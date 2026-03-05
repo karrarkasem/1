@@ -1562,12 +1562,22 @@ async function init() {
 
   await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications()]);
 
-  try {
+ try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {
       const parsed = JSON.parse(saved);
-      const fresh  = users.find(u => u.username === parsed.username);
-      if (fresh) CU = { ...fresh };
+      // جرب username أولاً، وإذا ما لقى جرب email (لحسابات Google)
+      const fresh = users.find(u => 
+        u.username === parsed.username || 
+        u.email === parsed.username ||
+        (parsed.googleUser && u.username === parsed.googleUser.username)
+      );
+      if (fresh) {
+        CU = { ...fresh };
+      } else if (parsed.googleUser) {
+        // fallback للحسابات اللي ما تحملت بعد
+        CU = { ...parsed.googleUser };
+      }
     }
   } catch(e) {}
 

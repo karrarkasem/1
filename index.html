@@ -146,8 +146,7 @@ body{
 .sb-logo-text h2{font-size:1.1rem;font-weight:900;color:white}
 .sb-logo-text span{font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase}
 .sb-user{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px;}
-.sb-avatar{width:40px;height:40px;border-radius:var(--r12);background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(14,165,233,.15));border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;transition:all .2s;}
-.sb-avatar:hover{border-color:rgba(255,255,255,.5);box-shadow:0 0 0 3px rgba(255,255,255,.15);}
+.sb-avatar{width:40px;height:40px;border-radius:var(--r12);background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(14,165,233,.15));border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
 .sb-uname{color:white;font-weight:800;font-size:.88rem}
 .sb-urole{display:inline-block;margin-top:2px;background:rgba(14,165,233,.18);border:1px solid rgba(14,165,233,.28);padding:2px 8px;border-radius:var(--r99);font-size:.65rem;color:rgba(255,255,255,.75);}
 .sb-online{display:inline-flex;align-items:center;gap:5px;font-size:.65rem;color:rgba(16,185,129,.8);margin-top:2px}
@@ -651,10 +650,7 @@ body.sidebar-open{overflow:hidden}
       <div class="sb-logo-text"><h2>برجمان</h2><span>BARJOMAN</span></div>
     </div>
     <div class="sb-user" id="sbUser">
-      <div class="sb-avatar" id="sbAv" onclick="openProfileModal()" style="cursor:pointer;position:relative;overflow:hidden" title="تغيير الصورة">
-        <img id="sbAvImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;border-radius:inherit">
-        <span id="sbAvIcon">🌐</span>
-      </div>
+      <div class="sb-avatar" id="sbAv">🌐</div>
       <div>
         <div class="sb-uname" id="sbName">زائر</div>
         <div class="sb-urole" id="sbRole">تصفح حر</div>
@@ -1327,43 +1323,6 @@ body.sidebar-open{overflow:hidden}
 </div>
 
 
-<!-- PROFILE EDIT MODAL -->
-<div class="modal z1" id="profileModal">
-  <div class="m-box" style="max-width:400px">
-    <button class="m-close" onclick="closeModal('profileModal')">✕</button>
-    <div class="m-title">👤 ملفي الشخصي</div>
-
-    <!-- الصورة -->
-    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
-      <div id="pm_avatar_wrap" style="width:90px;height:90px;border-radius:50%;overflow:hidden;background:rgba(14,165,233,.1);border:3px solid rgba(14,165,233,.2);margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;position:relative">
-        <img id="pm_avatar_img" src="" style="width:100%;height:100%;object-fit:cover;display:none">
-        <span id="pm_avatar_icon">👤</span>
-        <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.45);color:white;font-size:.62rem;text-align:center;padding:3px;font-weight:700">تغيير</div>
-      </div>
-      <label style="cursor:pointer">
-        <input type="file" id="pm_photo" accept="image/*" style="display:none" onchange="previewPmPhoto(this)">
-        <span class="btn btn-ghost btn-sm">📷 تغيير الصورة</span>
-      </label>
-    </div>
-
-    <div class="fg"><label class="fl">الاسم الكامل</label>
-      <input id="pm_name" type="text" class="fi">
-    </div>
-    <div class="fg"><label class="fl">رقم الهاتف</label>
-      <input id="pm_phone" type="tel" class="fi" dir="ltr">
-    </div>
-    <div class="fg"><label class="fl">العنوان</label>
-      <input id="pm_address" type="text" class="fi">
-    </div>
-    <div class="fg"><label class="fl">الإيميل</label>
-      <input id="pm_email" type="text" class="fi" readonly style="background:rgba(14,165,233,.04);color:rgba(9,50,87,.5)">
-    </div>
-
-    <div id="pm_err" style="color:var(--rose);font-size:.8rem;margin-bottom:8px;min-height:18px"></div>
-    <button class="btn btn-gold btn-full" onclick="saveProfileEdit()" id="pm_save_btn">💾 حفظ التغييرات</button>
-  </div>
-</div>
-
 <!-- PROFILE SETUP MODAL (بعد Google Login) -->
 <div class="modal z2" id="profileSetupModal" style="backdrop-filter:blur(12px)">
   <div class="m-box" style="max-width:440px">
@@ -1772,16 +1731,7 @@ function buildUI() {
 
 function buildSidebar() {
   const p = PERMS[CU?.type||'guest'];
-  document.getElementById('sbAv').textContent   = CU ? '' : '🌐';
-  // صورة الملف الشخصي
-  const sbImg  = document.getElementById('sbAvImg');
-  const sbIcon = document.getElementById('sbAvIcon');
-  if(CU?.photoURL) {
-    sbImg.src = CU.photoURL; sbImg.style.display='block'; sbIcon.style.display='none';
-  } else {
-    sbImg.style.display='none'; sbIcon.style.display='flex';
-    sbIcon.textContent = CU ? (ROLES[CU.type]?.charAt(0)||'👤') : '🌐';
-  }
+  document.getElementById('sbAv').textContent   = CU ? (ROLES[CU.type]?.charAt(0)||'👤') : '🌐';
   document.getElementById('sbName').textContent  = CU?.name||'زائر';
   document.getElementById('sbRole').textContent  = CU ? ROLES[CU.type] : 'تصفح حر';
   document.getElementById('sbOnline').style.display = CU ? 'flex':'none';
@@ -2274,8 +2224,7 @@ function buildDashboard(){
     <div class="kpi-card kpi-violet"><div class="kpi-icon">⭐</div><div class="kpi-val">${pts}</div><div class="kpi-lbl">النقاط المتراكمة</div></div>`;
   }
   document.getElementById('dashKpi').innerHTML=kpi;
-  const isFullAccess2 = CU.type==='admin' || CU.type==='sales_manager';
-  const showOrds = isFullAccess2 ? orders : filterMyOrders();
+  const showOrds = (p.dash && CU.type!=='market_owner') ? orders : filterMyOrders();
   document.getElementById('recentBody').innerHTML=[...showOrds].slice(-8).reverse().map(o=>`
     <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
       <td>${o.date}</td>
@@ -2292,9 +2241,7 @@ function buildDashboard(){
 function renderOrders(){
   if(!CU) return;
   const p=PERMS[CU.type]||PERMS.guest;
-  // الأدمن والمشرف يشوفون كل الطلبات — الباقي طلباتهم فقط
-  const isFullAccess = CU.type==='admin' || CU.type==='sales_manager';
-  const base = isFullAccess ? orders : filterMyOrders();
+  const base=p.dash?orders:filterMyOrders();
   const f=document.getElementById('ordFilter')?.value||'all';
   let filt=base;
   if(f==='today') filt=base.filter(o=>isSameDay(o.date,new Date()));
@@ -3749,78 +3696,6 @@ async function doGoogleLogin() {
     errEl.textContent = msgs[err.code] || '❌ خطأ في تسجيل الدخول بـ Google';
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = btn.innerHTML.replace('⏳ جاري التسجيل...', 'تسجيل الدخول بـ Google'); }
-  }
-}
-
-function openProfileModal() {
-  if(!CU) { showLogin(); return; }
-  document.getElementById('pm_name').value    = CU.name || '';
-  document.getElementById('pm_phone').value   = CU.phone || '';
-  document.getElementById('pm_address').value = CU.address || '';
-  document.getElementById('pm_email').value   = CU.email || CU.username || '';
-  document.getElementById('pm_err').textContent = '';
-  // الصورة الحالية
-  const img  = document.getElementById('pm_avatar_img');
-  const icon = document.getElementById('pm_avatar_icon');
-  if(CU.photoURL) {
-    img.src=CU.photoURL; img.style.display='block'; icon.style.display='none';
-  } else {
-    img.style.display='none'; icon.style.display='flex'; icon.textContent='👤';
-  }
-  document.getElementById('pm_photo').value = '';
-  openModal('profileModal');
-}
-
-function previewPmPhoto(input) {
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img  = document.getElementById('pm_avatar_img');
-    const icon = document.getElementById('pm_avatar_icon');
-    img.src=e.target.result; img.style.display='block'; icon.style.display='none';
-  };
-  reader.readAsDataURL(file);
-}
-
-async function saveProfileEdit() {
-  const name    = document.getElementById('pm_name').value.trim();
-  const phone   = document.getElementById('pm_phone').value.trim();
-  const address = document.getElementById('pm_address').value.trim();
-  const errEl   = document.getElementById('pm_err');
-  if(!name){ errEl.textContent='⚠️ أدخل الاسم'; return; }
-
-  const btn = document.getElementById('pm_save_btn');
-  btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
-  errEl.textContent='';
-
-  try {
-    let photoURL = CU.photoURL || '';
-    const file = document.getElementById('pm_photo').files[0];
-    if(file) {
-      photoURL = await new Promise(res => {
-        const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsDataURL(file);
-      });
-    }
-
-    const updates = { name, phone, address, photoURL };
-    if(CU._id) await fbUpdate('users', CU._id, updates).catch(()=>{});
-
-    // حدّث CU و users
-    Object.assign(CU, updates);
-    const idx = users.findIndex(u=>u._id===CU._id||u.username===CU.username);
-    if(idx>=0) Object.assign(users[idx], updates);
-
-    // حدّث localStorage
-    const saved = JSON.parse(localStorage.getItem('bjUser')||'{}');
-    localStorage.setItem('bjUser', JSON.stringify({...saved, googleUser:{...saved.googleUser,...updates}}));
-
-    closeModal('profileModal');
-    buildSidebar();
-    toast('✅ تم حفظ الملف الشخصي');
-  } catch(e) {
-    errEl.textContent='❌ حدث خطأ، حاول مجدداً';
-  } finally {
-    btn.disabled=false; btn.textContent='💾 حفظ التغييرات';
   }
 }
 

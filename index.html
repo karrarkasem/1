@@ -2224,7 +2224,8 @@ function buildDashboard(){
     <div class="kpi-card kpi-violet"><div class="kpi-icon">⭐</div><div class="kpi-val">${pts}</div><div class="kpi-lbl">النقاط المتراكمة</div></div>`;
   }
   document.getElementById('dashKpi').innerHTML=kpi;
-  const showOrds = (p.dash && CU.type!=='market_owner') ? orders : filterMyOrders();
+  const isAdminView2 = CU && (CU.type==='admin' || CU.type==='sales_manager');
+const showOrds = isAdminView2 ? orders : filterMyOrders();
   document.getElementById('recentBody').innerHTML=[...showOrds].slice(-8).reverse().map(o=>`
     <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
       <td>${o.date}</td>
@@ -2241,7 +2242,8 @@ function buildDashboard(){
 function renderOrders(){
   if(!CU) return;
   const p=PERMS[CU.type]||PERMS.guest;
-  const base=p.dash?orders:filterMyOrders();
+  const isAdminView = CU && (CU.type==='admin' || CU.type==='sales_manager');
+const base = isAdminView ? orders : filterMyOrders();
   const f=document.getElementById('ordFilter')?.value||'all';
   let filt=base;
   if(f==='today') filt=base.filter(o=>isSameDay(o.date,new Date()));

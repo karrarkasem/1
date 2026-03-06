@@ -626,6 +626,55 @@ hr{border:none;border-top:1px solid rgba(14,165,233,.1);margin:13px 0}
 /* ✅ FIX: Prevent body scroll when sidebar is open on mobile */
 body.sidebar-open{overflow:hidden}
 </style>
+
+
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+// ⚙️ أضف معرّفاتك من emailjs.com (مجاني)
+const EMAILJS_SERVICE_ID  = 'service_e1sj8tn';
+const EMAILJS_TEMPLATE_ID = 'template_2vxg15b';
+const EMAILJS_PUBLIC_KEY  = 'vXft7Q_VrPCL4VBQJ';
+const ADMIN_EMAILS = [
+  'karrarkasem@gmail.com', 
+  'karrarkasem@gmail.com'
+];
+(function(){
+  if(typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'vXft7Q_VrPCL4VBQJ')
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+})();
+
+async function sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc}) {
+  try {
+    if(typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'vXft7Q_VrPCL4VBQJ') return;
+    const repName = CU?.name || 'زائر';
+for(const email of ADMIN_EMAILS) {
+  await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: email,
+    subject: `🛍️ طلب جديد — ${shop} — ${total.toLocaleString()} د.ع`,
+    order_id: orderId,
+    order_date: nowStr,
+    rep_name: repName,
+    shop_name: shop,
+    shop_addr: addr,
+    shop_note: note || '—',
+    location: selLoc || '—',
+    products: prodList.join('\n'),
+    total: total.toLocaleString() + ' د.ع',
+    commission: commission.toLocaleString() + ' د.ع (' + commPct + '%)',
+    net: (total - commission).toLocaleString() + ' د.ع',
+  });
+  
+}
+  } catch(e) {
+    console.error('Error sending email:', e);
+}
+}
+
+</script>
+
+
 </head>
 <body>
 <div class="crystal-bg"></div>
@@ -1562,22 +1611,12 @@ async function init() {
 
   await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications()]);
 
- try {
+  try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // جرب username أولاً، وإذا ما لقى جرب email (لحسابات Google)
-      const fresh = users.find(u => 
-        u.username === parsed.username || 
-        u.email === parsed.username ||
-        (parsed.googleUser && u.username === parsed.googleUser.username)
-      );
-      if (fresh) {
-        CU = { ...fresh };
-      } else if (parsed.googleUser) {
-        // fallback للحسابات اللي ما تحملت بعد
-        CU = { ...parsed.googleUser };
-      }
+      const fresh  = users.find(u => u.username === parsed.username);
+      if (fresh) CU = { ...fresh };
     }
   } catch(e) {}
 
@@ -1908,7 +1947,7 @@ function renderCats(){
 function renderStore(filter='الكل',btn=null){
   if(btn){document.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('on'));btn.classList.add('on');}
   // إخفاء banner الزائر إذا كان مسجلاً
-  document.getElementById('guestBannerWrap').innerHTML = !CU ? `
+  document.getElementById('guestBannerWrap').innerHTML = (!CU || CU.type === 'guest') ? `
     <div class="guest-banner">
       <div class="gb-text"><p>🌐 أنت تتصفح كزائر</p><span>يمكنك التصفح — سجّل دخول للاستفادة الكاملة</span></div>
       <button class="btn btn-sky btn-sm" onclick="showLogin()">👤 دخول</button>
@@ -2121,7 +2160,18 @@ async function sendOrder(){
   for(const k in cart) msg+=`  • ${k} × ${cart[k].qty} = ${(cart[k].qty*cart[k].price).toLocaleString()} د.ع\n`;
   msg+=`\n💰 *الإجمالي: ${total.toLocaleString()} د.ع*`;
   if(CU&&commission>0) msg+=`\n💸 *عمولة المندوب: ${commission.toLocaleString()} د.ع*`;
-  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`,'_blank');
+  // ✅ فتح واتساب بشكل موثوق على كل المتصفحات والموبايل
+const waUrl = `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
+const waLink = document.createElement('a');
+waLink.href = waUrl;
+waLink.target = '_blank';
+waLink.rel = 'noopener noreferrer';
+document.body.appendChild(waLink);
+waLink.click();
+document.body.removeChild(waLink);
+
+// إرسال إيميل بنفس الوقت
+sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc});
 
   orders.push(parseOrder({...orderData,_id:fbId||'',createdAt:nowStr}));
   cart={}; updateCartUI(); closeModal('cartModal');
@@ -2234,8 +2284,7 @@ function buildDashboard(){
     <div class="kpi-card kpi-violet"><div class="kpi-icon">⭐</div><div class="kpi-val">${pts}</div><div class="kpi-lbl">النقاط المتراكمة</div></div>`;
   }
   document.getElementById('dashKpi').innerHTML=kpi;
-  const isAdminView2 = CU && (CU.type==='admin' || CU.type==='sales_manager');
-const showOrds = isAdminView2 ? orders : filterMyOrders();
+  const showOrds = (p.dash && CU.type!=='market_owner') ? orders : filterMyOrders();
   document.getElementById('recentBody').innerHTML=[...showOrds].slice(-8).reverse().map(o=>`
     <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
       <td>${o.date}</td>
@@ -2252,8 +2301,7 @@ const showOrds = isAdminView2 ? orders : filterMyOrders();
 function renderOrders(){
   if(!CU) return;
   const p=PERMS[CU.type]||PERMS.guest;
-  const isAdminView = CU && (CU.type==='admin' || CU.type==='sales_manager');
-const base = isAdminView ? orders : filterMyOrders();
+  const base=p.dash?orders:filterMyOrders();
   const f=document.getElementById('ordFilter')?.value||'all';
   let filt=base;
   if(f==='today') filt=base.filter(o=>isSameDay(o.date,new Date()));

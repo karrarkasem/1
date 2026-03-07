@@ -640,17 +640,20 @@ const ADMIN_EMAILS = [
   'karrarkasem@gmail.com', 
   'karrarkasem@gmail.com'
 ];
+// ✅ init
 (function(){
-  if(typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'vXft7Q_VrPCL4VBQJ')
+  if(typeof emailjs !== 'undefined')
     emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 })();
 
+// ✅ sendOrderEmail
 async function sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc}) {
   try {
-    if(typeof emailjs === 'undefined' || EMAILJS_PUBLIC_KEY === 'vXft7Q_VrPCL4VBQJ') return;
+    if(typeof emailjs === 'undefined') return;
     const repName = CU?.name || 'زائر';
-for(const email of ADMIN_EMAILS) {
-  await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    for(const email of ADMIN_EMAILS) {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        // ... باقي الكود بدون تغيير
     to_email: email,
     subject: `🛍️ طلب جديد — ${shop} — ${total.toLocaleString()} د.ع`,
     order_id: orderId,
@@ -2160,15 +2163,9 @@ async function sendOrder(){
   for(const k in cart) msg+=`  • ${k} × ${cart[k].qty} = ${(cart[k].qty*cart[k].price).toLocaleString()} د.ع\n`;
   msg+=`\n💰 *الإجمالي: ${total.toLocaleString()} د.ع*`;
   if(CU&&commission>0) msg+=`\n💸 *عمولة المندوب: ${commission.toLocaleString()} د.ع*`;
-  // ✅ فتح واتساب بشكل موثوق على كل المتصفحات والموبايل
-const waUrl = `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
-const waLink = document.createElement('a');
-waLink.href = waUrl;
-waLink.target = '_blank';
-waLink.rel = 'noopener noreferrer';
-document.body.appendChild(waLink);
-waLink.click();
-document.body.removeChild(waLink);
+
+  // ✅ فتح واتساب مباشرة — أسرع وأموثق على الموبايل
+window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 
 // إرسال إيميل بنفس الوقت
 sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc});
@@ -2177,9 +2174,23 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
   cart={}; updateCartUI(); closeModal('cartModal');
   ['shopName','shopAddr','orderNote'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('locOk').style.display='none'; selLoc='';
+  // إشعار تيليغرام
+  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+  const TG_CHAT  = '-5246620507';
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: TG_CHAT,
+      text: `🛍️ *طلب جديد*\n\n📅 ${nowStr}\n👤 ${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 ${total.toLocaleString()} د.ع\n💸 عمولة: ${commission.toLocaleString()} د.ع`,
+      parse_mode: 'Markdown'
+    })
+  }).catch(()=>{});
+
   toast(CU&&commission>0?`✅ الطلب أُرسل! عمولتك: ${commission.toLocaleString()} د.ع`:'✅ تم إرسال الطلب');
   renderStore('الكل'); renderInventory(); renderOrders(); buildDashboard(); renderSalesList();
 }
+
 
 // ═══════════════════════════════════════════════════════
 // ✅ POINTS SYSTEM — Core Logic
@@ -3148,7 +3159,7 @@ async function useOffer(offerId) {
   o.usages = usages;
   await fbUpdate('offers', o._id, {usages}).catch(()=>{});
 
-  updateCartBadge();
+  updateCartUI();
   renderOffers();
   showPage('pageStore');
 }

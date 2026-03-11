@@ -585,12 +585,14 @@ hr{border:none;border-top:1px solid rgba(14,165,233,.1);margin:13px 0}
    RESPONSIVE — MOBILE FIRST
    ═══════════════════════════════════════════ */
 @media(max-width:768px){
-  /* ✅ FIX: Sidebar fully off screen, never bleeds */
   .sidebar{
     width:280px;
     transform:translateX(100%) !important;
     visibility:hidden;
+    left: auto;  /* هذا السطر الجديد */
   }
+  /* باقي الكود... */
+}
   .sidebar.open{
     transform:translateX(0) !important;
     visibility:visible;
@@ -816,8 +818,8 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 </div>
 
     
-    <!-- ORDERS -->
-   <div class="page" id="pageOrders">
+<!-- ORDERS -->
+<div class="page" id="pageOrders">
   <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
   <div id="ordSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:16px"></div>
   
@@ -876,21 +878,6 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     </div>
   </div>
 </div>
-      <div class="card">
-        <div class="card-hd">
-          <div class="card-title">📋 قائمة الطلبات</div>
-          <select id="ordFilter" class="fi" style="width:auto;padding:6px 10px;font-size:.78rem" onchange="renderOrders()">
-            <option value="all">الكل</option><option value="today">اليوم</option><option value="month">الشهر</option>
-          </select>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>التاريخ</th><th>المندوب</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th></th></tr></thead>
-            <tbody id="ordBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
     <!-- WALLET -->
     <div class="page" id="pageWallet">

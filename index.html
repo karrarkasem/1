@@ -4692,7 +4692,17 @@ init().catch(err=>{
   },1000);
   buildUI();
 });
-  const _origBuildUI = buildUI;
+  <script id="PATCH_JS">
+// ══════════════════════════════════════════════════════
+// PATCH: Registration + Marketing System
+// ══════════════════════════════════════════════════════
+
+// ── Step 1: Add "Marketing" to sidebar nav ──
+// في دالة buildSidebar()، أضف هذا السطر في مصفوفة nav:
+// {id:'pageMarketing', icon:'📣', lbl:'التسويق', perm:'manage'},
+// (تلقائياً سيُضاف من خلال override في الكود هنا)
+
+const _origBuildUI = buildUI;
 buildUI = function() {
   _origBuildUI();
   injectMarketingNav();
@@ -5381,7 +5391,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCampaignHistory();
   }, 2000);
 });
-
+</script>
 
 </script>
 </body>

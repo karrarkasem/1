@@ -45,7 +45,8 @@ window._fb = {
   collection, doc, getDocs, getDoc, addDoc, updateDoc,
   setDoc, deleteDoc, query, where, orderBy, limit, onSnapshot,
   serverTimestamp, writeBatch, increment, Timestamp,
-  ref, uploadBytes, getDownloadURL,
+  storageRef: ref,   // ✅ تم التغيير هنا من 'ref' إلى 'storageRef'
+  uploadBytes, getDownloadURL,
   signInWithPopup, signOut
 };
 window._fbReady = true;
@@ -816,9 +817,65 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
     
     <!-- ORDERS -->
-    <div class="page" id="pageOrders">
-      <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
-      <div id="ordSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:16px"></div>
+   <div class="page" id="pageOrders">
+  <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
+  <div id="ordSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:16px"></div>
+  
+  <!-- ✅ فلاتر متقدمة -->
+  <div class="card" style="margin-bottom:14px;padding:14px 16px">
+    <div style="font-size:.82rem;font-weight:800;color:var(--deep);margin-bottom:11px">🔍 فلتر الطلبات</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px">
+      
+      <div class="fg" style="margin:0">
+        <label class="fl">📅 الفترة</label>
+        <select id="ordFilter" class="fsel" onchange="renderOrders()">
+          <option value="all">الكل</option>
+          <option value="today">اليوم</option>
+          <option value="week">الأسبوع</option>
+          <option value="month">الشهر</option>
+          <option value="custom">مخصص</option>
+        </select>
+      </div>
+
+      <div class="fg" style="margin:0" id="ordRepFilterWrap">
+        <label class="fl">🤝 المندوب</label>
+        <select id="ordRepFilter" class="fsel" onchange="renderOrders()">
+          <option value="all">الكل</option>
+        </select>
+      </div>
+
+      <div class="fg" style="margin:0">
+        <label class="fl">🏪 المحل</label>
+        <input type="text" id="ordShopFilter" class="fi" placeholder="بحث باسم المحل..." oninput="renderOrders()">
+      </div>
+
+    </div>
+
+    <!-- تواريخ مخصصة -->
+    <div id="ordCustomDates" style="display:none;margin-top:10px">
+      <div class="frow">
+        <div class="fg" style="margin:0"><label class="fl">من تاريخ</label><input type="date" id="ordFrom" class="fi" onchange="renderOrders()"></div>
+        <div class="fg" style="margin:0"><label class="fl">إلى تاريخ</label><input type="date" id="ordTo" class="fi" onchange="renderOrders()"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-ghost btn-sm" onclick="resetOrdFilters()">🔄 إعادة تعيين</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 قائمة الطلبات <span id="ordCountBadge" class="badge b-sky" style="margin-right:8px"></span></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>التاريخ</th><th>المندوب</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th></th></tr></thead>
+        <tbody id="ordBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
       <div class="card">
         <div class="card-hd">
           <div class="card-title">📋 قائمة الطلبات</div>
@@ -1772,7 +1829,29 @@ function startRealtimeListeners() {
     }
   });
   fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
-    notifications = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    notifications = fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
+  // ✅ FIX: دمج ذكي — لا نحذف الإشعارات المحلية الجديدة
+  const fromServer = snap.docs.map(d => ({
+    _id:   d.id,
+    title: d.data().title  || '',
+    body:  d.data().body   || d.data().message || '',
+    type:  d.data().type   || 'info',
+    read:  d.data().read   || false,
+    date:  tsToStr(d.data().date || d.data().createdAt),
+    target: d.data().targetUser || 'all'
+  }));
+  // دمج مع الإشعارات المحلية — نتجنب التكرار
+  const serverIds = new Set(fromServer.map(n => n._id));
+  const localOnly  = notifications.filter(n => !serverIds.has(n._id));
+  notifications = [...fromServer, ...localOnly].sort((a, b) => {
+    // الأحدث أولاً
+    if (!a.read && b.read) return -1;
+    if (a.read && !b.read) return 1;
+    return 0;
+  });
+  renderNotifBadge();
+  renderNotifications();
+});
     renderNotifBadge();
     renderNotifications();
   });
@@ -2037,7 +2116,11 @@ async function doLogin() {
   CU={...found};
   if(document.getElementById('remMe').checked) localStorage.setItem('bjUser',JSON.stringify({username:CU.username}));
   if(found._id) fbUpdate('users',found._id,{lastLogin:new Date().toLocaleDateString('ar-IQ')}).catch(()=>{});
-  hideLogin(); buildUI(); showPage('pageDashboard'); toast('✅ مرحباً '+CU.name);
+  hideLogin(); buildUI();
+  // ✅ طلب إذن إشعارات المتصفح
+if (Notification && Notification.permission === 'default') {
+  Notification.requestPermission();
+} showPage('pageDashboard'); toast('✅ مرحباً '+CU.name);
 }
 
 function doLogout(){
@@ -2255,22 +2338,39 @@ async function sendOrder(){
   }
 
   await fbAdd('notifications',{
-    title:'📦 طلب جديد',
-    body:`${CU?.name||'زائر'} — ${shop} — ${total.toLocaleString()} د.ع`,
-    type:'order', read:false, targetUser:'admin',
-    date:new Date().toLocaleDateString('ar-IQ')
-  }).catch(()=>{});
+    // ══ إشعار فوري داخل التطبيق ══
+const notifData = {
+  title: '📦 طلب جديد',
+  body:  `${CU?.name||'زائر'} — ${shop} — ${total.toLocaleString()} د.ع`,
+  type:  'order',
+  read:  false,
+  targetUser: 'admin',
+  date:  new Date().toLocaleDateString('ar-IQ')
+};
+const notifId = await fbAdd('notifications', notifData).catch(()=>null);
 
-  let msg=`🛍️ *طلب جديد — برجمان*\n\n📅 *التاريخ:* ${nowStr}\n`;
-  msg+=CU?`👤 *المندوب:* ${CU.name}\n`:`🌐 *طلب من زائر*\n`;
-  msg+=`🏪 *المحل:* ${shop}\n📍 *العنوان:* ${addr}\n`;
-  if(selLoc) msg+=`🗺️ *الموقع:* ${selLoc}\n`;
-  if(note)   msg+=`📝 *ملاحظة:* ${note}\n`;
-  msg+=`\n*📦 المنتجات:*\n`;
-  for(const k in cart) msg+=`  • ${k} × ${cart[k].qty} = ${(cart[k].qty*cart[k].price).toLocaleString()} د.ع\n`;
-  msg+=`\n💰 *الإجمالي: ${total.toLocaleString()} د.ع*`;
-  if(CU&&commission>0) msg+=`\n💸 *عمولة المندوب: ${commission.toLocaleString()} د.ع*`;
+// ✅ أضف الإشعار فوراً للمصفوفة المحلية بدون انتظار onSnapshot
+if (notifId) {
+  notifications.unshift({ _id: notifId, ...notifData });
+  renderNotifications();
+  renderNotifBadge();
+  buildSidebar(); // تحديث شارة الإشعارات في الشريط الجانبي
+}
 
+// ✅ إشعار بالمتصفح (Web Push) إذا أُذن له
+if (Notification?.permission === 'granted') {
+  new Notification('📦 طلب جديد — برجمان', {
+    body: `${shop} — ${total.toLocaleString()} د.ع`,
+    icon: 'https://via.placeholder.com/64?text=🏪'
+  });
+} else if (Notification?.permission !== 'denied') {
+  Notification?.requestPermission().then(perm => {
+    if (perm === 'granted')
+      new Notification('📦 طلب جديد — برجمان', {
+        body: `${shop} — ${total.toLocaleString()} د.ع`
+      });
+  });
+}
   // ✅ فتح واتساب مباشرة — أسرع وأموثق على الموبايل
 window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 
@@ -2416,66 +2516,122 @@ function buildDashboard(){
 // ═══════════════════════════════════════════════════════
 // ORDERS
 // ═══════════════════════════════════════════════════════
-function renderOrders(){
-  if(!CU) return;
-  const p=PERMS[CU.type]||PERMS.guest;
-  const base=p.dash?orders:filterMyOrders();
-  const f=document.getElementById('ordFilter')?.value||'all';
-  let filt=base;
-  if(f==='today') filt=base.filter(o=>isSameDay(o.date,new Date()));
-  if(f==='month') filt=base.filter(o=>isThisMonth(o.date));
-  const t=filt.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
-  const c=filt.reduce((s,o)=>s+(parseFloat(o.commission)||0),0);
-  document.getElementById('ordSummary').innerHTML=`
-    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:1.3rem;font-weight:900;color:var(--sky2)">${filt.length}</div><div style="font-size:.68rem;color:rgba(9,50,87,.48)">عدد الطلبات</div></div>
-    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:1.3rem;font-weight:900;color:var(--mint2)">${(t/1000).toFixed(0)}K</div><div style="font-size:.68rem;color:rgba(9,50,87,.48)">إجمالي المبيعات</div></div>
-    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)"><div style="font-size:1.3rem;font-weight:900;color:var(--gold2)">${(c/1000).toFixed(0)}K</div><div style="font-size:.68rem;color:rgba(9,50,87,.48)">إجمالي العمولات</div></div>`;
-  document.getElementById('ordBody').innerHTML=[...filt].reverse().map(o=>`
-    <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
-      <td>${o.date}</td>
-      <td>${o.repName||'—'}</td>
-      <td style="font-weight:700;color:var(--deep)">${o.shopName||'—'}</td>
-      <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(9,50,87,.48)">${o.products}</td>
-      <td style="font-weight:800;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()}</td>
-      <td style="color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()}</td>
-      <td style="color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()}</td>
-      <td><button class="btn btn-ghost btn-sm">🔍</button></td>
-    </tr>`).join('')||'<tr><td colspan="8" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد طلبات</td></tr>';
+function renderOrders() {
+  if (!CU) return;
+  const p = PERMS[CU.type] || PERMS.guest;
+
+  // ── 1. قاعدة البيانات حسب الصلاحية ──
+  const base = p.dash ? [...orders] : [...filterMyOrders()];
+
+  // ── 2. ملأ قائمة المندوبين في الفلتر (للأدمن فقط) ──
+  const repWrap = document.getElementById('ordRepFilterWrap');
+  const repSel  = document.getElementById('ordRepFilter');
+  if (repWrap) repWrap.style.display = p.dash ? 'block' : 'none';
+  if (repSel && p.dash) {
+    const reps = [...new Set(base.map(o => o.repUser).filter(Boolean))];
+    const cur  = repSel.value;
+    repSel.innerHTML = '<option value="all">الكل</option>' +
+      reps.map(r => {
+        const u = users.find(u => u.username === r);
+        return `<option value="${r}" ${r===cur?'selected':''}>${u?.name||r}</option>`;
+      }).join('');
+  }
+
+  // ── 3. قراءة قيم الفلاتر ──
+  const period    = document.getElementById('ordFilter')?.value   || 'all';
+  const repFilter = document.getElementById('ordRepFilter')?.value || 'all';
+  const shopQ     = (document.getElementById('ordShopFilter')?.value || '').trim().toLowerCase();
+  const fromDate  = document.getElementById('ordFrom')?.value;
+  const toDate    = document.getElementById('ordTo')?.value;
+
+  // إظهار/إخفاء حقول التاريخ المخصص
+  const customDates = document.getElementById('ordCustomDates');
+  if (customDates) customDates.style.display = period === 'custom' ? 'block' : 'none';
+
+  // ── 4. تطبيق الفلاتر ──
+  const now = new Date();
+  let filt = base;
+
+  // فلتر الفترة
+  if (period === 'today')
+    filt = filt.filter(o => isSameDay(o.date, now));
+  else if (period === 'week') {
+    const w = new Date(now); w.setDate(now.getDate() - 7);
+    filt = filt.filter(o => isAfterDate(o.date, w));
+  }
+  else if (period === 'month')
+    filt = filt.filter(o => isThisMonth(o.date));
+  else if (period === 'custom') {
+    if (fromDate) filt = filt.filter(o => isAfterDate(o.date, new Date(fromDate)));
+    if (toDate)   filt = filt.filter(o => isBeforeDate(o.date, new Date(toDate)));
+  }
+
+  // فلتر المندوب
+  if (repFilter !== 'all')
+    filt = filt.filter(o => o.repUser === repFilter);
+
+  // فلتر المحل
+  if (shopQ)
+    filt = filt.filter(o => (o.shopName || '').toLowerCase().includes(shopQ));
+
+  // ── 5. ترتيب من الأحدث للأقدم ──
+  filt.sort((a, b) => {
+    // نحوّل التاريخ العربي لرقم للمقارنة
+    const da = parseArabicDate(a.date);
+    const db = parseArabicDate(b.date);
+    return db - da; // الأحدث أولاً
+  });
+
+  // ── 6. ملخص KPI ──
+  const t = filt.reduce((s,o) => s+(parseFloat(o.total)||0), 0);
+  const c = filt.reduce((s,o) => s+(parseFloat(o.commission)||0), 0);
+  document.getElementById('ordSummary').innerHTML = `
+    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)">
+      <div style="font-size:1.3rem;font-weight:900;color:var(--sky2)">${filt.length}</div>
+      <div style="font-size:.68rem;color:rgba(9,50,87,.48)">عدد الطلبات</div>
+    </div>
+    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)">
+      <div style="font-size:1.3rem;font-weight:900;color:var(--mint2)">${(t/1000).toFixed(0)}K</div>
+      <div style="font-size:.68rem;color:rgba(9,50,87,.48)">إجمالي المبيعات</div>
+    </div>
+    <div style="background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:12px;text-align:center;box-shadow:var(--shadow-sm)">
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold2)">${(c/1000).toFixed(0)}K</div>
+      <div style="font-size:.68rem;color:rgba(9,50,87,.48)">إجمالي العمولات</div>
+    </div>`;
+
+  // تحديث شارة العدد
+  const badge = document.getElementById('ordCountBadge');
+  if (badge) badge.textContent = filt.length + ' طلب';
+
+  // ── 7. رسم الجدول ──
+  document.getElementById('ordBody').innerHTML = filt.length
+    ? filt.map(o => `
+        <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
+          <td style="white-space:nowrap;color:rgba(9,50,87,.55);font-size:.76rem">${o.date}</td>
+          <td style="font-weight:700;color:var(--sky2)">${o.repName||'—'}</td>
+          <td style="font-weight:700;color:var(--deep)">${o.shopName||'—'}</td>
+          <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(9,50,87,.48)">${o.products}</td>
+          <td style="font-weight:800;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()}</td>
+          <td style="color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()}</td>
+          <td style="color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()}</td>
+          <td><button class="btn btn-ghost btn-sm">🔍</button></td>
+        </tr>`).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد طلبات بهذه الفلاتر</td></tr>';
 }
 
-async function showOrdDetail(idOrFbId){
-  let o=orders.find(x=>x._id===idOrFbId||x.id===idOrFbId)||orders[orders.length-1];
-  if(!o) return;
-  let tracking=[];
-  if(o._id) tracking=await fbGetSub('orders',o._id,'tracking').catch(()=>[]);
-  document.getElementById('ordDetailContent').innerHTML=`
-    <div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.1);border-radius:var(--r16);padding:14px;margin-bottom:13px">
-      ${[['رقم الطلب',o.id||o._id||'—'],['التاريخ',o.date],['المندوب',o.repName||'زائر'],
-         ['المحل',o.shopName||'—'],['العنوان',o.shopAddr||'—'],o.note?['ملاحظة',o.note]:null]
-        .filter(Boolean).map(([l,v])=>`
-        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(14,165,233,.07);font-size:.83rem">
-          <span style="color:rgba(9,50,87,.45)">${l}</span><span style="font-weight:700;color:var(--deep)">${v}</span>
-        </div>`).join('')}
-    </div>
-    <div style="background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:13px;margin-bottom:13px">
-      <div style="font-weight:800;color:var(--deep);margin-bottom:9px;font-size:.84rem">📦 المنتجات</div>
-      <div style="font-size:.82rem;color:rgba(9,50,87,.62);line-height:1.8">${o.products||'—'}</div>
-    </div>
-    ${tracking.length?`<div style="background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:13px;margin-bottom:13px">
-      <div style="font-weight:800;color:var(--deep);margin-bottom:9px;font-size:.84rem">📍 تتبع الطلب</div>
-      ${tracking.map(t=>`<div style="display:flex;gap:9px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(14,165,233,.07);font-size:.8rem">
-        <span style="color:var(--mint2)">•</span><span style="font-weight:600">${t.status}</span><span style="color:rgba(9,50,87,.4)">${tsToStr(t.timestamp||t.createdAt)}</span>
-      </div>`).join('')}
-    </div>`:''}
-    <div style="background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.9);border-radius:var(--r16);padding:13px">
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.84rem"><span style="color:rgba(9,50,87,.45)">الإجمالي</span><span style="font-weight:800;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()} د.ع</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.84rem"><span style="color:rgba(9,50,87,.45)">العمولة</span><span style="font-weight:800;color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()} د.ع</span></div>
-      <div style="display:flex;justify-content:space-between;padding:9px 0 0;font-size:.96rem;font-weight:900;border-top:1px solid rgba(14,165,233,.09)"><span>الصافي</span><span style="color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()} د.ع</span></div>
-    </div>
-    ${o.location?`<a href="${o.location}" target="_blank" class="btn btn-sky btn-full" style="margin-top:11px;text-decoration:none">🗺️ عرض الموقع</a>`:''}`;
-  openModal('ordDetailModal');
+// ── دالة مساعدة: إعادة تعيين الفلاتر ──
+function resetOrdFilters() {
+  const ids = ['ordFilter', 'ordRepFilter'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.value = 'all'; });
+  const shop = document.getElementById('ordShopFilter');
+  if(shop) shop.value = '';
+  const frm = document.getElementById('ordFrom');
+  const to  = document.getElementById('ordTo');
+  if(frm) frm.value = '';
+  if(to)  to.value  = '';
+  renderOrders();
+  toast('🔄 تم إعادة تعيين الفلاتر');
 }
-
 // ═══════════════════════════════════════════════════════
 // WALLET
 // ═══════════════════════════════════════════════════════
@@ -3873,7 +4029,37 @@ function isSameDay(dateStr,d){
     return od.getFullYear()===d.getFullYear()&&od.getMonth()===d.getMonth()&&od.getDate()===d.getDate();
   } catch{return false;}
 }
+// ✅ تحويل تاريخ عربي/هجري/ميلادي إلى timestamp للمقارنة والترتيب
+function parseArabicDate(dateStr) {
+  if (!dateStr || dateStr === '—') return 0;
+  try {
+    // تحويل الأرقام العربية للغربية
+    const normalized = dateStr.replace(/[٠١٢٣٤٥٦٧٨٩]/g, d =>
+      '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    const parts = normalized.split('/');
+    if (parts.length === 3) {
+      // صيغة dd/mm/yyyy
+      return new Date(
+        parseInt(parts[2]),
+        parseInt(parts[1]) - 1,
+        parseInt(parts[0])
+      ).getTime();
+    }
+    return new Date(normalized).getTime() || 0;
+  } catch { return 0; }
+}
 
+// ✅ إضافة isAfterDate و isBeforeDate إن لم تكونا موجودتين
+function isAfterDate(dateStr, d) {
+  const t = parseArabicDate(dateStr);
+  return t > 0 && t >= d.getTime();
+}
+
+function isBeforeDate(dateStr, d) {
+  const t = parseArabicDate(dateStr);
+  return t > 0 && t <= d.getTime();
+}
+  
 function isThisMonth(dateStr){
   if(!dateStr||dateStr==='—') return false;
   try{

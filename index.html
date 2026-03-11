@@ -3823,10 +3823,7 @@ function isBeforeDate(dateStr, d) {
 function renderReports() {
   // ✅ FIX: التحقق من تحميل البيانات أولاً
   if (!CU) {
-    document.getElementById('repKpi').innerHTML =
-      '
-🔒 يجب تسجيل الدخول لعرض التقارير
-';
+    document.getElementById('repKpi').innerHTML = '<div style="text-align:center;padding:28px">🔒 يجب تسجيل الدخول لعرض التقارير</div>';
     return;
   }
 
@@ -3835,14 +3832,10 @@ function renderReports() {
 
   // ✅ FIX: إظهار رسالة واضحة إذا لا توجد طلبات
   if (!filtered.length) {
-    document.getElementById('repKpi').innerHTML =
-      '
-📊 لا توجد طلبات في هذه الفترة
-';
+    document.getElementById('repKpi').innerHTML = '<div style="text-align:center;padding:28px">📊 لا توجد طلبات في هذه الفترة</div>';
     const repsCard = document.getElementById('repRepsCard');
     if (repsCard) repsCard.style.display = 'none';
-    document.getElementById('repProdsBody').innerHTML =
-      'لا توجد بيانات';
+    document.getElementById('repProdsBody').innerHTML = '<tr><td colspan="3" style="text-align:center;padding:28px">لا توجد بيانات</td></tr>';
     return;
   }
 
@@ -3852,72 +3845,32 @@ function renderReports() {
   const outOfStock = products.filter(p => p.stock === 0).length;
 
   document.getElementById('repKpi').innerHTML = `
-    
-
-      
-💰
-
-      
-${tot >= 1e6 ? (tot / 1e6).toFixed(2) + 'M' : tot.toLocaleString()}
-
-      
-إجمالي المبيعات (د.ع)
-
-    
-
-    
-
-      
-📦
-
-      
-${filtered.length}
-
-      
-عدد الطلبات
-
-    
-
-    
-
-      
-💸
-
-      
-${comm >= 1e6 ? (comm / 1e6).toFixed(2) + 'M' : comm.toLocaleString()}
-
-      
-إجمالي العمولات
-
-    
-
-    
-
-      
-📊
-
-      
-${avg.toLocaleString()}
-
-      
-متوسط قيمة الطلب
-
-    
-
+    <div class="kpi-card kpi-sky">
+      <div class="kpi-icon">💰</div>
+      <div class="kpi-val">${tot >= 1e6 ? (tot / 1e6).toFixed(2) + 'M' : tot.toLocaleString()}</div>
+      <div class="kpi-lbl">إجمالي المبيعات (د.ع)</div>
+    </div>
+    <div class="kpi-card kpi-teal">
+      <div class="kpi-icon">📦</div>
+      <div class="kpi-val">${filtered.length}</div>
+      <div class="kpi-lbl">عدد الطلبات</div>
+    </div>
+    <div class="kpi-card kpi-mint">
+      <div class="kpi-icon">💸</div>
+      <div class="kpi-val">${comm >= 1e6 ? (comm / 1e6).toFixed(2) + 'M' : comm.toLocaleString()}</div>
+      <div class="kpi-lbl">إجمالي العمولات</div>
+    </div>
+    <div class="kpi-card kpi-gold">
+      <div class="kpi-icon">📊</div>
+      <div class="kpi-val">${avg.toLocaleString()}</div>
+      <div class="kpi-lbl">متوسط قيمة الطلب</div>
+    </div>
     ${isAdmin ? `
-    
-
-      
-🚫
-
-      
-${outOfStock}
-
-      
-نفاد المخزون
-
-    
-` : ''}`;
+    <div class="kpi-card kpi-rose">
+      <div class="kpi-icon">🚫</div>
+      <div class="kpi-val">${outOfStock}</div>
+      <div class="kpi-lbl">نفاد المخزون</div>
+    </div>` : ''}`;
 
   // جدول المندوبين — للأدمن والمشرف فقط
   const repsCard = document.getElementById('repRepsCard');
@@ -3933,25 +3886,22 @@ ${outOfStock}
       rMap[o.repUser].comm += parseFloat(o.commission) || 0;
     });
 
-    document.getElementById('repRepsBody').innerHTML =
-      Object.values(rMap)
-        .sort((a, b) => b.tot - a.tot)
-        .map(r => `
-          
-            ${r.name}
-            ${r.ord}
-            ${r.tot.toLocaleString()} د.ع
-            ${r.comm.toLocaleString()} د.ع
-            ${(r.tot - r.comm).toLocaleString()} د.ع
-          `).join('') ||
-      'لا توجد بيانات';
+    document.getElementById('repRepsBody').innerHTML = Object.values(rMap)
+      .sort((a, b) => b.tot - a.tot)
+      .map(r => `
+        <tr>
+          <td>${r.name}</td>
+          <td>${r.ord}</td>
+          <td>${r.tot.toLocaleString()} د.ع</td>
+          <td>${r.comm.toLocaleString()} د.ع</td>
+          <td>${(r.tot - r.comm).toLocaleString()} د.ع</td>
+        </tr>`).join('') || '<tr><td colspan="5" style="text-align:center">لا توجد بيانات</td></tr>';
   }
 
-  // أكثر المنتجات مبيعاً — ✅ FIX: دعم صيغ متعددة للمنتجات
+  // أكثر المنتجات مبيعاً
   const prodMap = {};
   filtered.forEach(o => {
     const prods = o.products || '';
-    // صيغة: اسم(كمية)
     const matches = prods.match(/([^،,\n]+)\((\d+)\)/g) || [];
     if (matches.length) {
       matches.forEach(m => {
@@ -3964,34 +3914,19 @@ ${outOfStock}
         prodMap[name].qty += qty;
         prodMap[name].rev += qty * (prod?.price || 0);
       });
-    } else if (prods && prods !== '—') {
-      // صيغة بديلة: اسم×كمية أو اسم فقط
-      prods.split(/[،,]/).forEach(part => {
-        const mm2 = part.trim().match(/(.+)[×x](\d+)/);
-        const name = mm2 ? mm2[1].trim() : part.trim();
-        const qty  = mm2 ? parseInt(mm2[2]) : 1;
-        if (!name) return;
-        const prod = products.find(p => p.name === name);
-        if (!prodMap[name]) prodMap[name] = { name, qty: 0, rev: 0 };
-        prodMap[name].qty += qty;
-        prodMap[name].rev += qty * (prod?.price || 0);
-      });
     }
   });
 
-  document.getElementById('repProdsBody').innerHTML =
-    Object.values(prodMap)
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 10)
-      .map(p => `
-        
-          ${p.name}
-          ${p.qty}
-          ${p.rev.toLocaleString()} د.ع
-        `).join('') ||
-    'لا توجد بيانات';
+  document.getElementById('repProdsBody').innerHTML = Object.values(prodMap)
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 10)
+    .map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.qty}</td>
+        <td>${p.rev.toLocaleString()} د.ع</td>
+      </tr>`).join('') || '<tr><td colspan="3" style="text-align:center">لا توجد بيانات</td></tr>';
 }
-
 // ═══════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════
@@ -4049,11 +3984,7 @@ function parseArabicDate(dateStr) {
   } catch { return 0; }
 }
 
-// ✅ إضافة isAfterDate و isBeforeDate إن لم تكونا موجودتين
-function isAfterDate(dateStr, d) {
-  const t = parseArabicDate(dateStr);
-  return t > 0 && t >= d.getTime();
-}
+
 
 function isBeforeDate(dateStr, d) {
   const t = parseArabicDate(dateStr);

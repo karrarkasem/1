@@ -3927,8 +3927,8 @@ function toast(msg,ok=true){
 
 function filterMyOrders(){
   if(!CU) return [];
-  if(CU.type==='rep') return orders.filter(o=>o.repUser===CU.username);
-  if(CU.type==='market_owner') return orders.filter(o=>o.shopName===CU.name || o.repUser===CU.username);
+  if(CU.type==='rep') return orders.filter(o=>o.repUser===CU.username || o.repUser===CU.username);
+  if(CU.type==='market_owner') return orders.filter(o=>o.shopName===CU.name);
   if(CU.type==='admin'||CU.type==='sales_manager') return orders;
   return []; // guest أو أي نوع غير معروف — لا يرى أي طلب
 }

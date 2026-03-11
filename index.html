@@ -625,6 +625,19 @@ hr{border:none;border-top:1px solid rgba(14,165,233,.1);margin:13px 0}
 
 /* ✅ FIX: Prevent body scroll when sidebar is open on mobile */
 body.sidebar-open{overflow:hidden}
+
+  /* ═══ POINTS MANAGEMENT PAGE ═══ */
+.pts-mgmt-card{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);border-radius:var(--r20);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:13px;transition:all .2s;}
+.pts-mgmt-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.pts-mgmt-av{width:46px;height:46px;border-radius:var(--r12);background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(139,92,246,.05));border:1px solid rgba(139,92,246,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.pts-mgmt-info{flex:1;min-width:0}
+.pts-mgmt-name{font-weight:800;color:var(--deep);font-size:.9rem}
+.pts-mgmt-meta{font-size:.72rem;color:rgba(9,50,87,.45);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.pts-mgmt-pts{font-size:1.3rem;font-weight:900;color:var(--violet);min-width:60px;text-align:center}
+.pts-mgmt-pts small{display:block;font-size:.62rem;color:rgba(9,50,87,.38);font-weight:600}
+.pts-setting-card{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(14,165,233,.06));border:1.5px solid rgba(139,92,246,.2);border-radius:var(--r20);padding:18px;margin-bottom:16px;}
+.pts-setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  
 </style>
 
 
@@ -769,6 +782,35 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
       </div>
     </div>
 
+
+<!-- POINTS MGMT MODAL -->
+<div class="modal z1" id="ptsMgmtModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('ptsMgmtModal')">✕</button>
+    <div class="m-title">⭐ تعديل النقاط</div>
+    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);border-radius:var(--r16);padding:13px;text-align:center;margin-bottom:14px">
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-bottom:2px" id="ptsMgmtUserName">—</div>
+      <div style="font-size:1.5rem;font-weight:900;color:var(--violet)" id="ptsMgmtCurrentPts">0 نقطة</div>
+    </div>
+    <div class="fg"><label class="fl">نوع العملية</label>
+      <select id="ptsMgmtOp" class="fsel">
+        <option value="add">➕ إضافة نقاط</option>
+        <option value="sub">➖ خصم نقاط</option>
+        <option value="set">🎯 تحديد قيمة معينة</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">عدد النقاط *</label>
+      <input id="ptsMgmtAmount" type="number" class="fi" placeholder="مثال: 5" min="1">
+    </div>
+    <div class="fg"><label class="fl">السبب</label>
+      <input id="ptsMgmtDesc" type="text" class="fi" placeholder="مثال: مكافأة خاصة...">
+    </div>
+    <input type="hidden" id="ptsMgmtTarget">
+    <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 8px 25px rgba(139,92,246,.35);margin-top:5px" onclick="savePtsMgmt()">✅ تنفيذ</button>
+  </div>
+</div>
+
+    
     <!-- ORDERS -->
     <div class="page" id="pageOrders">
       <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
@@ -956,6 +998,45 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
     <!-- REPORTS -->
     <div class="page" id="pageReports">
+      <!-- POINTS MANAGEMENT -->
+<div class="page" id="pagePointsMgmt">
+  <div class="ph"><h1>⭐ إدارة النقاط</h1><p>التحكم الكامل بنقاط المستخدمين</p></div>
+
+  <!-- إعداد العتبة -->
+  <div class="pts-setting-card">
+    <div style="font-size:.84rem;font-weight:800;color:var(--violet);margin-bottom:12px">⚙️ إعدادات نظام النقاط</div>
+    <div class="pts-setting-row">
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.55)">قيمة العتبة الحالية</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--violet)" id="currentThresholdDisp">100,000 د.ع</div>
+        <div style="font-size:.68rem;color:rgba(9,50,87,.4)">لكل X د.ع = نقطة واحدة</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="number" id="newThresholdVal" class="fi" style="width:140px" placeholder="مثال: 100000" value="100000">
+        <button class="btn btn-violet btn-sm" onclick="saveThreshold()" style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 4px 14px rgba(139,92,246,.3)">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" style="margin-bottom:16px" id="ptsMgmtKpi"></div>
+
+  <!-- قائمة المستخدمين -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">👥 نقاط المستخدمين</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <input type="text" id="ptsMgmtSearch" class="fi" style="width:150px;padding:7px 11px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderPointsMgmt()">
+        <select id="ptsMgmtFilter" class="fsel" style="width:auto;padding:6px 10px;font-size:.78rem" onchange="renderPointsMgmt()">
+          <option value="all">الكل</option>
+          <option value="rep">مندوبون</option>
+          <option value="market_owner">ماركتات</option>
+        </select>
+      </div>
+    </div>
+    <div id="ptsMgmtList"></div>
+  </div>
+</div>
       <div class="ph"><h1>📊 التقارير</h1><p>إحصائيات ومؤشرات الأداء</p></div>
       <!-- فلتر الفترة الزمنية -->
       <div class="card" style="margin-bottom:16px;padding:14px 16px">
@@ -1615,7 +1696,7 @@ async function init() {
   document.getElementById('loadSub').textContent = 'جاري تحميل البيانات...';
 
   await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications()]);
-
+await loadThreshold();
   try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {
@@ -1805,6 +1886,7 @@ function buildSidebar() {
     {id:'pageRepTracking', icon:'📍',  lbl:'تتبع المندوبين',     perm:'tracking'},
     {id:'pageNotifications',icon:'🔔', lbl:'الإشعارات',          perm:'notif', badge:true},
     {id:'pageReports',     icon:'📈',  lbl:'التقارير',           perm:'reports'},
+    {id:'pagePointsMgmt', icon:'⭐', lbl:'إدارة النقاط', perm:'users'},
   ];
   let html='',lastSec='';
   nav.forEach(n=>{
@@ -1878,6 +1960,7 @@ function showPage(id) {
     showLogin();
     return;
   }
+  if(id==='pagePointsMgmt') renderPointsMgmt();
 
   document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
@@ -4084,6 +4167,166 @@ function downloadTemplate() {
   toast('✅ تم تحميل النموذج');
 }
 
+// ═══════════════════════════════════════════════════════
+// POINTS MANAGEMENT — Admin Control
+// ═══════════════════════════════════════════════════════
+let currentThreshold = 100000;
+
+async function loadThreshold() {
+  try {
+    const snap = await fbGet('settings');
+    const s = snap.find(x => x._id === 'pointsThreshold' || x.key === 'pointsThreshold');
+    if(s) {
+      currentThreshold = parseInt(s.value) || 100000;
+      document.getElementById('newThresholdVal').value = currentThreshold;
+      document.getElementById('currentThresholdDisp').textContent = currentThreshold.toLocaleString() + ' د.ع';
+    }
+  } catch(e) {}
+}
+
+async function saveThreshold() {
+  const val = parseInt(document.getElementById('newThresholdVal').value) || 0;
+  if(val < 1000) { toast('القيمة يجب أن تكون 1,000 على الأقل', false); return; }
+  currentThreshold = val;
+  document.getElementById('currentThresholdDisp').textContent = val.toLocaleString() + ' د.ع';
+  // حفظ في Firebase
+  try {
+    const snap = await fbGet('settings');
+    const existing = snap.find(x => x.key === 'pointsThreshold');
+    if(existing && existing._id) {
+      await fbUpdate('settings', existing._id, {value: val, key:'pointsThreshold'});
+    } else {
+      await fbAdd('settings', {key:'pointsThreshold', value: val});
+    }
+    toast('✅ تم حفظ العتبة الجديدة: ' + val.toLocaleString() + ' د.ع');
+    renderPointsMgmt();
+  } catch(e) { toast('❌ خطأ في الحفظ', false); }
+}
+
+function renderPointsMgmt() {
+  if(!CU || (CU.type !== 'admin' && CU.type !== 'sales_manager')) return;
+
+  const search = (document.getElementById('ptsMgmtSearch')?.value || '').toLowerCase();
+  const filter = document.getElementById('ptsMgmtFilter')?.value || 'all';
+
+  let list = users.filter(u => u.type === 'rep' || u.type === 'market_owner');
+  if(filter !== 'all') list = list.filter(u => u.type === filter);
+  if(search) list = list.filter(u => u.name.toLowerCase().includes(search) || u.username.toLowerCase().includes(search));
+
+  const totalPts = list.reduce((s,u) => s + (parseInt(u.earnedPoints)||0), 0);
+  const totalAmt = list.reduce((s,u) => s + (parseFloat(u.totalOrdersAmount)||0), 0);
+
+  document.getElementById('ptsMgmtKpi').innerHTML = `
+    <div class="kpi-card kpi-violet"><div class="kpi-icon">⭐</div><div class="kpi-val">${totalPts}</div><div class="kpi-lbl">إجمالي النقاط الموزعة</div></div>
+    <div class="kpi-card kpi-sky"><div class="kpi-icon">👥</div><div class="kpi-val">${list.length}</div><div class="kpi-lbl">المستخدمون المؤهلون</div></div>
+    <div class="kpi-card kpi-mint"><div class="kpi-icon">💰</div><div class="kpi-val">${(totalAmt/1e6).toFixed(1)}M</div><div class="kpi-lbl">إجمالي المشتريات (د.ع)</div></div>
+    <div class="kpi-card kpi-gold"><div class="kpi-icon">⚙️</div><div class="kpi-val">${currentThreshold.toLocaleString()}</div><div class="kpi-lbl">العتبة الحالية (د.ع)</div></div>`;
+
+  if(!list.length) {
+    document.getElementById('ptsMgmtList').innerHTML = '<div style="text-align:center;padding:45px;color:rgba(9,50,87,.35)">لا يوجد مستخدمون</div>';
+    return;
+  }
+
+  document.getElementById('ptsMgmtList').innerHTML = list.map(u => {
+    const pts = parseInt(u.earnedPoints) || 0;
+    const totalAmt = parseFloat(u.totalOrdersAmount) || 0;
+    const progress = currentThreshold > 0 ? Math.min(100, ((totalAmt % currentThreshold) / currentThreshold) * 100) : 0;
+    const nextIn   = currentThreshold > 0 ? (currentThreshold - (totalAmt % currentThreshold)) : 0;
+    return `
+    <div class="pts-mgmt-card">
+      <div class="pts-mgmt-av">${u.type==='rep'?'🤝':'🏪'}</div>
+      <div class="pts-mgmt-info">
+        <div class="pts-mgmt-name">${u.name}</div>
+        <div class="pts-mgmt-meta">
+          <span>@${u.username}</span>
+          <span>${u.type==='rep'?'مندوب':'ماركت'}</span>
+          <span>مشتريات: ${totalAmt.toLocaleString()} د.ع</span>
+        </div>
+        <div style="margin-top:7px">
+          <div style="display:flex;justify-content:space-between;font-size:.66rem;color:rgba(9,50,87,.4);margin-bottom:3px">
+            <span>التقدم للنقطة القادمة</span>
+            <span>متبقي ${nextIn.toLocaleString()} د.ع</span>
+          </div>
+          <div style="height:5px;background:rgba(139,92,246,.1);border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${progress}%;background:linear-gradient(90deg,var(--violet),var(--sky));border-radius:99px;transition:width .6s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pts-mgmt-pts">
+        ${pts}
+        <small>نقطة</small>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;font-size:.72rem" onclick="openPtsMgmtModal('${u.username}')">✏️ تعديل</button>
+        <button class="btn btn-danger btn-sm" style="font-size:.72rem" onclick="confirmResetPoints('${u.username}')">🗑️ صفر</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPtsMgmtModal(username) {
+  const u = users.find(x => x.username === username);
+  if(!u) return;
+  document.getElementById('ptsMgmtTarget').value = username;
+  document.getElementById('ptsMgmtUserName').textContent = u.name + ' — ' + (u.type==='rep'?'مندوب':'ماركت');
+  document.getElementById('ptsMgmtCurrentPts').textContent = (parseInt(u.earnedPoints)||0) + ' نقطة';
+  document.getElementById('ptsMgmtAmount').value = '';
+  document.getElementById('ptsMgmtDesc').value = '';
+  document.getElementById('ptsMgmtOp').value = 'add';
+  openModal('ptsMgmtModal');
+}
+
+async function savePtsMgmt() {
+  const username = document.getElementById('ptsMgmtTarget').value;
+  const op       = document.getElementById('ptsMgmtOp').value;
+  const amount   = parseInt(document.getElementById('ptsMgmtAmount').value) || 0;
+  const desc     = document.getElementById('ptsMgmtDesc').value.trim() || 'تعديل يدوي من الأدمن';
+  const u        = users.find(x => x.username === username);
+  if(!u || amount < 1) { toast('أدخل قيمة صحيحة', false); return; }
+
+  const before = parseInt(u.earnedPoints) || 0;
+  let after;
+  if(op === 'add')      after = before + amount;
+  else if(op === 'sub') after = Math.max(0, before - amount);
+  else                  after = amount; // set
+
+  u.earnedPoints = after;
+  if(CU && CU.username === username) CU.earnedPoints = after;
+
+  if(u._id) {
+    await fbUpdate('users', u._id, {earnedPoints: after}).catch(()=>{});
+    const histEntry = {
+      type: op === 'add' ? 'earn' : 'redeem',
+      points: op === 'add' ? amount : (before - after),
+      desc, date: new Date().toLocaleDateString('ar-IQ'),
+      byAdmin: CU.name
+    };
+    await fbAddSub('users', u._id, 'pointsHistory', histEntry).catch(()=>{});
+  }
+
+  closeModal('ptsMgmtModal');
+  toast(`✅ تم تعديل نقاط ${u.name}: ${before} ← ${after}`);
+  renderPointsMgmt();
+  renderUsersList();
+}
+
+async function confirmResetPoints(username) {
+  const u = users.find(x => x.username === username);
+  if(!u) return;
+  if(!confirm(`هل تريد تصفير نقاط "${u.name}"؟`)) return;
+  const before = parseInt(u.earnedPoints) || 0;
+  u.earnedPoints = 0;
+  if(u._id) {
+    await fbUpdate('users', u._id, {earnedPoints: 0}).catch(()=>{});
+    await fbAddSub('users', u._id, 'pointsHistory', {
+      type: 'reset', points: before, desc: 'تصفير من الأدمن',
+      date: new Date().toLocaleDateString('ar-IQ'), byAdmin: CU.name
+    }).catch(()=>{});
+  }
+  toast(`🗑️ تم تصفير نقاط ${u.name}`);
+  renderPointsMgmt();
+}
+  
 // ═══════════════════════════════════════════════════════
 // START
 // ═══════════════════════════════════════════════════════

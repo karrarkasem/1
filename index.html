@@ -1815,7 +1815,7 @@ function startRealtimeListeners() {
     }
   });
   fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
-    notifications = fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
+    
   // ✅ FIX: دمج ذكي — لا نحذف الإشعارات المحلية الجديدة
   const fromServer = snap.docs.map(d => ({
     _id:   d.id,
@@ -1840,7 +1840,7 @@ function startRealtimeListeners() {
 });
     renderNotifBadge();
     renderNotifications();
-  });
+ 
   fb().onSnapshot(fb().collection(db(), 'offers'), snap => {
     offers = snap.docs.map(d=>({
       _id:d.id, title:d.data().title||'', desc:d.data().description||'',
@@ -2323,9 +2323,7 @@ async function sendOrder(){
     await awardPoints(CU.username, total, shop, orderId);
   }
 
-  await fbAdd('notifications',{
-    // ══ إشعار فوري داخل التطبيق ══
-const notifData = {
+  const notifData = {
   title: '📦 طلب جديد',
   body:  `${CU?.name||'زائر'} — ${shop} — ${total.toLocaleString()} د.ع`,
   type:  'order',
@@ -2334,16 +2332,12 @@ const notifData = {
   date:  new Date().toLocaleDateString('ar-IQ')
 };
 const notifId = await fbAdd('notifications', notifData).catch(()=>null);
-
-// ✅ أضف الإشعار فوراً للمصفوفة المحلية بدون انتظار onSnapshot
 if (notifId) {
   notifications.unshift({ _id: notifId, ...notifData });
   renderNotifications();
   renderNotifBadge();
-  buildSidebar(); // تحديث شارة الإشعارات في الشريط الجانبي
+  buildSidebar();
 }
-
-// ✅ إشعار بالمتصفح (Web Push) إذا أُذن له
 if (Notification?.permission === 'granted') {
   new Notification('📦 طلب جديد — برجمان', {
     body: `${shop} — ${total.toLocaleString()} د.ع`,
@@ -2358,6 +2352,7 @@ if (Notification?.permission === 'granted') {
   });
 }
   // ✅ فتح واتساب مباشرة — أسرع وأموثق على الموبايل
+const msg = `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
 window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 
 // إرسال إيميل بنفس الوقت
@@ -3938,16 +3933,16 @@ function filterMyOrders(){
   return []; // guest أو أي نوع غير معروف — لا يرى أي طلب
 }
 
-function isSameDay(dateStr,d){
+function isSameDay(dateStr,targetDate){
   if(!dateStr||dateStr==='—') return false;
   try{
-    const parts=dateStr.replace(/[٠١٢٣٤٥٦٧٨٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).split('/');
+    const parts=dateStr.replace(/[٠١٢٣٤٥٦٧٨٩]/g,ch=>'٠١٢٣٤٥٦٧٨٩'.indexOf(ch)).split('/');
     if(parts.length===3){
       const od=new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0]));
-      return od.getFullYear()===d.getFullYear()&&od.getMonth()===d.getMonth()&&od.getDate()===d.getDate();
+      return od.getFullYear()===targetDate.getFullYear()&&od.getMonth()===targetDate.getMonth()&&od.getDate()===targetDate.getDate();
     }
     const od=new Date(dateStr);
-    return od.getFullYear()===d.getFullYear()&&od.getMonth()===d.getMonth()&&od.getDate()===d.getDate();
+    return od.getFullYear()===targetDate.getFullYear()&&od.getMonth()===targetDate.getMonth()&&od.getDate()===targetDate.getDate();
   } catch{return false;}
 }
 // ✅ تحويل تاريخ عربي/هجري/ميلادي إلى timestamp للمقارنة والترتيب

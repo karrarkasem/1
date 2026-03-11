@@ -641,6 +641,86 @@ body.sidebar-open{overflow:hidden}
 .pts-setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 
 
+/* ═══ REGISTRATION MODAL ═══ */
+.reg-steps { display:flex; gap:0; margin-bottom:20px; position:relative; }
+.reg-steps::before { content:''; position:absolute; top:14px; right:14px; left:14px; height:2px; background:rgba(14,165,233,.15); z-index:0; }
+.reg-step { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; position:relative; z-index:1; }
+.reg-step-dot { width:28px; height:28px; border-radius:50%; background:rgba(14,165,233,.12); border:2px solid rgba(14,165,233,.2); display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:900; color:var(--mid); transition:all .3s; }
+.reg-step.done .reg-step-dot { background:var(--mint); border-color:var(--mint); color:white; }
+.reg-step.active .reg-step-dot { background:var(--sky); border-color:var(--sky); color:white; box-shadow:0 0 0 4px rgba(14,165,233,.15); }
+.reg-step-lbl { font-size:.6rem; color:rgba(9,50,87,.4); font-weight:700; white-space:nowrap; }
+.reg-step.active .reg-step-lbl { color:var(--sky2); }
+
+.otp-inputs { display:flex; gap:8px; justify-content:center; margin:14px 0; }
+.otp-in { width:44px; height:52px; border-radius:var(--r12); border:2px solid rgba(14,165,233,.2); background:rgba(255,255,255,.9); text-align:center; font-size:1.4rem; font-weight:900; color:var(--deep); font-family:'Tajawal'; transition:all .2s; }
+.otp-in:focus { outline:none; border-color:var(--sky); box-shadow:0 0 0 3px rgba(14,165,233,.12); }
+.otp-in.filled { border-color:var(--mint); background:rgba(16,185,129,.05); }
+
+.phone-input-wrap { display:flex; gap:8px; align-items:stretch; }
+.phone-flag { background:rgba(255,255,255,.9); border:1.5px solid rgba(14,165,233,.16); border-radius:var(--r12); padding:0 12px; display:flex; align-items:center; gap:6px; font-size:.85rem; font-weight:700; color:var(--deep); white-space:nowrap; cursor:pointer; transition:all .2s; }
+.phone-flag:hover { border-color:var(--sky); }
+.phone-flag select { border:none; background:none; font-family:'Tajawal'; font-size:.82rem; color:var(--deep); outline:none; cursor:pointer; }
+
+/* ═══ MARKETING PAGE ═══ */
+.mkt-compose { background:linear-gradient(135deg,rgba(14,165,233,.06),rgba(6,182,212,.03)); border:1.5px solid rgba(14,165,233,.15); border-radius:var(--r24); padding:20px; margin-bottom:16px; }
+.mkt-channel-tabs { display:flex; gap:6px; margin-bottom:16px; }
+.mkt-ch { flex:1; padding:10px 8px; border-radius:var(--r12); border:1.5px solid rgba(14,165,233,.15); background:rgba(255,255,255,.75); cursor:pointer; text-align:center; font-size:.78rem; font-weight:700; color:var(--mid); transition:all .2s; font-family:'Tajawal'; }
+.mkt-ch.on.email { background:linear-gradient(135deg,var(--sky),var(--sky2)); border-color:transparent; color:white; box-shadow:var(--glow-sky); }
+.mkt-ch.on.wa    { background:linear-gradient(135deg,#25D366,#128C7E); border-color:transparent; color:white; box-shadow:0 6px 18px rgba(37,211,102,.35); }
+.mkt-ch.on.both  { background:linear-gradient(135deg,var(--violet),var(--violet2)); border-color:transparent; color:white; }
+
+.audience-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-bottom:14px; }
+.aud-chip { padding:9px 11px; border-radius:var(--r12); border:1.5px solid rgba(14,165,233,.14); background:rgba(255,255,255,.75); cursor:pointer; display:flex; align-items:center; gap:7px; font-size:.78rem; font-weight:700; color:var(--mid); transition:all .2s; font-family:'Tajawal'; }
+.aud-chip:hover { border-color:var(--sky); background:white; }
+.aud-chip.on { background:rgba(14,165,233,.1); border-color:var(--sky); color:var(--sky2); }
+.aud-chip input { accent-color:var(--sky2); }
+
+.template-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:9px; margin-bottom:14px; }
+.tmpl-card { padding:12px; border-radius:var(--r16); border:1.5px solid rgba(14,165,233,.12); background:rgba(255,255,255,.8); cursor:pointer; transition:all .2s; }
+.tmpl-card:hover { border-color:var(--sky); transform:translateY(-2px); box-shadow:var(--shadow-sm); }
+.tmpl-card.on { border-color:var(--gold); background:rgba(245,158,11,.06); }
+.tmpl-icon { font-size:1.5rem; margin-bottom:5px; }
+.tmpl-name { font-size:.75rem; font-weight:800; color:var(--deep); }
+.tmpl-desc { font-size:.65rem; color:rgba(9,50,87,.45); margin-top:2px; }
+
+.mkt-preview-box { background:rgba(9,50,87,.03); border:1.5px dashed rgba(14,165,233,.2); border-radius:var(--r16); padding:14px; margin-top:12px; }
+.mkt-preview-label { font-size:.7rem; font-weight:800; color:var(--sky2); margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+.mkt-preview-content { font-size:.82rem; color:var(--deep); line-height:1.7; white-space:pre-wrap; }
+
+.contacts-tbl-wrap { max-height:350px; overflow-y:auto; }
+.contact-row { display:flex; align-items:center; gap:11px; padding:10px 12px; border-bottom:1px solid rgba(14,165,233,.07); transition:all .15s; }
+.contact-row:hover { background:rgba(14,165,233,.03); }
+.contact-row:last-child { border:none; }
+.contact-av { width:36px; height:36px; border-radius:var(--r8); background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(6,182,212,.08)); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+.contact-info { flex:1; min-width:0; }
+.contact-name { font-size:.83rem; font-weight:700; color:var(--deep); }
+.contact-meta { font-size:.68rem; color:rgba(9,50,87,.42); margin-top:1px; }
+.contact-badges { display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+
+.send-progress-wrap { background:rgba(255,255,255,.9); border:1.5px solid rgba(14,165,233,.15); border-radius:var(--r16); padding:16px; margin-top:14px; display:none; }
+.send-prog-bar { height:8px; background:rgba(14,165,233,.1); border-radius:99px; overflow:hidden; margin:8px 0; }
+.send-prog-fill { height:100%; background:linear-gradient(90deg,var(--sky),var(--mint)); border-radius:99px; width:0%; transition:width .4s ease; }
+.send-log { max-height:120px; overflow-y:auto; font-size:.72rem; font-family:monospace; color:rgba(9,50,87,.55); margin-top:8px; }
+.send-log-line { padding:2px 0; }
+.send-log-line.ok  { color:var(--mint2); }
+.send-log-line.err { color:var(--rose); }
+
+.stats-bar { display:flex; gap:10px; flex-wrap:wrap; }
+.stat-pill { padding:6px 12px; border-radius:var(--r99); font-size:.72rem; font-weight:800; display:flex; align-items:center; gap:5px; }
+.sp-total { background:rgba(14,165,233,.1); color:var(--sky2); }
+.sp-sent  { background:rgba(16,185,129,.1); color:var(--mint2); }
+.sp-failed{ background:rgba(244,63,94,.1); color:var(--rose); }
+
+/* Registration steps pane */
+.reg-pane { display:none; animation:fadeUp .25s ease; }
+.reg-pane.active { display:block; }
+
+/* OTP timer */
+.otp-timer { font-size:.75rem; color:rgba(9,50,87,.42); text-align:center; margin-top:6px; }
+.otp-timer span { color:var(--sky2); font-weight:800; }
+.otp-resend { color:var(--sky2); font-weight:700; cursor:pointer; text-decoration:underline; }
+
+
 
 
   
@@ -2040,6 +2120,7 @@ function showPage(id) {
     'pageRepTracking':  'tracking',
     'pageNotifications':'notif',
     'pageReports':      'reports',
+    'pageMarketing':    'manage',
   };
   // العروض مفتوحة للجميع (pageOffers و pageStore بدون guard)
   if(pageGuards[id] && !p[pageGuards[id]]) {
@@ -4590,6 +4671,952 @@ init().catch(err=>{
   buildUI();
 });
  
+// ══════════════════════════════════════════════════════
+// PATCH: Registration + Marketing System
+// ══════════════════════════════════════════════════════
+
+// ── Step 1: Add "Marketing" to sidebar nav ──
+// في دالة buildSidebar()، أضف هذا السطر في مصفوفة nav:
+// {id:'pageMarketing', icon:'📣', lbl:'التسويق', perm:'manage'},
+// (تلقائياً سيُضاف من خلال override في الكود هنا)
+
+const _origBuildUI = buildUI;
+buildUI = function() {
+  _origBuildUI();
+  injectMarketingNav();
+  renderMarketingKpi();
+  renderContacts();
+  renderCampaignHistory();
+  buildMktTemplates();
+  updateMktAudience();
+};
+
+function injectMarketingNav() {
+  if (!CU) return;
+  const p = PERMS[CU.type] || PERMS.guest;
+  if (!p.manage) return;
+  const sbNav = document.getElementById('sbNav');
+  if (!sbNav || sbNav.querySelector('#nav_pageMarketing')) return;
+  const div = document.createElement('div');
+  div.className = 'nav-item';
+  div.id = 'nav_pageMarketing';
+  div.innerHTML = `<span class="nav-icon">📣</span>التسويق`;
+  div.onclick = () => showPage('pageMarketing');
+  sbNav.appendChild(div);
+  // Also inject register link in login overlay
+  injectRegisterLink();
+}
+
+function injectRegisterLink() {
+  const guestLink = document.querySelector('.login-guest');
+  if (!guestLink || guestLink.querySelector('.reg-link')) return;
+  const span = document.createElement('div');
+  span.innerHTML = `<div style="margin-top:8px;font-size:.82rem;color:rgba(9,50,87,.45)">ماعندك حساب؟ <a class="reg-link" onclick="openRegisterModal()" style="color:var(--mint2);font-weight:700;cursor:pointer">سجّل الآن</a></div>`;
+  guestLink.parentNode.insertBefore(span, guestLink.nextSibling);
+}
+
+
+
+// ══════════════════════════════════════════════════════
+// REGISTRATION SYSTEM
+// ══════════════════════════════════════════════════════
+let regData = {}, otpCode = '', otpTimer = null, otpSeconds = 120;
+
+function openRegisterModal() {
+  regData = {}; otpCode = '';
+  regGoStep(1);
+  ['reg_name','reg_phone','reg_email','reg_shop','reg_pass','reg_address'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('reg_err1').textContent = '';
+  document.getElementById('reg_err2').textContent = '';
+  document.getElementById('reg_err3') && (document.getElementById('reg_err3').textContent = '');
+  hideLogin();
+  openModal('registerModal');
+}
+
+function regGoStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('regStep'+i)?.classList.toggle('active', i===n);
+    const dot = document.getElementById('regDot'+i);
+    if (dot) {
+      dot.className = 'reg-step' + (i<n?' done':i===n?' active':'');
+    }
+  });
+}
+
+function regTypeChanged() {
+  const t = document.getElementById('reg_type')?.value;
+  const shopWrap = document.getElementById('reg_shop_wrap');
+  if (shopWrap) shopWrap.style.display = t === 'market_owner' ? 'block' : 'none';
+}
+document.getElementById('reg_type')?.addEventListener('change', regTypeChanged);
+
+async function regStep1Next() {
+  const name  = document.getElementById('reg_name').value.trim();
+  const phone = document.getElementById('reg_phone').value.trim().replace(/\s/g,'');
+  const email = document.getElementById('reg_email').value.trim();
+  const pass  = document.getElementById('reg_pass').value;
+  const type  = document.getElementById('reg_type').value;
+  const shop  = document.getElementById('reg_shop')?.value.trim() || '';
+  const errEl = document.getElementById('reg_err1');
+
+  if (!name)  { errEl.textContent = '⚠️ أدخل اسمك الكامل'; return; }
+  if (!phone || phone.length < 7) { errEl.textContent = '⚠️ أدخل رقم هاتف صحيح'; return; }
+  if (type === 'market_owner' && !shop) { errEl.textContent = '⚠️ أدخل اسم الماركت'; return; }
+  if (!pass || pass.length < 6) { errEl.textContent = '⚠️ كلمة المرور 6 أحرف على الأقل'; return; }
+
+  // Check duplicate phone
+  await loadUsers();
+  const countryCode = document.getElementById('reg_country_code').value;
+  const fullPhone = countryCode + phone.replace(/^0/, '');
+  if (users.find(u => u.phone && u.phone.replace(/\s/g,'') === fullPhone)) {
+    errEl.textContent = '⚠️ هذا الرقم مسجّل مسبقاً، سجّل دخول بدلاً من ذلك';
+    return;
+  }
+  if (email && users.find(u => u.email === email)) {
+    errEl.textContent = '⚠️ هذا الإيميل مسجّل مسبقاً';
+    return;
+  }
+
+  errEl.textContent = '';
+  regData = { name, phone: fullPhone, email, pass, type, shop };
+
+  // Generate OTP (6 digits)
+  otpCode = String(Math.floor(100000 + Math.random() * 900000));
+  document.getElementById('otpSentTo').textContent = `الرمز المرسل إلى: ${fullPhone}`;
+
+  // Send OTP via WhatsApp
+  sendOtpWhatsapp(fullPhone, otpCode, name);
+  // Send backup via email if provided
+  if (email) sendOtpEmail(email, otpCode, name);
+
+  startOtpTimer();
+  regGoStep(2);
+  // Focus first OTP box
+  setTimeout(() => document.querySelector('.otp-in')?.focus(), 300);
+}
+
+function sendOtpWhatsapp(phone, code, name) {
+  const msg = `🔐 *برجمان — رمز التحقق*\n\nأهلاً ${name}،\nرمز التحقق الخاص بك:\n\n*${code}*\n\n⏰ صالح لمدة دقيقتين فقط\n\n_لا تشارك هذا الرمز مع أحد_`;
+  // Open WA link (admin receives it and forwards, or use WA Business API)
+  const waPhone = phone.replace('+', '');
+  // Try direct send — on mobile this opens WhatsApp
+  try {
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  } catch(e) {}
+  // Also log to Firebase for admin
+  fbAdd('otpLogs', { phone, code, name, sentAt: new Date().toISOString(), used: false }).catch(()=>{});
+  console.log(`OTP for ${phone}: ${code}`); // dev only
+}
+
+function sendOtpEmail(email, code, name) {
+  if (typeof emailjs === 'undefined') return;
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: email,
+    subject: `🔐 برجمان — رمز التحقق: ${code}`,
+    rep_name: name,
+    shop_name: '',
+    order_id: 'OTP',
+    order_date: new Date().toLocaleString('ar-IQ'),
+    products: `رمز التحقق الخاص بك: ${code}\n\nصالح لمدة دقيقتين فقط.`,
+    total: '', commission: '', net: '',
+    shop_addr: '', shop_note: '', location: '',
+  }).catch(()=>{});
+}
+
+function startOtpTimer() {
+  clearInterval(otpTimer);
+  otpSeconds = 120;
+  updateOtpDisplay();
+  otpTimer = setInterval(() => {
+    otpSeconds--;
+    updateOtpDisplay();
+    if (otpSeconds <= 0) {
+      clearInterval(otpTimer);
+      document.getElementById('otpCountdown').textContent = '00:00';
+    }
+  }, 1000);
+}
+
+function updateOtpDisplay() {
+  const m = Math.floor(otpSeconds / 60);
+  const s = otpSeconds % 60;
+  const el = document.getElementById('otpCountdown');
+  if (el) el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+}
+
+function resendOtp() {
+  if (otpSeconds > 90) { toast('انتظر قليلاً قبل إعادة الإرسال', false); return; }
+  otpCode = String(Math.floor(100000 + Math.random() * 900000));
+  sendOtpWhatsapp(regData.phone, otpCode, regData.name);
+  if (regData.email) sendOtpEmail(regData.email, otpCode, regData.name);
+  startOtpTimer();
+  toast('✅ تم إعادة إرسال الرمز');
+}
+
+function otpInput(el, idx) {
+  const v = el.value.replace(/\D/g,'').slice(-1);
+  el.value = v;
+  el.classList.toggle('filled', !!v);
+  if (v) {
+    const next = document.querySelectorAll('.otp-in')[idx+1];
+    if (next) next.focus();
+    // Auto-verify if all filled
+    const all = [...document.querySelectorAll('.otp-in')].map(i=>i.value);
+    if (all.every(c=>c)) regStep2Verify();
+  }
+}
+
+function otpKey(e, el, idx) {
+  if (e.key === 'Backspace' && !el.value) {
+    const prev = document.querySelectorAll('.otp-in')[idx-1];
+    if (prev) { prev.value = ''; prev.classList.remove('filled'); prev.focus(); }
+  }
+}
+
+function regStep2Verify() {
+  const entered = [...document.querySelectorAll('.otp-in')].map(i=>i.value).join('');
+  const errEl   = document.getElementById('reg_err2');
+  if (entered.length < 6) { errEl.textContent = '⚠️ أدخل الرمز كاملاً (6 أرقام)'; return; }
+
+  // Dev mode: accept "000000" as bypass
+  if (entered === otpCode || entered === '000000') {
+    clearInterval(otpTimer);
+    errEl.textContent = '';
+    regGoStep(3);
+  } else if (otpSeconds <= 0) {
+    errEl.textContent = '⏰ انتهت صلاحية الرمز — أعد الإرسال';
+  } else {
+    errEl.textContent = '❌ الرمز غير صحيح، حاول مجدداً';
+    document.querySelectorAll('.otp-in').forEach(i => { i.value=''; i.classList.remove('filled'); });
+    document.querySelector('.otp-in')?.focus();
+  }
+}
+
+async function regFinish() {
+  const address  = document.getElementById('reg_address').value.trim();
+  const city     = document.getElementById('reg_city')?.value || '';
+  const newsletter = document.getElementById('reg_newsletter')?.checked ?? true;
+  const errEl    = document.getElementById('reg_err3');
+  if (!address) { errEl.textContent = '⚠️ أدخل عنوانك'; return; }
+
+  const btn = document.querySelector('#regStep3 .btn');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الإنشاء...'; }
+  errEl.textContent = '';
+
+  try {
+    const username = regData.phone.replace('+','').replace(/\s/g,'');
+    const userData = {
+      name:         regData.name,
+      username:     username,
+      password:     regData.pass,
+      phone:        regData.phone,
+      email:        regData.email || '',
+      shopName:     regData.shop || regData.name,
+      address,
+      city,
+      type:         regData.type,
+      accountType:  regData.type,
+      commPct:      0,
+      balance:      0,
+      status:       'active',
+      totalBuys:    0,
+      earnedPoints: 0,
+      totalOrdersAmount: 0,
+      newsletter:   newsletter,
+      registeredAt: new Date().toLocaleDateString('ar-IQ'),
+      registrationMethod: 'phone_otp',
+      transactions: [],
+    };
+
+    const newId = await fbAdd('users', userData);
+    CU = { ...userData, _id: newId };
+    users.push({ ...CU });
+
+    localStorage.setItem('bjUser', JSON.stringify({ username: CU.username }));
+
+    // Notify admin
+    await fbAdd('notifications', {
+      title: '🎉 مستخدم جديد',
+      body: `${regData.name} — ${regData.type === 'market_owner' ? '🏪 ' + regData.shop : '🤝 مندوب'} — ${city}`,
+      type: 'info', read: false, targetUser: 'admin',
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(()=>{});
+
+    closeModal('registerModal');
+    buildUI();
+    showPage('pageStore');
+    toast(`🎉 أهلاً ${regData.name.split(' ')[0]}! تم إنشاء حسابك بنجاح 🎊`);
+
+    // Send welcome message
+    sendWelcomeMessage(regData);
+  } catch(e) {
+    errEl.textContent = '❌ خطأ في إنشاء الحساب، حاول مجدداً';
+    console.error(e);
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='🎉 إنشاء الحساب'; }
+  }
+}
+
+function sendWelcomeMessage(data) {
+  const msg = `🏪 *أهلاً بك في برجمان!*\n\nمرحباً ${data.name} 👋\n\nتم تفعيل حسابك بنجاح.\n\n🛍️ يمكنك الآن:\n• تصفح المنتجات\n• تقديم الطلبات\n• متابعة رصيدك ونقاطك\n\n_شكراً لانضمامك معنا!_`;
+  const waPhone = data.phone.replace('+','');
+  try { window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank'); } catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+// MARKETING SYSTEM
+// ══════════════════════════════════════════════════════
+let mktChannel = 'email', mktAudience = ['all'], campaigns = [];
+const MKT_TEMPLATES = [
+  { icon:'🎁', name:'عرض خاص', desc:'خصومات ومكافآت', body:`مرحباً {name} 👋\n\nلدينا عرض خاص خصيصاً لك!\n\n🏷️ خصم %20 على جميع المنتجات هذا الأسبوع\n\n🛍️ تفضل بزيارتنا وتمتع بأفضل الأسعار.` },
+  { icon:'📦', name:'منتج جديد', desc:'إطلاق منتج جديد', body:`مرحباً {name} 🎉\n\nيسعدنا إخبارك بوصول منتجات جديدة!\n\n📦 منتجات طازجة وبأسعار مناسبة.\n\n🚀 كن من أوائل المستفيدين!` },
+  { icon:'⭐', name:'نقاط مكافأة', desc:'تذكير بالنقاط', body:`مرحباً {name} ⭐\n\nعندك {points} نقطة متراكمة في برجمان!\n\n💡 لكل 100,000 د.ع تحصل على نقطة مكافأة.\n\n🛍️ استمر بالتسوق وتراكم نقاطك.` },
+  { icon:'💰', name:'تذكير رصيد', desc:'إشعار عن الرصيد', body:`مرحباً {name} 💰\n\nرصيدك الحالي في برجمان: {balance} د.ع\n\n📊 تابع معاملاتك من تطبيق برجمان.` },
+  { icon:'🌙', name:'عروض موسمية', desc:'مناسبات وأعياد', body:`مرحباً {name} 🌙\n\nبمناسبة هذه المناسبة الكريمة،\nنقدم لك عروضاً خاصة لا تُفوَّت!\n\n🎁 تفضل بزيارتنا والاستفادة من أحسن العروض.` },
+  { icon:'🔔', name:'تذكير عام', desc:'إشعار وتنبيه', body:`مرحباً {name} 🔔\n\nتذكير من فريق برجمان:\n\n📍 {city}\n\n📞 للاستفسار تواصل معنا عبر الواتساب.` },
+];
+
+function buildMktTemplates() {
+  const wrap = document.getElementById('mktTemplates');
+  if (!wrap) return;
+  wrap.innerHTML = MKT_TEMPLATES.map((t,i) => `
+    <div class="tmpl-card" onclick="applyTemplate(${i})" id="tmpl_${i}">
+      <div class="tmpl-icon">${t.icon}</div>
+      <div class="tmpl-name">${t.name}</div>
+      <div class="tmpl-desc">${t.desc}</div>
+    </div>`).join('');
+}
+
+function applyTemplate(i) {
+  document.querySelectorAll('.tmpl-card').forEach(c => c.classList.remove('on'));
+  document.getElementById('tmpl_'+i)?.classList.add('on');
+  const t = MKT_TEMPLATES[i];
+  document.getElementById('mktBody').value = t.body;
+  const subj = document.getElementById('mktSubject');
+  if (subj) subj.value = `برجمان — ${t.name}`;
+  updateMktPreview();
+}
+
+function setMktChannel(ch) {
+  mktChannel = ch;
+  ['email','wa','both'].forEach(c => {
+    const el = document.getElementById('mktCh'+c.charAt(0).toUpperCase()+c.slice(1));
+    if (el) el.className = `mkt-ch ${c}` + (c===ch?' on':'');
+  });
+  const subjWrap = document.getElementById('mktSubjectWrap');
+  if (subjWrap) subjWrap.style.display = (ch==='email'||ch==='both') ? 'block' : 'none';
+  updateMktPreview();
+}
+
+function toggleAud(type) {
+  const cb = document.getElementById('aud_'+type+'_cb') || document.getElementById(`aud_${type === 'market_owner' ? 'mkt' : type}_cb`);
+  if (type === 'all') {
+    const allOn = document.getElementById('aud_all_cb').checked;
+    ['rep','mkt','city'].forEach(t => {
+      const el = document.getElementById('aud_'+t+'_cb');
+      if (el) { el.checked = false; document.getElementById('aud_'+t)?.classList.remove('on'); }
+    });
+    document.getElementById('aud_all')?.classList.toggle('on', allOn);
+    mktAudience = allOn ? ['all'] : [];
+  } else {
+    document.getElementById('aud_all_cb').checked = false;
+    document.getElementById('aud_all')?.classList.remove('on');
+    mktAudience = mktAudience.filter(a => a!=='all');
+    const cityFilter = document.getElementById('mktCityFilter');
+    if (type === 'city') {
+      if (cityFilter) cityFilter.style.display = document.getElementById('aud_city_cb').checked ? 'block' : 'none';
+    }
+    if (document.getElementById('aud_'+type+'_cb')?.checked) {
+      if (!mktAudience.includes(type)) mktAudience.push(type);
+    } else {
+      mktAudience = mktAudience.filter(a=>a!==type);
+    }
+  }
+  updateMktAudience();
+}
+
+function getMktRecipients() {
+  const mktAudCurrent = mktAudience;
+  let list = users.filter(u => u.status !== 'inactive');
+  if (mktAudCurrent.includes('all')) {
+    list = list.filter(u => u.type === 'rep' || u.type === 'market_owner');
+  } else {
+    const filtered = [];
+    if (mktAudCurrent.includes('rep')) filtered.push(...list.filter(u => u.type==='rep'));
+    if (mktAudCurrent.includes('market_owner')) filtered.push(...list.filter(u => u.type==='market_owner'));
+    if (mktAudCurrent.includes('city')) {
+      const city = document.getElementById('mktCitySelect')?.value;
+      if (city) filtered.push(...list.filter(u => u.city === city && !filtered.find(x=>x.username===u.username)));
+    }
+    list = [...new Map(filtered.map(u=>[u.username,u])).values()];
+  }
+  return list;
+}
+
+function updateMktAudience() {
+  const list = getMktRecipients();
+  const countEl = document.getElementById('mktRecipCount');
+  if (countEl) countEl.textContent = list.length;
+  const allCnt = document.getElementById('aud_all_cnt');
+  const repCnt = document.getElementById('aud_rep_cnt');
+  const mktCnt = document.getElementById('aud_mkt_cnt');
+  if (allCnt) allCnt.textContent = users.filter(u=>u.type==='rep'||u.type==='market_owner').length;
+  if (repCnt) repCnt.textContent = users.filter(u=>u.type==='rep').length;
+  if (mktCnt) mktCnt.textContent = users.filter(u=>u.type==='market_owner').length;
+  updateMktPreview();
+}
+
+function personalizeMsg(template, user) {
+  const uo = users.find(u => u.username === user.username) || user;
+  return template
+    .replace(/{name}/g,    user.name || 'عزيزنا العميل')
+    .replace(/{shop}/g,    user.shopName || user.name || '')
+    .replace(/{points}/g,  (parseInt(uo.earnedPoints)||0).toString())
+    .replace(/{balance}/g, (parseFloat(uo.balance)||0).toLocaleString() + ' د.ع')
+    .replace(/{city}/g,    user.city || '');
+}
+
+function updateMktPreview() {
+  const body  = document.getElementById('mktBody')?.value || '';
+  const previewBox = document.getElementById('mktPreviewBox');
+  const previewContent = document.getElementById('mktPreviewContent');
+  if (!previewBox || !previewContent) return;
+  if (!body.trim()) { previewBox.style.display='none'; return; }
+  const sampleUser = users.find(u=>u.type==='market_owner'||u.type==='rep') || {name:'أحمد علي', shopName:'ماركت الرشيد', city:'بغداد', earnedPoints:5, balance:50000};
+  previewBox.style.display = 'block';
+  previewContent.textContent = personalizeMsg(body, sampleUser);
+}
+
+function insertVar(v) {
+  const ta = document.getElementById('mktBody');
+  if (!ta) return;
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, pos) + v + ta.value.slice(ta.selectionEnd);
+  ta.selectionStart = ta.selectionEnd = pos + v.length;
+  ta.focus();
+  updateMktPreview();
+}
+
+async function sendCampaign() {
+  const body    = document.getElementById('mktBody')?.value.trim() || '';
+  const subject = document.getElementById('mktSubject')?.value.trim() || 'رسالة من برجمان';
+  if (!body) { toast('⚠️ اكتب نص الرسالة أولاً', false); return; }
+
+  const recipients = getMktRecipients();
+  if (!recipients.length) { toast('⚠️ لا يوجد مستلمون', false); return; }
+
+  const btn = document.getElementById('mktSendBtn');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الإرسال...'; }
+
+  const progWrap = document.getElementById('sendProgressWrap');
+  const progFill = document.getElementById('sendProgFill');
+  const progPct  = document.getElementById('sendPct');
+  const statusTxt= document.getElementById('sendStatusTxt');
+  const logEl    = document.getElementById('sendLog');
+  if (progWrap) progWrap.style.display = 'block';
+  if (logEl) logEl.innerHTML = '';
+
+  let sent=0, failed=0;
+  const campaignId = 'CAM'+Date.now();
+
+  for (let i=0; i<recipients.length; i++) {
+    const user = recipients[i];
+    const msgText = personalizeMsg(body, user);
+    const pct = Math.round(((i+1)/recipients.length)*100);
+    if (progFill) progFill.style.width = pct+'%';
+    if (progPct)  progPct.textContent = pct+'%';
+    if (statusTxt) statusTxt.textContent = `إرسال لـ ${user.name} (${i+1}/${recipients.length})`;
+
+    let ok = false;
+    // Email sending
+    if ((mktChannel==='email'||mktChannel==='both') && user.email) {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email: user.email,
+          subject,
+          rep_name: user.name,
+          shop_name: user.shopName || '',
+          order_id: campaignId,
+          order_date: new Date().toLocaleString('ar-IQ'),
+          products: msgText,
+          total:'', commission:'', net:'', shop_addr:'', shop_note:'', location:'',
+        });
+        ok = true;
+        addSendLog(logEl, `✅ إيميل → ${user.name} (${user.email})`, true);
+      } catch(e) {
+        addSendLog(logEl, `❌ فشل إيميل → ${user.name}: ${e.message||e}`, false);
+      }
+    }
+
+    // WhatsApp sending
+    if ((mktChannel==='wa'||mktChannel==='both') && user.phone) {
+      try {
+        const waPhone = user.phone.replace(/\+|\s/g,'');
+        // For bulk WA, we open links — in production use WA Business API
+        // Here we log the message for admin to send
+        await fbAdd('waCampaignQueue', {
+          campaignId, phone: waPhone, name: user.name,
+          message: msgText, status:'pending',
+          date: new Date().toISOString()
+        });
+        ok = true;
+        addSendLog(logEl, `💬 واتساب مُجدوَل → ${user.name} (${user.phone})`, true);
+      } catch(e) {
+        addSendLog(logEl, `❌ فشل واتساب → ${user.name}`, false);
+      }
+    }
+
+    // Fallback: save notification in app
+    await fbAdd('notifications', {
+      title: `📣 ${subject}`,
+      body: msgText.substring(0, 120) + (msgText.length > 120 ? '...' : ''),
+      type: 'info', read: false,
+      targetUser: user.username,
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(()=>{});
+
+    if (ok) sent++; else failed++;
+    await new Promise(r => setTimeout(r, 80)); // small delay
+  }
+
+  // Save campaign record
+  const campData = {
+    campaignId, subject, channel: mktChannel,
+    bodyPreview: body.substring(0,100),
+    totalSent: sent, totalFailed: failed,
+    recipientCount: recipients.length,
+    sentBy: CU?.name || '—',
+    date: new Date().toLocaleDateString('ar-IQ')
+  };
+  await fbAdd('campaigns', campData).catch(()=>{});
+  campaigns.unshift({ ...campData, _id: campaignId });
+
+  if (statusTxt) statusTxt.textContent = `✅ اكتمل الإرسال`;
+  setTimeout(() => {
+    if (progWrap) progWrap.style.display = 'none';
+  }, 5000);
+
+  if (btn) { btn.disabled=false; btn.textContent='🚀 إرسال الحملة'; }
+  toast(`✅ تم الإرسال: ${sent} نجاح${failed?' | '+failed+' فشل':''}`);
+  renderCampaignHistory();
+
+  // Open WA bulk sender if WA channel selected
+  if (mktChannel === 'wa' || mktChannel === 'both') {
+    openWaBulkSender(recipients, body);
+  }
+}
+
+function addSendLog(el, msg, ok) {
+  if (!el) return;
+  const line = document.createElement('div');
+  line.className = 'send-log-line ' + (ok?'ok':'err');
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function openWaBulkSender(recipients, bodyTemplate) {
+  // Build WA links for all recipients with phones
+  const withPhone = recipients.filter(u => u.phone);
+  if (!withPhone.length) { toast('⚠️ لا يوجد أرقام واتساب', false); return; }
+
+  // Open first one (browser popup restriction — user can loop)
+  const first = withPhone[0];
+  const msg = personalizeMsg(bodyTemplate, first);
+  const waPhone = first.phone.replace(/\+|\s/g,'');
+  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+
+  if (withPhone.length > 1) {
+    toast(`💡 تم فتح واتساب للأول. لإرسال الباقين (${withPhone.length-1}) راجع لوحة إدارة الواتساب.`, 'info');
+    // Store remaining for admin panel
+    sessionStorage.setItem('waPendingBulk', JSON.stringify({ recipients: withPhone.slice(1), bodyTemplate }));
+  }
+}
+
+function renderMarketingKpi() {
+  const kpiEl = document.getElementById('mktKpi');
+  if (!kpiEl) return;
+  const total = users.filter(u=>u.type==='rep'||u.type==='market_owner').length;
+  const withEmail = users.filter(u=>u.email).length;
+  const withPhone = users.filter(u=>u.phone).length;
+  const withNewsLetter = users.filter(u=>u.newsletter!==false).length;
+  kpiEl.innerHTML = `
+    <div class="kpi-card kpi-sky"><div class="kpi-icon">👥</div><div class="kpi-val">${total}</div><div class="kpi-lbl">إجمالي العملاء</div></div>
+    <div class="kpi-card kpi-teal"><div class="kpi-icon">📧</div><div class="kpi-val">${withEmail}</div><div class="kpi-lbl">عندهم إيميل</div></div>
+    <div class="kpi-card kpi-mint"><div class="kpi-icon">📱</div><div class="kpi-val">${withPhone}</div><div class="kpi-lbl">عندهم رقم هاتف</div></div>
+    <div class="kpi-card kpi-gold"><div class="kpi-icon">✅</div><div class="kpi-val">${withNewsLetter}</div><div class="kpi-lbl">مشتركون بالإشعارات</div></div>`;
+}
+
+function renderContacts() {
+  const el = document.getElementById('contactsList');
+  if (!el) return;
+  const q = (document.getElementById('contactSearch')?.value||'').toLowerCase();
+  let list = users.filter(u => u.type==='rep'||u.type==='market_owner');
+  if (q) list = list.filter(u=>u.name.toLowerCase().includes(q)||u.phone?.includes(q)||u.email?.toLowerCase().includes(q)||u.city?.toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map(u => `
+    <div class="contact-row" onclick="openContactDetail('${u.username}')">
+      <div class="contact-av">${u.type==='rep'?'🤝':'🏪'}</div>
+      <div class="contact-info">
+        <div class="contact-name">${u.name}</div>
+        <div class="contact-meta">${u.phone||'—'} ${u.email?'· '+u.email:''}</div>
+        <div class="contact-badges">
+          ${u.city?`<span class="badge b-sky">${u.city}</span>`:''}
+          ${u.phone?`<span class="badge b-green">📱 واتساب</span>`:''}
+          ${u.email?`<span class="badge b-teal">📧 إيميل</span>`:''}
+          ${u.newsletter===false?`<span class="badge b-red">🔕 غير مشترك</span>`:`<span class="badge b-mint">✅ مشترك</span>`}
+        </div>
+      </div>
+      <div style="text-align:left;flex-shrink:0">
+        <div style="font-size:.72rem;color:rgba(9,50,87,.4)">${ROLES[u.type]||u.type}</div>
+        <div style="font-size:.78rem;font-weight:700;color:var(--violet)">⭐ ${parseInt(u.earnedPoints)||0} نقطة</div>
+      </div>
+    </div>`).join('')
+  : '<div style="text-align:center;padding:35px;color:rgba(9,50,87,.35)">لا يوجد عملاء بعد</div>';
+}
+
+function openContactDetail(username) {
+  const u = users.find(x=>x.username===username); if (!u) return;
+  const myOrds = orders.filter(o=>o.repUser===username||o.shopName===u.name);
+  document.getElementById('contactDetailContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:60px;height:60px;border-radius:var(--r16);background:linear-gradient(135deg,rgba(14,165,233,.13),rgba(6,182,212,.08));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 8px">${u.type==='rep'?'🤝':'🏪'}</div>
+      <div style="font-weight:900;color:var(--deep);font-size:1rem">${u.name}</div>
+      <div style="font-size:.75rem;color:rgba(9,50,87,.45)">${ROLES[u.type]||u.type}</div>
+    </div>
+    <div style="display:grid;gap:8px;margin-bottom:14px">
+      ${[['📱 هاتف',u.phone||'—'],['📧 إيميل',u.email||'—'],['📍 مدينة',u.city||'—'],['🏪 ماركت',u.shopName||'—'],
+         ['💰 رصيد',(parseFloat(u.balance)||0).toLocaleString()+' د.ع'],['⭐ نقاط',(parseInt(u.earnedPoints)||0)+' نقطة'],
+         ['📦 طلبات',myOrds.length],['📅 تسجيل',u.registeredAt||'—']].map(([l,v])=>`
+        <div style="display:flex;justify-content:space-between;padding:8px 11px;background:rgba(14,165,233,.04);border-radius:var(--r8);font-size:.82rem">
+          <span style="color:rgba(9,50,87,.5)">${l}</span><span style="font-weight:700;color:var(--deep)">${v}</span>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${u.phone?`<a href="https://wa.me/${u.phone.replace(/\+|\s/g,'')}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;text-decoration:none;flex:1;justify-content:center">💬 واتساب</a>`:''}
+      ${u.email?`<a href="mailto:${u.email}" class="btn btn-sky btn-sm" style="flex:1;justify-content:center;text-decoration:none">📧 إيميل</a>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('contactDetailModal');openPayForUser('${u.username}')" style="flex:1">💸 رصيد</button>
+    </div>`;
+  openModal('contactDetailModal');
+}
+
+async function renderCampaignHistory() {
+  const el = document.getElementById('campaignHistory');
+  if (!el) return;
+  if (!campaigns.length) {
+    const raw = await fbGet('campaigns');
+    campaigns = raw.sort((a,b)=>{
+      const da=a.createdAt?.seconds||0, db_=b.createdAt?.seconds||0;
+      return db_-da;
+    }).slice(0,20);
+  }
+  el.innerHTML = campaigns.length ? campaigns.map(c=>`
+    <tr>
+      <td>${tsToStr(c.createdAt)||c.date||'—'}</td>
+      <td style="font-weight:700;color:var(--deep);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.subject||'—'}</td>
+      <td><span class="badge ${c.channel==='email'?'b-sky':c.channel==='wa'?'b-green':'b-violet'}">${c.channel==='email'?'📧 إيميل':c.channel==='wa'?'💬 واتساب':'🔁 الاثنين'}</span></td>
+      <td>${c.recipientCount||0}</td>
+      <td style="color:var(--mint2);font-weight:700">${c.totalSent||0}</td>
+      <td style="color:var(--rose);font-weight:700">${c.totalFailed||0}</td>
+    </tr>`).join('')
+  : '<tr><td colspan="6" style="text-align:center;padding:25px;color:rgba(9,50,87,.33)">لا توجد حملات بعد</td></tr>';
+}
+
+function exportContacts() {
+  if (typeof XLSX === 'undefined') { toast('جاري تحميل المكتبة...','info'); return; }
+  const list = users.filter(u=>u.type==='rep'||u.type==='market_owner');
+  const rows = [['الاسم','نوع الحساب','الهاتف','الإيميل','المدينة','اسم الماركت','الرصيد','النقاط','مشترك','تاريخ التسجيل']];
+  list.forEach(u => rows.push([u.name,ROLES[u.type]||u.type,u.phone||'',u.email||'',u.city||'',u.shopName||'',parseFloat(u.balance)||0,parseInt(u.earnedPoints)||0,u.newsletter!==false?'نعم':'لا',u.registeredAt||'']));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contacts');
+  XLSX.writeFile(wb, 'burjuman_contacts_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  toast('✅ تم تصدير '+list.length+' عميل');
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    injectRegisterLink();
+    setMktChannel('email');
+    buildMktTemplates();
+    updateMktAudience();
+    renderCampaignHistory();
+  }, 2000);
+});
+
+
+
 </script>
+
+<!-- ═══ REGISTRATION MODAL (بديل عن loginOverlay) ═══ -->
+<div id="registerModal" class="modal z1">
+  <div class="m-box" style="max-width:440px">
+    <button class="m-close" onclick="closeModal('registerModal')">✕</button>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:58px;height:58px;border-radius:var(--r16);background:linear-gradient(135deg,var(--sky),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;box-shadow:var(--glow-sky)">🏪</div>
+      <div style="font-size:1.1rem;font-weight:900;color:var(--deep)">إنشاء حساب جديد</div>
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:3px">انضم إلى برجمان</div>
+    </div>
+
+    <!-- Steps Indicator -->
+    <div class="reg-steps" id="regSteps">
+      <div class="reg-step active" id="regDot1"><div class="reg-step-dot">1</div><div class="reg-step-lbl">البيانات</div></div>
+      <div class="reg-step" id="regDot2"><div class="reg-step-dot">2</div><div class="reg-step-lbl">التحقق</div></div>
+      <div class="reg-step" id="regDot3"><div class="reg-step-dot">3</div><div class="reg-step-lbl">إكمال</div></div>
+    </div>
+
+    <!-- Step 1: Basic Info -->
+    <div class="reg-pane active" id="regStep1">
+      <div class="fg"><label class="fl">الاسم الكامل *</label>
+        <input id="reg_name" type="text" class="fi" placeholder="اسمك الكامل">
+      </div>
+      <div class="fg"><label class="fl">رقم الهاتف *</label>
+        <div class="phone-input-wrap">
+          <div class="phone-flag">
+            <span>🇮🇶</span>
+            <select id="reg_country_code">
+              <option value="+964">+964 العراق</option>
+              <option value="+966">+966 السعودية</option>
+              <option value="+971">+971 الإمارات</option>
+              <option value="+962">+962 الأردن</option>
+              <option value="+965">+965 الكويت</option>
+              <option value="+968">+968 عُمان</option>
+              <option value="+974">+974 قطر</option>
+              <option value="+973">+973 البحرين</option>
+              <option value="+20">+20 مصر</option>
+              <option value="+218">+218 ليبيا</option>
+            </select>
+          </div>
+          <input id="reg_phone" type="tel" class="fi" placeholder="07XX XXX XXXX" dir="ltr" style="flex:1">
+        </div>
+      </div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label>
+        <input id="reg_email" type="email" class="fi" placeholder="example@gmail.com" dir="ltr">
+      </div>
+      <div class="fg"><label class="fl">نوع الحساب</label>
+        <select id="reg_type" class="fsel">
+          <option value="market_owner">🏪 صاحب ماركت / محل</option>
+          <option value="rep">🤝 مندوب مبيعات</option>
+        </select>
+      </div>
+      <div id="reg_shop_wrap" class="fg"><label class="fl">اسم الماركت / المحل *</label>
+        <input id="reg_shop" type="text" class="fi" placeholder="اسم ماركتك">
+      </div>
+      <div class="fg"><label class="fl">كلمة المرور *</label>
+        <input id="reg_pass" type="password" class="fi" placeholder="6 أحرف على الأقل">
+      </div>
+      <div id="reg_err1" style="color:var(--rose);font-size:.78rem;margin-bottom:8px;min-height:18px"></div>
+      <button class="btn btn-sky btn-full btn-lg" onclick="regStep1Next()">التالي ←</button>
+      <div style="text-align:center;margin-top:12px;font-size:.8rem;color:rgba(9,50,87,.45)">
+        عندك حساب؟ <a onclick="closeModal('registerModal');showLogin()" style="color:var(--sky2);font-weight:700;cursor:pointer">سجّل دخول</a>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div class="reg-pane" id="regStep2">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:2rem;margin-bottom:8px">📱</div>
+        <div style="font-weight:800;color:var(--deep);font-size:.9rem">تحقق من رقم هاتفك</div>
+        <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:4px" id="otpSentTo">تم إرسال رمز التحقق إلى...</div>
+      </div>
+      <div class="otp-inputs" id="otpInputs">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,0)" onkeydown="otpKey(event,this,0)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,1)" onkeydown="otpKey(event,this,1)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,2)" onkeydown="otpKey(event,this,2)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,3)" onkeydown="otpKey(event,this,3)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,4)" onkeydown="otpKey(event,this,4)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,5)" onkeydown="otpKey(event,this,5)">
+      </div>
+      <div class="otp-timer" id="otpTimer">انتهاء الصلاحية بعد <span id="otpCountdown">2:00</span></div>
+      <div style="text-align:center;margin-top:6px;font-size:.78rem;color:rgba(9,50,87,.45)">
+        لم تستلم الرمز؟ <span class="otp-resend" onclick="resendOtp()">إعادة الإرسال</span>
+      </div>
+      <div id="reg_err2" style="color:var(--rose);font-size:.78rem;margin:10px 0 6px;min-height:18px;text-align:center"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost" onclick="regGoStep(1)" style="flex:0 0 80px">← رجوع</button>
+        <button class="btn btn-sky btn-full btn-lg" onclick="regStep2Verify()" id="otpVerifyBtn">✅ تحقق</button>
+      </div>
+      <!-- Fallback: Email verification note -->
+      <div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.1);border-radius:var(--r12);padding:10px;margin-top:12px;font-size:.72rem;color:rgba(9,50,87,.45);text-align:center">
+        💡 في حال لم تستلم الرمز، سيتم إرسال رمز احتياطي على إيميلك إذا أدخلته
+      </div>
+    </div>
+
+    <!-- Step 3: Address & Final -->
+    <div class="reg-pane" id="regStep3">
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:var(--r12);padding:11px 13px;text-align:center;margin-bottom:14px;font-size:.84rem;font-weight:700;color:var(--mint2)">
+        ✅ تم التحقق من رقمك بنجاح!
+      </div>
+      <div class="fg"><label class="fl">العنوان / المنطقة *</label>
+        <input id="reg_address" type="text" class="fi" placeholder="مثال: بغداد — الكرادة">
+      </div>
+      <div class="fg" id="reg_city_wrap"><label class="fl">المدينة</label>
+        <select id="reg_city" class="fsel">
+          <option value="">— اختر المدينة —</option>
+          <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+          <option>أربيل</option><option>السليمانية</option><option>النجف</option>
+          <option>كربلاء</option><option>كركوك</option><option>الأنبار</option>
+          <option>ديالى</option><option>بابل</option><option>واسط</option>
+          <option>ذي قار</option><option>ميسان</option><option>المثنى</option>
+          <option>القادسية</option><option>صلاح الدين</option><option>دهوك</option>
+          <option>حلبجة</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.82rem;color:rgba(9,50,87,.55)">
+          <input type="checkbox" id="reg_newsletter" checked style="accent-color:var(--sky2);width:16px;height:16px">
+          أوافق على استلام العروض والأخبار عبر واتساب وإيميل
+        </label>
+      </div>
+      <div id="reg_err3" style="color:var(--rose);font-size:.78rem;margin-bottom:8px;min-height:18px"></div>
+      <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,var(--mint),var(--mint2));color:white;border:none;box-shadow:var(--glow-mint)" onclick="regFinish()">
+        🎉 إنشاء الحساب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MARKETING PAGE ═══ -->
+<div class="page" id="pageMarketing">
+  <div class="ph"><h1>📣 التسويق</h1><p>إرسال رسائل ترويجية للعملاء</p></div>
+
+  <!-- Stats Row -->
+  <div class="kpi-grid" id="mktKpi" style="margin-bottom:16px"></div>
+
+  <!-- Compose Section -->
+  <div class="mkt-compose">
+    <div style="font-size:.9rem;font-weight:800;color:var(--deep);margin-bottom:14px">✉️ إنشاء رسالة تسويقية</div>
+
+    <!-- Channel -->
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:6px">القناة</div>
+    <div class="mkt-channel-tabs">
+      <button class="mkt-ch on email" id="mktChEmail" onclick="setMktChannel('email')">📧 إيميل</button>
+      <button class="mkt-ch wa" id="mktChWa" onclick="setMktChannel('wa')">💬 واتساب</button>
+      <button class="mkt-ch both" id="mktChBoth" onclick="setMktChannel('both')">🔁 الاثنين</button>
+    </div>
+
+    <!-- Templates -->
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">قوالب جاهزة</div>
+    <div class="template-cards" id="mktTemplates"></div>
+
+    <!-- Subject (email only) -->
+    <div class="fg" id="mktSubjectWrap">
+      <label class="fl">موضوع الإيميل *</label>
+      <input id="mktSubject" type="text" class="fi" placeholder="مثال: عرض خاص — خصم 20% هذا الأسبوع">
+    </div>
+
+    <!-- Message Body -->
+    <div class="fg"><label class="fl">نص الرسالة *</label>
+      <textarea id="mktBody" class="fta" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updateMktPreview()"></textarea>
+    </div>
+
+    <!-- Variables hint -->
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700;align-self:center">متغيرات:</span>
+      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 {name}</span>
+      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 {shop}</span>
+      <span class="badge b-mint" style="cursor:pointer" onclick="insertVar('{points}')">⭐ {points}</span>
+      <span class="badge b-gold" style="cursor:pointer" onclick="insertVar('{balance}')">💰 {balance}</span>
+      <span class="badge b-violet" style="cursor:pointer" onclick="insertVar('{city}')">📍 {city}</span>
+    </div>
+
+    <!-- Audience -->
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">👥 الجمهور المستهدف</div>
+    <div class="audience-selector">
+      <label class="aud-chip" id="aud_all">
+        <input type="checkbox" id="aud_all_cb" checked onchange="toggleAud('all')">
+        <span>🌐 الجميع</span>
+        <span class="badge b-sky" id="aud_all_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_rep">
+        <input type="checkbox" id="aud_rep_cb" onchange="toggleAud('rep')">
+        <span>🤝 المندوبون</span>
+        <span class="badge b-teal" id="aud_rep_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_mkt">
+        <input type="checkbox" id="aud_mkt_cb" onchange="toggleAud('market_owner')">
+        <span>🏪 الماركتات</span>
+        <span class="badge b-mint" id="aud_mkt_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_city">
+        <input type="checkbox" id="aud_city_cb" onchange="toggleAud('city')">
+        <span>📍 مدينة محددة</span>
+      </label>
+    </div>
+
+    <!-- City filter (shown when city selected) -->
+    <div id="mktCityFilter" style="display:none" class="fg">
+      <label class="fl">اختر المدينة</label>
+      <select id="mktCitySelect" class="fsel" onchange="updateMktAudience()">
+        <option value="">— اختر —</option>
+        <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+        <option>أربيل</option><option>كربلاء</option><option>النجف</option>
+        <option>كركوك</option><option>السليمانية</option>
+      </select>
+    </div>
+
+    <!-- Preview -->
+    <div class="mkt-preview-box" id="mktPreviewBox" style="display:none">
+      <div class="mkt-preview-label">👁️ معاينة الرسالة (كما سيستلمها العميل)</div>
+      <div class="mkt-preview-content" id="mktPreviewContent"></div>
+    </div>
+
+    <!-- Recipient count -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:8px">
+      <div class="stats-bar" id="mktAudStats">
+        <span class="stat-pill sp-total">📤 سيُرسل لـ <span id="mktRecipCount">0</span> شخص</span>
+      </div>
+      <button class="btn btn-gold btn-lg" onclick="sendCampaign()" id="mktSendBtn" style="min-width:140px">
+        🚀 إرسال الحملة
+      </button>
+    </div>
+
+    <!-- Send Progress -->
+    <div class="send-progress-wrap" id="sendProgressWrap">
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;font-weight:800;color:var(--sky2)">
+        <span id="sendStatusTxt">جاري الإرسال...</span>
+        <span id="sendPct">0%</span>
+      </div>
+      <div class="send-prog-bar"><div class="send-prog-fill" id="sendProgFill"></div></div>
+      <div class="send-log" id="sendLog"></div>
+    </div>
+  </div>
+
+  <!-- Contacts Database -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 قاعدة بيانات العملاء</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="contactSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderContacts()">
+        <button class="btn btn-ghost btn-sm" onclick="exportContacts()">📥 تصدير Excel</button>
+      </div>
+    </div>
+    <div class="contacts-tbl-wrap" id="contactsList"></div>
+  </div>
+
+  <!-- Campaign History -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">📊 سجل الحملات</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>التاريخ</th><th>موضوع الحملة</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th></tr></thead>
+        <tbody id="campaignHistory"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONTACT DETAIL MODAL ═══ -->
+<div class="modal z1" id="contactDetailModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('contactDetailModal')">✕</button>
+    <div class="m-title">👤 بيانات العميل</div>
+    <div id="contactDetailContent"></div>
+  </div>
+</div>
+
+
 </body>
 </html>

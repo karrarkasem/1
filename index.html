@@ -1788,11 +1788,14 @@ function startRealtimeListeners() {
 }
 
 function parseOrder(o) {
+  // ✅ FIX: حفظ التاريخ حتى لو فارغ — لا نحذف الطلبات بسبب التاريخ
+  const rawDate = o.date || o.createdAt;
+  const dateStr = rawDate ? tsToStr(rawDate) : new Date().toLocaleDateString('ar-IQ');
   return {
     _id:        o._id,
     id:         o.orderId || o._id || '',
-    date:       tsToStr(o.date || o.createdAt),
-    repUser:    o.repUsername || '',
+    date:       dateStr,
+    repUser:    o.repUsername || o.repUser || '',
     repName:    o.repName || '—',
     commPct:    parseFloat(o.commPct) || 0,
     shopName:   o.shopName || '',
@@ -1847,7 +1850,8 @@ async function loadProducts() {
 
 async function loadOrders() {
   const raw = await fbGet('orders');
-  orders = raw.map(o => parseOrder(o)).filter(o => o.date && o.date !== '—');
+  // ✅ FIX: إزالة filter بالتاريخ — نحتفظ بكل الطلبات
+  orders = raw.map(o => parseOrder(o));
 }
 
 async function loadOffers() {
@@ -3601,27 +3605,42 @@ function setRepFilter(f, btn) {
 }
 
 function getRepOrders() {
-  // صلاحيات — المندوب وصاحب الماركت يشوفون مبيعاتهم فقط
-  const isAdmin = CU && (CU.type==='admin' || CU.type==='sales_manager');
-  let base = isAdmin ? orders : (CU?.type==='rep'
-    ? orders.filter(o => o.repUser === CU.username)
-    : CU?.type==='market_owner'
-      ? orders.filter(o => o.shopName === CU.name)
-      : []);
+  // ✅ FIX: دعم كل أنواع المستخدمين
+  if (!CU) return [];
+
+  const isAdmin = CU.type === 'admin' || CU.type === 'sales_manager';
+  let base;
+
+  if (isAdmin) {
+    base = orders; // الأدمن يشوف الكل
+  } else if (CU.type === 'rep') {
+    base = orders.filter(o => o.repUser === CU.username);
+  } else if (CU.type === 'market_owner') {
+    base = orders.filter(o =>
+      o.shopName === CU.name ||
+      o.shopName === CU.shopName ||
+      o.repUser === CU.username
+    );
+  } else {
+    base = [];
+  }
 
   // فلتر الفترة
   const now = new Date();
-  if(repFilter === 'today')  return base.filter(o => isSameDay(o.date, now));
-  if(repFilter === 'week') {
-    const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+  if (repFilter === 'today')
+    return base.filter(o => isSameDay(o.date, now));
+  if (repFilter === 'week') {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
     return base.filter(o => isAfterDate(o.date, weekAgo));
   }
-  if(repFilter === 'month')  return base.filter(o => isThisMonth(o.date));
-  if(repFilter === 'custom') {
+  if (repFilter === 'month')
+    return base.filter(o => isThisMonth(o.date));
+  if (repFilter === 'custom') {
     const from = document.getElementById('repFrom')?.value;
     const to   = document.getElementById('repTo')?.value;
-    if(from) base = base.filter(o => isAfterDate(o.date, new Date(from)));
-    if(to)   base = base.filter(o => isBeforeDate(o.date, new Date(to)));
+    if (from) base = base.filter(o => isAfterDate(o.date, new Date(from)));
+    if (to)   base = base.filter(o => isBeforeDate(o.date, new Date(to)));
     return base;
   }
   return base;
@@ -3645,63 +3664,176 @@ function isBeforeDate(dateStr, d) {
   } catch { return false; }
 }
 
-function renderReports(){
-  if(!CU) return;
-  const isAdmin = CU.type==='admin' || CU.type==='sales_manager';
-  const filtered = getRepOrders();
-
-  const tot  = filtered.reduce((s,o)=>s+(parseFloat(o.total)||0),0);
-  const comm = filtered.reduce((s,o)=>s+(parseFloat(o.commission)||0),0);
-  const avg  = filtered.length ? Math.round(tot/filtered.length) : 0;
-  const outOfStock = products.filter(p=>p.stock===0).length;
-
-  document.getElementById('repKpi').innerHTML=`
-    <div class="kpi-card kpi-sky"><div class="kpi-icon">💰</div><div class="kpi-val">${tot>=1e6?(tot/1e6).toFixed(2)+'M':tot.toLocaleString()}</div><div class="kpi-lbl">إجمالي المبيعات (د.ع)</div></div>
-    <div class="kpi-card kpi-teal"><div class="kpi-icon">📦</div><div class="kpi-val">${filtered.length}</div><div class="kpi-lbl">عدد الطلبات</div></div>
-    <div class="kpi-card kpi-gold"><div class="kpi-icon">💸</div><div class="kpi-val">${comm>=1e6?(comm/1e6).toFixed(2)+'M':comm.toLocaleString()}</div><div class="kpi-lbl">إجمالي العمولات</div></div>
-    <div class="kpi-card kpi-mint"><div class="kpi-icon">📊</div><div class="kpi-val">${avg.toLocaleString()}</div><div class="kpi-lbl">متوسط قيمة الطلب</div></div>
-    ${isAdmin?`<div class="kpi-card kpi-rose"><div class="kpi-icon">🚫</div><div class="kpi-val">${outOfStock}</div><div class="kpi-lbl">نفاد المخزون</div></div>`:''}`;
-
-  // جدول المندوبين — للأدمن فقط
-  const repsCard = document.getElementById('repRepsCard');
-  if(repsCard) repsCard.style.display = isAdmin ? 'block' : 'none';
-  if(isAdmin) {
-    const rMap={};
-    filtered.forEach(o=>{
-      if(!o.repUser) return;
-      if(!rMap[o.repUser]) rMap[o.repUser]={name:o.repName||o.repUser,ord:0,tot:0,comm:0};
-      rMap[o.repUser].ord++;
-      rMap[o.repUser].tot+=(parseFloat(o.total)||0);
-      rMap[o.repUser].comm+=(parseFloat(o.commission)||0);
-    });
-    document.getElementById('repRepsBody').innerHTML=Object.values(rMap).sort((a,b)=>b.tot-a.tot).map(r=>`
-      <tr><td style="font-weight:700;color:var(--deep)">${r.name}</td><td>${r.ord}</td>
-      <td style="font-weight:800;color:var(--mint2)">${r.tot.toLocaleString()} د.ع</td>
-      <td style="color:var(--gold2)">${r.comm.toLocaleString()} د.ع</td>
-      <td style="color:var(--teal2)">${(r.tot-r.comm).toLocaleString()} د.ع</td></tr>`).join('')
-    ||'<tr><td colspan="5" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد بيانات</td></tr>';
+function renderReports() {
+  // ✅ FIX: التحقق من تحميل البيانات أولاً
+  if (!CU) {
+    document.getElementById('repKpi').innerHTML =
+      '
+🔒 يجب تسجيل الدخول لعرض التقارير
+';
+    return;
   }
 
-  // أكثر المنتجات مبيعاً
-  const prodMap={};
-  filtered.forEach(o=>{
-    const prods = o.products||'';
-    const matches = prods.match(/([^،,]+)\((\d+)\)/g)||[];
-    matches.forEach(m=>{
-      const mm=m.match(/(.+)\((\d+)\)/);
-      if(!mm) return;
-      const name=mm[1].trim(), qty=parseInt(mm[2])||1;
-      const prod=products.find(p=>p.name===name);
-      if(!prodMap[name]) prodMap[name]={name,qty:0,rev:0};
-      prodMap[name].qty+=qty;
-      prodMap[name].rev+=qty*(prod?.price||0);
+  const isAdmin = CU.type === 'admin' || CU.type === 'sales_manager';
+  const filtered = getRepOrders();
+
+  // ✅ FIX: إظهار رسالة واضحة إذا لا توجد طلبات
+  if (!filtered.length) {
+    document.getElementById('repKpi').innerHTML =
+      '
+📊 لا توجد طلبات في هذه الفترة
+';
+    const repsCard = document.getElementById('repRepsCard');
+    if (repsCard) repsCard.style.display = 'none';
+    document.getElementById('repProdsBody').innerHTML =
+      'لا توجد بيانات';
+    return;
+  }
+
+  const tot  = filtered.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+  const comm = filtered.reduce((s, o) => s + (parseFloat(o.commission) || 0), 0);
+  const avg  = filtered.length ? Math.round(tot / filtered.length) : 0;
+  const outOfStock = products.filter(p => p.stock === 0).length;
+
+  document.getElementById('repKpi').innerHTML = `
+    
+
+      
+💰
+
+      
+${tot >= 1e6 ? (tot / 1e6).toFixed(2) + 'M' : tot.toLocaleString()}
+
+      
+إجمالي المبيعات (د.ع)
+
+    
+
+    
+
+      
+📦
+
+      
+${filtered.length}
+
+      
+عدد الطلبات
+
+    
+
+    
+
+      
+💸
+
+      
+${comm >= 1e6 ? (comm / 1e6).toFixed(2) + 'M' : comm.toLocaleString()}
+
+      
+إجمالي العمولات
+
+    
+
+    
+
+      
+📊
+
+      
+${avg.toLocaleString()}
+
+      
+متوسط قيمة الطلب
+
+    
+
+    ${isAdmin ? `
+    
+
+      
+🚫
+
+      
+${outOfStock}
+
+      
+نفاد المخزون
+
+    
+` : ''}`;
+
+  // جدول المندوبين — للأدمن والمشرف فقط
+  const repsCard = document.getElementById('repRepsCard');
+  if (repsCard) repsCard.style.display = isAdmin ? 'block' : 'none';
+
+  if (isAdmin) {
+    const rMap = {};
+    filtered.forEach(o => {
+      if (!o.repUser) return;
+      if (!rMap[o.repUser]) rMap[o.repUser] = { name: o.repName || o.repUser, ord: 0, tot: 0, comm: 0 };
+      rMap[o.repUser].ord++;
+      rMap[o.repUser].tot  += parseFloat(o.total)      || 0;
+      rMap[o.repUser].comm += parseFloat(o.commission) || 0;
     });
+
+    document.getElementById('repRepsBody').innerHTML =
+      Object.values(rMap)
+        .sort((a, b) => b.tot - a.tot)
+        .map(r => `
+          
+            ${r.name}
+            ${r.ord}
+            ${r.tot.toLocaleString()} د.ع
+            ${r.comm.toLocaleString()} د.ع
+            ${(r.tot - r.comm).toLocaleString()} د.ع
+          `).join('') ||
+      'لا توجد بيانات';
+  }
+
+  // أكثر المنتجات مبيعاً — ✅ FIX: دعم صيغ متعددة للمنتجات
+  const prodMap = {};
+  filtered.forEach(o => {
+    const prods = o.products || '';
+    // صيغة: اسم(كمية)
+    const matches = prods.match(/([^،,\n]+)\((\d+)\)/g) || [];
+    if (matches.length) {
+      matches.forEach(m => {
+        const mm = m.match(/(.+)\((\d+)\)/);
+        if (!mm) return;
+        const name = mm[1].trim();
+        const qty  = parseInt(mm[2]) || 1;
+        const prod = products.find(p => p.name === name);
+        if (!prodMap[name]) prodMap[name] = { name, qty: 0, rev: 0 };
+        prodMap[name].qty += qty;
+        prodMap[name].rev += qty * (prod?.price || 0);
+      });
+    } else if (prods && prods !== '—') {
+      // صيغة بديلة: اسم×كمية أو اسم فقط
+      prods.split(/[،,]/).forEach(part => {
+        const mm2 = part.trim().match(/(.+)[×x](\d+)/);
+        const name = mm2 ? mm2[1].trim() : part.trim();
+        const qty  = mm2 ? parseInt(mm2[2]) : 1;
+        if (!name) return;
+        const prod = products.find(p => p.name === name);
+        if (!prodMap[name]) prodMap[name] = { name, qty: 0, rev: 0 };
+        prodMap[name].qty += qty;
+        prodMap[name].rev += qty * (prod?.price || 0);
+      });
+    }
   });
-  document.getElementById('repProdsBody').innerHTML=Object.values(prodMap).sort((a,b)=>b.qty-a.qty).slice(0,10).map(p=>`
-    <tr><td style="font-weight:700;color:var(--deep)">${p.name}</td>
-    <td style="font-weight:800;color:var(--sky2)">${p.qty}</td>
-    <td style="font-weight:800;color:var(--mint2)">${p.rev.toLocaleString()} د.ع</td></tr>`).join('')
-  ||'<tr><td colspan="3" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد بيانات</td></tr>';
+
+  document.getElementById('repProdsBody').innerHTML =
+    Object.values(prodMap)
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 10)
+      .map(p => `
+        
+          ${p.name}
+          ${p.qty}
+          ${p.rev.toLocaleString()} د.ع
+        `).join('') ||
+    'لا توجد بيانات';
 }
 
 // ═══════════════════════════════════════════════════════

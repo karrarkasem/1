@@ -1204,7 +1204,14 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     <div class="login-guest">أو <a onclick="hideLogin()">تصفح كزائر بدون حساب</a></div>
   </div>
 </div>
-
+<div id="registerModal" class="modal z1">
+  <div class="m-box" style="max-width:440px">
+    <button class="m-close" onclick="closeModal('registerModal')">✕</button>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:58px;height:58px;border-radius:var(--r16);background:linear-gradient(135deg,var(--sky),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;box-shadow:var(--glow-sky)">🏪</div>
+      <div style="font-size:1.1rem;font-weight:900;color:var(--deep)">إنشاء حساب جديد</div>
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:3px">انضم إلى برجمان</div>
+    </div>
 <!-- CART MODAL -->
 <div class="modal z1" id="cartModal">
   <div class="m-box" style="max-width:520px">
@@ -1778,6 +1785,15 @@ async function init() {
   else {
     await new Promise(res => document.addEventListener('fbReady', res, {once:true}));
     fbReady = true;
+    // Timeout safety — إذا تأخر التحميل أكثر من 8 ثواني افتح الصفحة
+setTimeout(() => {
+  const ls = document.getElementById('loadScreen');
+  if (ls && ls.style.display !== 'none') {
+    ls.style.opacity = '0';
+    setTimeout(() => ls.style.display = 'none', 400);
+    buildUI();
+  }
+}, 8000);
   }
   setFbStatus(true, 'متصل');
   document.getElementById('loadSub').textContent = 'جاري تحميل البيانات...';
@@ -4351,14 +4367,7 @@ function renderPointsMgmt() {
     </div>`;
   }).join('');
 }
-<div id="registerModal" class="modal z1">
-  <div class="m-box" style="max-width:440px">
-    <button class="m-close" onclick="closeModal('registerModal')">✕</button>
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="width:58px;height:58px;border-radius:var(--r16);background:linear-gradient(135deg,var(--sky),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;box-shadow:var(--glow-sky)">🏪</div>
-      <div style="font-size:1.1rem;font-weight:900;color:var(--deep)">إنشاء حساب جديد</div>
-      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:3px">انضم إلى برجمان</div>
-    </div>
+
 
     <!-- Steps Indicator -->
     <div class="reg-steps" id="regSteps">
@@ -4678,7 +4687,7 @@ async function confirmResetPoints(username) {
   }
   toast(`🗑️ تم تصفير نقاط ${u.name}`);
   renderPointsMgmt();
-
+}
   
 // ═══════════════════════════════════════════════════════
 // START

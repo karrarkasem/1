@@ -507,6 +507,18 @@ hr{border:none;border-top:1px solid rgba(14,165,233,.1);margin:13px 0}
 .offer-icon{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05));display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;border:1px solid rgba(245,158,11,.18);}
 .offer-title{font-weight:800;color:var(--deep);font-size:.88rem}
 .offer-desc{font-size:.74rem;color:rgba(9,50,87,.48);margin-top:2px}
+.offer-card-img{width:60px;height:60px;object-fit:cover;border-radius:var(--r12);flex-shrink:0;border:1.5px solid rgba(14,165,233,.12);}
+.offer-card.offer-expired-card{opacity:.6;}
+.badge-exp{background:rgba(244,63,94,.1);color:#e11d48;font-size:.7rem;font-weight:800;padding:2px 9px;border-radius:var(--r99);display:inline-flex;align-items:center;gap:3px;}
+.offer-exp-msg{text-align:center;padding:9px;font-size:.8rem;color:#e11d48;background:rgba(244,63,94,.06);border-radius:var(--r12);margin-top:8px;font-weight:700;}
+.offer-slide-img{width:68px;height:68px;object-fit:contain;border-radius:12px;flex-shrink:0;border:2.5px solid rgba(255,255,255,.55);box-shadow:0 2px 10px rgba(0,0,0,.18);background:rgba(255,255,255,.92);padding:3px;}
+.off-img-zone{border:2px dashed rgba(14,165,233,.25);border-radius:var(--r12);padding:12px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(14,165,233,.02);margin-bottom:2px;}
+.off-img-zone:hover{border-color:var(--sky2);background:rgba(14,165,233,.05);}
+.off-img-zone img{width:100%;max-height:130px;object-fit:cover;border-radius:var(--r8);margin-top:8px;}
+.prod-img-picker{display:flex;flex-wrap:wrap;gap:7px;padding:10px;background:rgba(14,165,233,.03);border:1px solid rgba(14,165,233,.12);border-radius:var(--r12);max-height:130px;overflow-y:auto;}
+.prod-img-thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0;}
+.prod-img-thumb:hover{border-color:var(--sky2);transform:scale(1.05);}
+.prod-img-thumb.selected{border-color:var(--sky2);box-shadow:0 0 0 3px rgba(14,165,233,.2);}
 .rep-track-card{background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.88);border-radius:var(--r20);padding:15px;margin-bottom:10px;box-shadow:var(--shadow-sm);}
 .rt-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .rt-av{width:40px;height:40px;border-radius:var(--r12);background:linear-gradient(135deg,var(--sky),var(--teal));display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:white;}
@@ -524,8 +536,11 @@ hr{border:none;border-top:1px solid rgba(14,165,233,.1);margin:13px 0}
 .notif-ico-warn{background:rgba(245,158,11,.1)}
 .notif-ico-info{background:rgba(14,165,233,.1)}
 .notif-title{font-size:.84rem;font-weight:700;color:var(--deep)}
-.notif-body{font-size:.75rem;color:rgba(9,50,87,.52);margin-top:2px}
+.notif-body{font-size:.75rem;color:rgba(9,50,87,.52);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .notif-time{font-size:.65rem;color:rgba(9,50,87,.35);margin-top:3px}
+.notif-view-btn{background:rgba(14,165,233,.09);border:none;border-radius:var(--r99);padding:3px 10px;font-size:.68rem;font-weight:700;color:var(--sky2);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .15s;}
+.notif-view-btn:hover{background:rgba(14,165,233,.18);}
+.notif-detail-icon{width:56px;height:56px;border-radius:var(--r16);display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 14px;}
 .upload-progress{background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:var(--r12);padding:10px 13px;margin-top:8px;display:none}
 .up-bar{height:5px;background:rgba(14,165,233,.1);border-radius:99px;overflow:hidden;margin-top:5px}
 .up-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--teal));border-radius:99px;width:0%;transition:width .3s}
@@ -830,7 +845,7 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
         </div>
         <div class="search-wrap" id="topSearch" style="display:none">
           <span style="color:rgba(9,50,87,.33)">🔍</span>
-          <input type="text" id="searchIn" placeholder="ابحث..." oninput="doSearch(this.value)">
+          <input type="text" id="searchIn" placeholder="ابحث..." oninput="_debouncedSearch(this.value)">
         </div>
         <button class="top-btn" id="cartTopBtn" style="display:none" onclick="openCartModal()">
           🛒 <span id="cartCountTop">0</span>
@@ -927,7 +942,7 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
       <div class="fg" style="margin:0">
         <label class="fl">🏪 المحل</label>
-        <input type="text" id="ordShopFilter" class="fi" placeholder="بحث باسم المحل..." oninput="renderOrders()">
+        <input type="text" id="ordShopFilter" class="fi" placeholder="بحث باسم المحل..." oninput="_debouncedOrdFilter()">
       </div>
 
     </div>
@@ -948,6 +963,9 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
   <div class="card">
     <div class="card-hd">
       <div class="card-title">📋 قائمة الطلبات <span id="ordCountBadge" class="badge b-sky" style="margin-right:8px"></span></div>
+      <div id="ordAdminActions" style="display:none">
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.09);color:#e11d48;border:1px solid rgba(244,63,94,.2)" onclick="deleteAllVisibleOrders()">🗑️ حذف المعروض</button>
+      </div>
     </div>
     <div class="tbl-wrap">
       <table>
@@ -1123,8 +1141,6 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
       <div id="notifList"></div>
     </div>
 
-    <!-- REPORTS -->
-    
       <!-- POINTS MANAGEMENT -->
 <div class="page" id="pagePointsMgmt">
   <div class="ph"><h1>⭐ إدارة النقاط</h1><p>التحكم الكامل بنقاط المستخدمين</p></div>
@@ -1164,7 +1180,6 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     <div id="ptsMgmtList"></div>
   </div>
 </div>
-    </div>
 
     <!-- REPORTS -->
     <div class="page" id="pageReports">
@@ -1210,6 +1225,115 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
         </div>
       </div>
     </div>
+
+    <!-- MARKETING PAGE -->
+    <div class="page" id="pageMarketing">
+  <div class="ph"><h1>📣 التسويق</h1><p>إرسال رسائل ترويجية للعملاء</p></div>
+  <div class="kpi-grid" id="mktKpi" style="margin-bottom:16px"></div>
+  <div class="mkt-compose">
+    <div style="font-size:.9rem;font-weight:800;color:var(--deep);margin-bottom:14px">✉️ إنشاء رسالة تسويقية</div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:6px">القناة</div>
+    <div class="mkt-channel-tabs">
+      <button class="mkt-ch on email" id="mktChEmail" onclick="setMktChannel('email')">📧 إيميل</button>
+      <button class="mkt-ch wa" id="mktChWa" onclick="setMktChannel('wa')">💬 واتساب</button>
+      <button class="mkt-ch both" id="mktChBoth" onclick="setMktChannel('both')">🔁 الاثنين</button>
+    </div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">قوالب جاهزة</div>
+    <div class="template-cards" id="mktTemplates"></div>
+    <div class="fg" id="mktSubjectWrap">
+      <label class="fl">موضوع الإيميل *</label>
+      <input id="mktSubject" type="text" class="fi" placeholder="مثال: عرض خاص — خصم 20% هذا الأسبوع">
+    </div>
+    <div class="fg"><label class="fl">نص الرسالة *</label>
+      <textarea id="mktBody" class="fta" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updateMktPreview()"></textarea>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
+      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700;align-self:center">متغيرات:</span>
+      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 {name}</span>
+      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 {shop}</span>
+      <span class="badge b-mint" style="cursor:pointer" onclick="insertVar('{points}')">⭐ {points}</span>
+      <span class="badge b-gold" style="cursor:pointer" onclick="insertVar('{balance}')">💰 {balance}</span>
+      <span class="badge b-violet" style="cursor:pointer" onclick="insertVar('{city}')">📍 {city}</span>
+    </div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">👥 الجمهور المستهدف</div>
+    <div class="audience-selector">
+      <label class="aud-chip" id="aud_all">
+        <input type="checkbox" id="aud_all_cb" checked onchange="toggleAud('all')">
+        <span>🌐 الجميع</span>
+        <span class="badge b-sky" id="aud_all_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_rep">
+        <input type="checkbox" id="aud_rep_cb" onchange="toggleAud('rep')">
+        <span>🤝 المندوبون</span>
+        <span class="badge b-teal" id="aud_rep_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_mkt">
+        <input type="checkbox" id="aud_mkt_cb" onchange="toggleAud('market_owner')">
+        <span>🏪 الماركتات</span>
+        <span class="badge b-mint" id="aud_mkt_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_city">
+        <input type="checkbox" id="aud_city_cb" onchange="toggleAud('city')">
+        <span>📍 مدينة محددة</span>
+      </label>
+    </div>
+    <div id="mktCityFilter" style="display:none" class="fg">
+      <label class="fl">اختر المدينة</label>
+      <select id="mktCitySelect" class="fsel" onchange="updateMktAudience()">
+        <option value="">— اختر —</option>
+        <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+        <option>أربيل</option><option>كربلاء</option><option>النجف</option>
+        <option>كركوك</option><option>السليمانية</option>
+      </select>
+    </div>
+    <div class="mkt-preview-box" id="mktPreviewBox" style="display:none">
+      <div class="mkt-preview-label">👁️ معاينة الرسالة (كما سيستلمها العميل)</div>
+      <div class="mkt-preview-content" id="mktPreviewContent"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:8px">
+      <div class="stats-bar" id="mktAudStats">
+        <span class="stat-pill sp-total">📤 سيُرسل لـ <span id="mktRecipCount">0</span> شخص</span>
+      </div>
+      <button class="btn btn-gold btn-lg" onclick="sendCampaign()" id="mktSendBtn" style="min-width:140px">
+        🚀 إرسال الحملة
+      </button>
+    </div>
+    <div class="send-progress-wrap" id="sendProgressWrap">
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;font-weight:800;color:var(--sky2)">
+        <span id="sendStatusTxt">جاري الإرسال...</span>
+        <span id="sendPct">0%</span>
+      </div>
+      <div class="send-prog-bar"><div class="send-prog-fill" id="sendProgFill"></div></div>
+      <div class="send-log" id="sendLog"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 قاعدة بيانات العملاء</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="contactSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="_debouncedContacts()">
+        <button class="btn btn-ghost btn-sm" onclick="exportContacts()">📥 تصدير Excel</button>
+      </div>
+    </div>
+    <!-- تبويبات: مستخدمون / زوار -->
+    <div style="display:flex;gap:0;border-bottom:2px solid rgba(14,165,233,.12);margin-bottom:12px">
+      <button id="mktTabUsers" onclick="switchMktTab('users')" style="flex:1;padding:9px;border:none;background:none;font-weight:800;font-size:.82rem;color:var(--sky2);border-bottom:2.5px solid var(--sky2);cursor:pointer">👥 المستخدمون</button>
+      <button id="mktTabVisitors" onclick="switchMktTab('visitors')" style="flex:1;padding:9px;border:none;background:none;font-weight:700;font-size:.82rem;color:rgba(9,50,87,.45);cursor:pointer">👤 الزوار <span id="visitorsCountBadge" class="badge b-sky" style="margin-right:4px"></span></button>
+    </div>
+    <div id="contactsList"></div>
+    <div id="visitorsList" style="display:none"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">📊 سجل الحملات</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>التاريخ</th><th>موضوع الحملة</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th></tr></thead>
+        <tbody id="campaignHistory"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
   </main>
 </div>
 
@@ -1259,6 +1383,7 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
       <div class="fg"><label class="fl">🏪 اسم المحل *</label><input id="shopName" type="text" class="fi" placeholder="اسم المحل"></div>
       <div class="fg"><label class="fl">📍 العنوان *</label><input id="shopAddr" type="text" class="fi" placeholder="المنطقة / العنوان"></div>
     </div>
+    <div class="fg" id="visitorPhoneWrap" style="display:none"><label class="fl">📞 رقم هاتفك *</label><input id="visitorPhone" type="tel" class="fi" placeholder="07xxxxxxxxxx"></div>
     <div class="fg"><label class="fl">📝 ملاحظة</label><textarea id="orderNote" class="fta" rows="2" placeholder="ملاحظات..."></textarea></div>
     <button id="mapBtn" class="btn btn-ghost btn-full" style="margin-bottom:9px" onclick="toggleMap()">
       📍 تحديد الموقع <span id="mapOptLabel" style="font-size:.7rem;opacity:.55">(اختياري)</span>
@@ -1472,6 +1597,21 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     </div>
     <div class="fg"><label class="fl">الوصف</label>
       <textarea id="off_desc" class="fta" rows="2" placeholder="تفاصيل العرض..."></textarea>
+    </div>
+
+    <!-- صورة العرض -->
+    <div class="fg"><label class="fl">صورة العرض (تظهر في الشريط والكارد)</label>
+      <div class="off-img-zone" onclick="document.getElementById('off_img_file').click()" id="offImgZone">
+        <input type="file" id="off_img_file" accept="image/*" style="display:none" onchange="uploadOfferImg(this)">
+        <div id="offImgLabel" style="font-size:.82rem;color:rgba(9,50,87,.45);font-weight:700">🖼️ اضغط لرفع صورة جديدة</div>
+        <img id="off_img_preview" src="" alt="" style="display:none">
+      </div>
+      <input type="hidden" id="off_img">
+    </div>
+    <!-- منتقي صور المنتجات -->
+    <div class="fg" id="offProdImgWrap" style="display:none;margin-top:-6px">
+      <label class="fl" style="margin-bottom:6px">أو اختر من صور المنتجات</label>
+      <div class="prod-img-picker" id="offProdImgPicker"></div>
     </div>
 
     <!-- نوع العرض -->
@@ -1703,6 +1843,12 @@ const PERMS = {
 };
 const ROLES = { admin:'🛡️ أدمن', sales_manager:'📊 مشرف', rep:'🤝 مندوب', market_owner:'🏪 صاحب ماركت', guest:'🌐 زائر' };
 
+// ═══ UTILS ════════════════════════════════════════════
+function debounce(fn, ms=300){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+const _debouncedSearch    = debounce(q=>doSearch(q),250);
+const _debouncedOrdFilter = debounce(()=>renderOrders(),250);
+const _debouncedContacts  = debounce(()=>renderContacts(),250);
+
 // ═══ STATE ═══════════════════════════════════════════
 let users=[], products=[], orders=[], purInvoices=[], discounts=[], offers=[], notifications=[];
 let cart={}, selLoc='', curProd=null, pmQtyVal=1;
@@ -1710,6 +1856,7 @@ let leafMap=null, purItems=[];
 let CU=null;
 let fbReady=false;
 let _uploadedImgUrl = '';
+let _sendingOrder = false;
 // Banner state
 let bannerSlide=0, bannerTimer=null;
 // Import state
@@ -1856,29 +2003,20 @@ await loadThreshold();
   startRealtimeListeners();
   setupImportDragDrop();
 
-  setInterval(async () => {
-    await Promise.all([loadUsers(), loadOrders()]);
-    if (CU) {
-      const fresh = users.find(u=>u.username===CU.username);
-      if (fresh) CU={...fresh};
-      updateWalletBar();
-    }
-    buildDashboard();
-    renderNotifBadge();
-  }, 90000);
 }
 
 // ═══════════════════════════════════════════════════════
 // REALTIME LISTENERS
 // ═══════════════════════════════════════════════════════
+let _ordersRenderTimer=null, _productsRenderTimer=null;
 function startRealtimeListeners() {
   if (!fbReady) return;
   fb().onSnapshot(fb().collection(db(), 'orders'), snap => {
     orders = snap.docs.map(d => parseOrder({_id:d.id,...d.data()}));
-    buildDashboard();
-    renderOrders();
-    renderSalesList();
-    renderReports();
+    clearTimeout(_ordersRenderTimer);
+    _ordersRenderTimer = setTimeout(() => {
+      buildDashboard(); renderOrders(); renderSalesList(); renderReports();
+    }, 120);
   });
   fb().onSnapshot(fb().collection(db(), 'products'), snap => {
     const updated = snap.docs.map(d=>({_id:d.id,...d.data()}));
@@ -1891,42 +2029,49 @@ function startRealtimeListeners() {
         minStock:parseInt(p.minStock)||10,
         status:p.status||'active', detail:p.detail||''
       })).filter(p=>p.name&&p.price>0);
-      renderStore('الكل'); renderCats(); renderInventory(); renderManageProds();
+      clearTimeout(_productsRenderTimer);
+      _productsRenderTimer = setTimeout(() => {
+        renderStore('الكل'); renderCats(); renderInventory(); renderManageProds();
+      }, 120);
     }
   });
   fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
-    
-  // ✅ FIX: دمج ذكي — لا نحذف الإشعارات المحلية الجديدة
-  const fromServer = snap.docs.map(d => ({
-    _id:   d.id,
-    title: d.data().title  || '',
-    body:  d.data().body   || d.data().message || '',
-    type:  d.data().type   || 'info',
-    read:  d.data().read   || false,
-    date:  tsToStr(d.data().date || d.data().createdAt),
-    target: d.data().targetUser || 'all'
-  }));
-  // دمج مع الإشعارات المحلية — نتجنب التكرار
-  const serverIds = new Set(fromServer.map(n => n._id));
-  const localOnly  = notifications.filter(n => !serverIds.has(n._id));
-  notifications = [...fromServer, ...localOnly].sort((a, b) => {
-    // الأحدث أولاً
-    if (!a.read && b.read) return -1;
-    if (a.read && !b.read) return 1;
-    return 0;
+  const prevUnreadIds = new Set(
+    notifications.filter(n=>!n.read&&(n.target==='all'||n.target===CU?.username||n.target===CU?.type)).map(n=>n._id)
+  );
+
+  const fromServer = snap.docs.map(d => {
+    const data = d.data();
+    const rawTs = data.date || data.createdAt;
+    const ts = rawTs?.toMillis ? rawTs.toMillis() : (rawTs?.seconds ? rawTs.seconds*1000 : 0);
+    return {
+      _id:    d.id,
+      _ts:    ts,
+      title:  data.title  || '',
+      body:   data.body   || data.message || '',
+      type:   data.type   || 'info',
+      read:   data.read   || false,
+      date:   tsToStr(rawTs),
+      target: data.targetUser || 'all'
+    };
   });
+
+  const serverIds = new Set(fromServer.map(n=>n._id));
+  const localOnly = notifications.filter(n=>!serverIds.has(n._id));
+  notifications = [...fromServer, ...localOnly].sort((a,b)=>(b._ts||0)-(a._ts||0));
+
+  // صوت للإشعارات الجديدة
+  const newUnread = fromServer.filter(n =>
+    !n.read && !prevUnreadIds.has(n._id) &&
+    (n.target==='all' || n.target===CU?.username || n.target===CU?.type)
+  );
+  if (newUnread.length > 0) playNotifSound();
+
   renderNotifBadge();
   renderNotifications();
 });
-    renderNotifBadge();
-    renderNotifications();
- 
   fb().onSnapshot(fb().collection(db(), 'offers'), snap => {
-    offers = snap.docs.map(d=>({
-      _id:d.id, title:d.data().title||'', desc:d.data().description||'',
-      type:d.data().discountType||'percent', value:parseFloat(d.data().value)||0,
-      from:d.data().startDate||'', to:d.data().endDate||'', status:d.data().status||'active'
-    }));
+    offers = snap.docs.map(d=>({_id:d.id, ...d.data()}));
     renderOffersBanner();
     renderOffers();
   });
@@ -2144,6 +2289,7 @@ function showPage(id) {
   if(id==='pageRepTracking')  renderRepTracking();
   if(id==='pageNotifications')renderNotifications();
   if(id==='pageOffers')       renderOffers();
+  if(id==='pageMarketing')    { renderMarketingKpi(); renderContacts(); renderVisitors(); buildMktTemplates(); updateMktAudience(); renderCampaignHistory(); }
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
@@ -2278,7 +2424,12 @@ function updateCartUI(){
   document.getElementById('cartFloat').className='cart-float z1'+(count?' show':'');
 }
 
-function openCartModal(){renderCartItems();openModal('cartModal');}
+function openCartModal(){
+  renderCartItems();
+  const phoneWrap = document.getElementById('visitorPhoneWrap');
+  if (phoneWrap) phoneWrap.style.display = CU ? 'none' : 'block';
+  openModal('cartModal');
+}
 
 function renderCartItems(){
   const keys=Object.keys(cart);
@@ -2343,16 +2494,24 @@ function confirmLoc(){
 // SEND ORDER + POINTS SYSTEM
 // ═══════════════════════════════════════════════════════
 async function sendOrder(){
+  if(_sendingOrder){toast('⏳ جاري إرسال الطلب، انتظر لحظة...',false);return;}
   const shop=document.getElementById('shopName').value.trim();
   const addr=document.getElementById('shopAddr').value.trim();
   const note=document.getElementById('orderNote').value.trim();
+  const visPhone=document.getElementById('visitorPhone')?.value.trim()||'';
   let hasErr=false;
   document.getElementById('shopName').classList.remove('err');
   document.getElementById('shopAddr').classList.remove('err');
+  document.getElementById('visitorPhone')?.classList.remove('err');
   if(!shop){document.getElementById('shopName').classList.add('err');hasErr=true;}
   if(!addr){document.getElementById('shopAddr').classList.add('err');hasErr=true;}
-  if(hasErr){toast('⚠️ أكمل الحقول المطلوبة',false);return;}
+  if(!CU&&!/^\d{11}$/.test(visPhone)){document.getElementById('visitorPhone')?.classList.add('err');hasErr=true;}
+  if(hasErr){toast('⚠️ أكمل الحقول المطلوبة — رقم الهاتف 11 رقم بالضبط',false);return;}
   if(CU?.type==='rep'&&!selLoc){toast('⚠️ المندوب مطلوب منه تحديد الموقع',false);return;}
+  _sendingOrder = true;
+  const sendBtn = document.querySelector('#cartModal .btn-full.btn-lg');
+  if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='⏳ جاري الإرسال...';}
+  try{
 
   let prodList=[],total=0;
   for(const k in cart){prodList.push(`${k}(${cart[k].qty})`);total+=cart[k].qty*cart[k].price;}
@@ -2369,6 +2528,7 @@ async function sendOrder(){
     repUsername:CU?.username||'guest', repName:CU?.name||'زائر',
     commPct, shopName:shop, shopAddress:addr, note:note||'',
     location:selLoc||'',
+    visitorPhone: CU ? '' : visPhone,
     products:prodList.join('، '),
     total, commission, net,
   };
@@ -2433,7 +2593,12 @@ if (Notification?.permission === 'granted') {
   });
 }
   // ✅ فتح واتساب مباشرة — أسرع وأموثق على الموبايل
-const msg = `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
+const locLine  = selLoc  ? `\n🗺️ الموقع: ${selLoc}` : '';
+const noteLine = note    ? `\n📝 ملاحظة: ${note}`    : '';
+const phoneLine= visPhone? `\n📞 هاتف الزائر: ${visPhone}` : '';
+const msg = CU
+  ? `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU.name}\n🏪 ${shop}\n📍 ${addr}${locLine}${noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`
+  : `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${phoneLine}\n🏪 ${shop}\n📍 ${addr}${locLine}${noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
 window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 
 // إرسال إيميل بنفس الوقت
@@ -2441,7 +2606,7 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
 
   orders.push(parseOrder({...orderData,_id:fbId||'',createdAt:nowStr}));
   cart={}; updateCartUI(); closeModal('cartModal');
-  ['shopName','shopAddr','orderNote'].forEach(id=>document.getElementById(id).value='');
+  ['shopName','shopAddr','orderNote','visitorPhone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('locOk').style.display='none'; selLoc='';
   // إشعار تيليغرام
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
@@ -2458,6 +2623,11 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
 
   toast(CU&&commission>0?`✅ الطلب أُرسل! عمولتك: ${commission.toLocaleString()} د.ع`:'✅ تم إرسال الطلب');
   renderStore('الكل'); renderInventory(); renderOrders(); buildDashboard(); renderSalesList();
+  }finally{
+    _sendingOrder=false;
+    const sb=document.querySelector('#cartModal .btn-full.btn-lg');
+    if(sb){sb.disabled=false;sb.innerHTML='📱 إرسال الطلب عبر الواتساب';}
+  }
 }
 
 
@@ -2665,7 +2835,15 @@ function renderOrders() {
   const badge = document.getElementById('ordCountBadge');
   if (badge) badge.textContent = filt.length + ' طلب';
 
+  // إظهار أزرار الأدمن
+  const adminActions = document.getElementById('ordAdminActions');
+  if (adminActions) adminActions.style.display = CU?.type==='admin' ? 'flex' : 'none';
+
+  // حفظ IDs المعروضة للحذف الجماعي
+  window._visibleOrderIds = filt.map(o => o._id||o.id||'').filter(Boolean);
+
   // ── 7. رسم الجدول ──
+  const isAdmin = CU?.type === 'admin';
   document.getElementById('ordBody').innerHTML = filt.length
     ? filt.map(o => `
         <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
@@ -2676,7 +2854,10 @@ function renderOrders() {
           <td style="font-weight:800;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()}</td>
           <td style="color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()}</td>
           <td style="color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()}</td>
-          <td><button class="btn btn-ghost btn-sm">🔍</button></td>
+          <td onclick="event.stopPropagation()" style="white-space:nowrap">
+            <button class="btn btn-ghost btn-sm" onclick="showOrdDetail('${o._id||o.id||''}')">🔍</button>
+            ${isAdmin?`<button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:none" onclick="deleteOrder('${o._id||o.id||''}')">🗑️</button>`:''}
+          </td>
         </tr>`).join('')
     : '<tr><td colspan="8" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد طلبات بهذه الفلاتر</td></tr>';
 }
@@ -2694,6 +2875,72 @@ function resetOrdFilters() {
   renderOrders();
   toast('🔄 تم إعادة تعيين الفلاتر');
 }
+function showOrdDetail(id) {
+  const o = orders.find(x => (x._id||x.id) === id);
+  if (!o) return;
+  const locBtn = o.location ? `<a href="${o.location}" target="_blank" style="color:var(--sky2);font-weight:700;text-decoration:none">🗺️ عرض الموقع</a>` : '—';
+  document.getElementById('ordDetailContent').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:.85rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(14,165,233,.05);border-radius:var(--r12);padding:10px">
+          <div style="font-size:.68rem;color:rgba(9,50,87,.45);margin-bottom:3px">رقم الطلب</div>
+          <div style="font-weight:800;color:var(--sky2);font-size:.78rem">${o.orderId||o._id||'—'}</div>
+        </div>
+        <div style="background:rgba(14,165,233,.05);border-radius:var(--r12);padding:10px">
+          <div style="font-size:.68rem;color:rgba(9,50,87,.45);margin-bottom:3px">التاريخ</div>
+          <div style="font-weight:700">${o.date||'—'}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.8);border:1px solid rgba(14,165,233,.12);border-radius:var(--r12);padding:12px;display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">المندوب</span><span style="font-weight:700">${o.repName||'زائر'}</span></div>
+        ${o.visitorPhone?`<div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">📞 هاتف الزائر</span><span style="font-weight:700;color:var(--sky2)">${o.visitorPhone}</span></div>`:''}
+        <div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">المحل</span><span style="font-weight:700">${o.shopName||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">العنوان</span><span style="font-weight:700">${o.shopAddress||o.addr||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">الموقع</span><span>${locBtn}</span></div>
+        ${o.note?`<div style="display:flex;justify-content:space-between"><span style="color:rgba(9,50,87,.5)">ملاحظة</span><span style="font-weight:700">${o.note}</span></div>`:''}
+      </div>
+      <div style="background:rgba(255,255,255,.8);border:1px solid rgba(14,165,233,.12);border-radius:var(--r12);padding:12px">
+        <div style="font-size:.72rem;color:rgba(9,50,87,.45);margin-bottom:6px">المنتجات</div>
+        <div style="font-weight:700;line-height:1.7">${o.products||'—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:rgba(16,185,129,.07);border-radius:var(--r12);padding:10px">
+          <div style="font-size:.68rem;color:rgba(9,50,87,.45)">الإجمالي</div>
+          <div style="font-weight:900;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()}</div>
+        </div>
+        <div style="background:rgba(234,179,8,.07);border-radius:var(--r12);padding:10px">
+          <div style="font-size:.68rem;color:rgba(9,50,87,.45)">العمولة</div>
+          <div style="font-weight:900;color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()}</div>
+        </div>
+        <div style="background:rgba(20,184,166,.07);border-radius:var(--r12);padding:10px">
+          <div style="font-size:.68rem;color:rgba(9,50,87,.45)">الصافي</div>
+          <div style="font-weight:900;color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()}</div>
+        </div>
+      </div>
+    </div>`;
+  openModal('ordDetailModal');
+}
+
+async function deleteOrder(id) {
+  if (CU?.type !== 'admin') return;
+  if (!confirm('حذف هذا الطلب؟ لا يمكن التراجع.')) return;
+  await fbDel('orders', id).catch(()=>{});
+  orders = orders.filter(o => (o._id||o.id) !== id);
+  renderOrders(); buildDashboard(); renderSalesList(); renderReports();
+  toast('✅ تم حذف الطلب');
+}
+
+async function deleteAllVisibleOrders() {
+  if (CU?.type !== 'admin') return;
+  const ids = window._visibleOrderIds || [];
+  if (!ids.length) return;
+  if (!confirm(`حذف ${ids.length} طلب معروض؟ لا يمكن التراجع.`)) return;
+  await Promise.all(ids.map(id => fbDel('orders', id).catch(()=>{})));
+  orders = orders.filter(o => !ids.includes(o._id||o.id||''));
+  renderOrders(); buildDashboard(); renderSalesList(); renderReports();
+  toast(`✅ تم حذف ${ids.length} طلب`);
+}
+
 // ═══════════════════════════════════════════════════════
 // WALLET
 // ═══════════════════════════════════════════════════════
@@ -2980,8 +3227,18 @@ function renderUsersList(){
       <div style="display:flex;gap:5px;flex-shrink:0">
         <button class="btn btn-ghost btn-sm" onclick="openEditUser(${i})">✏️</button>
         <button class="btn btn-sky btn-sm" onclick="openPayForUser('${u.username}')">💸</button>
+        ${CU?.type==='admin'?`<button class="btn btn-sm" style="background:rgba(244,63,94,.09);color:#e11d48;border:1px solid rgba(244,63,94,.18)" onclick="deleteUser('${u._id}','${u.username}')">🗑️</button>`:''}
       </div>
     </div>`).join('');
+}
+
+async function deleteUser(fbid, username) {
+  if (CU?.type !== 'admin') return;
+  if (!confirm(`حذف المستخدم "${username}"؟ لا يمكن التراجع.`)) return;
+  if (fbid) await fbDel('users', fbid).catch(()=>{});
+  users = users.filter(u => u._id !== fbid && u.username !== username);
+  renderUsersList();
+  toast('✅ تم حذف المستخدم');
 }
 
 function openAddUser(){
@@ -3354,6 +3611,73 @@ function totalOfferUses(o) {
   return Object.values(o.usages||{}).reduce((s,v)=>s+(v||0),0);
 }
 
+/* هل انتهت صلاحية العرض؟ */
+function isOfferExpired(o) {
+  if (!o.to) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(o.to) < today;
+}
+
+/* منتقي صور المنتجات */
+function buildOfferImgPicker() {
+  const wrap   = document.getElementById('offProdImgWrap');
+  const picker = document.getElementById('offProdImgPicker');
+  if (!wrap || !picker) return;
+  const imgs = products.filter(p => p.img).map(p => ({img:p.img, name:p.name}));
+  if (!imgs.length) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  picker.innerHTML = imgs.map(p =>
+    `<img class="prod-img-thumb" src="${p.img}" alt="${p.name}" title="${p.name}" onclick="selectOfferImg('${p.img}',this)">`
+  ).join('');
+  // mark selected if already chosen
+  const cur = document.getElementById('off_img').value;
+  if (cur) {
+    picker.querySelectorAll('.prod-img-thumb').forEach(el => {
+      if (el.src === cur) el.classList.add('selected');
+    });
+  }
+}
+
+function selectOfferImg(url, el) {
+  document.getElementById('off_img').value = url;
+  const preview = document.getElementById('off_img_preview');
+  preview.src = url;
+  preview.style.display = 'block';
+  document.getElementById('offImgLabel').textContent = '✅ تم اختيار الصورة';
+  document.querySelectorAll('#offProdImgPicker .prod-img-thumb').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+/* رفع صورة العرض على ImgBB */
+async function uploadOfferImg(input) {
+  const file = input.files[0]; if (!file) return;
+  const label = document.getElementById('offImgLabel');
+  const preview = document.getElementById('off_img_preview');
+  label.textContent = '⏳ جاري الرفع...';
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej();
+      r.readAsDataURL(file);
+    });
+    const fd = new FormData();
+    fd.append('image', base64);
+    fd.append('key', IMGBB_API_KEY);
+    const resp = await fetch('https://api.imgbb.com/1/upload', {method:'POST', body:fd});
+    const data = await resp.json();
+    if (!data.success) throw new Error();
+    const url = data.data.url;
+    document.getElementById('off_img').value = url;
+    preview.src = url;
+    preview.style.display = 'block';
+    label.textContent = '✅ تم رفع الصورة';
+  } catch {
+    label.textContent = '❌ فشل الرفع — حاول مرة أخرى';
+    toast('فشل رفع صورة العرض', false);
+  }
+}
+
 /* نص قيمة العرض */
 function offerValueSummary(o) {
   if(o.type==='pct_any'||o.type==='pct_prod') return `خصم ${o.value}%${o.prodName?' على '+o.prodName:' على أي منتج'}`;
@@ -3378,11 +3702,14 @@ function renderOffers() {
   if(isAdmin) {
     visible = offers; // الأدمن يشوف الكل
   } else if(CU) {
-    // مسجّل — يشوف العروض المخصصة له فقط والنشطة
-    visible = offers.filter(o => o.status==='active' && isOfferForMe(o));
+    const key = CU.username||CU._id||'';
+    // المستخدم يشوف: العروض النشطة الخاصة به + عروضه المنتهية التي كان قد فعّلها
+    const active  = offers.filter(o => o.status==='active' && !isOfferExpired(o) && isOfferForMe(o));
+    const expired = offers.filter(o => isOfferExpired(o) && (o.claims||{})[key]);
+    visible = [...active, ...expired];
   } else {
     // زائر — يشوف العروض العامة بدون زر استخدام
-    visible = offers.filter(o => o.status==='active' && (o.targetType==='all'||!o.targetType));
+    visible = offers.filter(o => o.status==='active' && !isOfferExpired(o) && (o.targetType==='all'||!o.targetType));
   }
 
   if(!visible.length) {
@@ -3401,14 +3728,15 @@ function renderOffers() {
     const totUses   = totalOfferUses(o);
     const totMax    = parseInt(o.totalMaxUses)||0;
     const totExhausted = totMax>0 && totUses>=totMax;
-    const done      = exhausted || totExhausted;
+    const expired   = isOfferExpired(o);
+    const done      = exhausted || totExhausted || expired;
 
     // شريط التقدم لكل عرض
     const progressPct = maxPer>0 ? Math.min(100, Math.round(myUses/maxPer*100)) : 0;
 
     // الجمهور المستهدف
     let targetLabel = '';
-    if(o.targetType==='all')          targetLabel = '🌐 للجميع';
+    if(o.targetType==='all')              targetLabel = '🌐 للجميع';
     else if(o.targetType==='all_reps')    targetLabel = '🤝 كل المندوبين';
     else if(o.targetType==='all_markets') targetLabel = '🏪 كل الماركتات';
     else if(o.targetType==='specific') {
@@ -3417,9 +3745,11 @@ function renderOffers() {
     }
 
     return `
-    <div class="offer-card ${done?'offer-done':''}">
+    <div class="offer-card ${expired?'offer-expired-card':''}${done&&!expired?'offer-done':''}">
       <div class="offer-card-header">
-        <div style="font-size:1.8rem;line-height:1">${getOfferIcon(o.type)}</div>
+        ${o.img
+          ? `<img class="offer-card-img" src="${o.img}" alt="${o.title}">`
+          : `<div style="font-size:1.8rem;line-height:1;width:46px;height:46px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));border-radius:var(--r12);flex-shrink:0">${getOfferIcon(o.type)}</div>`}
         <div style="flex:1;min-width:0">
           <div class="offer-title">${o.title}</div>
           <div style="font-size:.75rem;color:var(--sky2);font-weight:700;margin-top:3px">${getOfferTypeName(o.type)}</div>
@@ -3427,7 +3757,9 @@ function renderOffers() {
           ${o.desc?`<div class="offer-desc" style="margin-top:4px">${o.desc}</div>`:''}
         </div>
         <div style="text-align:left;min-width:90px">
-          <span class="badge ${o.status==='active'?'b-green':'b-red'}">${o.status==='active'?'🟢 نشط':'🔴 موقف'}</span>
+          ${expired
+            ? `<span class="badge-exp">⏰ منتهي</span>`
+            : `<span class="badge ${o.status==='active'?'b-green':'b-red'}">${o.status==='active'?'🟢 نشط':'🔴 موقف'}</span>`}
           ${isAdmin?`<div style="font-size:.68rem;color:rgba(9,50,87,.4);margin-top:4px">استُخدم ${totUses} مرة${totMax?'/'+totMax:''}</div>`:''}
           ${isAdmin?`<button class="btn btn-ghost btn-sm" style="margin-top:6px;padding:3px 9px;font-size:.72rem" onclick="openEditOffer('${o._id}')">✏️ تعديل</button>`:''}
         </div>
@@ -3440,15 +3772,17 @@ function renderOffers() {
         </div>
         ${CU&&!isAdmin?`
         <div style="margin:8px 0 2px;background:rgba(14,165,233,.08);border-radius:var(--r99);height:6px;overflow:hidden">
-          <div style="height:100%;width:${progressPct}%;background:${progressPct>=100?'var(--rose)':'var(--sky2)'};border-radius:var(--r99);transition:width .3s"></div>
+          <div style="height:100%;width:${progressPct}%;background:${progressPct>=100||expired?'var(--rose)':'var(--sky2)'};border-radius:var(--r99);transition:width .3s"></div>
         </div>`:''}
-        ${CU ? (done
-          ? `<div style="text-align:center;padding:10px;font-size:.82rem;color:rgba(9,50,87,.4);background:rgba(0,0,0,.03);border-radius:var(--r12);margin-top:8px">
-              🚫 ${exhausted?'استنفدت رصيدك من هذا العرض':'العرض وصل حده الكلي'}</div>`
-          : `<button class="offer-add-btn" onclick="useOffer('${o._id}')">
-              ${getOfferIcon(o.type)} استخدام العرض</button>`)
-          : `<button class="offer-add-btn" onclick="showLogin()" style="background:linear-gradient(135deg,var(--sky2),var(--teal2))">
-              👤 سجّل دخول للاستفادة</button>`}
+        ${expired
+          ? `<div class="offer-exp-msg">⏰ انتهت صلاحية هذا العرض — لا يمكن الاستفادة منه</div>`
+          : CU ? (done
+            ? `<div style="text-align:center;padding:10px;font-size:.82rem;color:rgba(9,50,87,.4);background:rgba(0,0,0,.03);border-radius:var(--r12);margin-top:8px">
+                🚫 ${exhausted?'استنفدت رصيدك من هذا العرض':'العرض وصل حده الكلي'}</div>`
+            : `<button class="offer-add-btn" onclick="useOffer('${o._id}')">
+                ${getOfferIcon(o.type)} استخدام العرض</button>`)
+            : `<button class="offer-add-btn" onclick="showLogin()" style="background:linear-gradient(135deg,var(--sky2),var(--teal2))">
+                👤 سجّل دخول للاستفادة</button>`}
       </div>
     </div>`;
   }).join('');
@@ -3459,6 +3793,7 @@ async function useOffer(offerId) {
   const o = offers.find(x=>x._id===offerId);
   if(!o || !CU) return;
   // التحقق من الصلاحية
+  if(isOfferExpired(o)) { toast('🚫 انتهت صلاحية هذا العرض', false); return; }
   if(!isOfferForMe(o)) { toast('🚫 هذا العرض غير متاح لك', false); return; }
   if(isOfferExhausted(o)) { toast('🚫 استنفدت رصيدك من هذا العرض', false); return; }
   const totMax = parseInt(o.totalMaxUses)||0;
@@ -3516,11 +3851,14 @@ async function useOffer(offerId) {
     toast(`🛒 تمت إضافة منتجات عرض "${o.title}" للسلة`);
   }
 
-  // سجّل الاستخدام في Firestore
+  // سجّل الاستخدام في Firestore + سجّل الـ claim بالحساب
   const usages = {...(o.usages||{})};
   usages[key] = (usages[key]||0)+1;
   o.usages = usages;
-  await fbUpdate('offers', o._id, {usages}).catch(()=>{});
+  const claims = {...(o.claims||{})};
+  if (!claims[key]) claims[key] = { at: new Date().toISOString(), expiresAt: o.to||'' };
+  o.claims = claims;
+  await fbUpdate('offers', o._id, {usages, claims}).catch(()=>{});
 
   updateCartUI();
   renderOffers();
@@ -3617,8 +3955,13 @@ function openAddOffer(){
   document.getElementById('off_target_type').value='all';
   document.getElementById('off_status').value='active';
   document.getElementById('off_specific_wrap').style.display='none';
+  document.getElementById('off_img').value='';
+  document.getElementById('off_img_preview').src='';
+  document.getElementById('off_img_preview').style.display='none';
+  document.getElementById('offImgLabel').textContent='🖼️ اضغط لرفع صورة جديدة';
   comboItemCount=0;
   offerTypeChanged();
+  buildOfferImgPicker();
   openModal('offerModal');
 }
 
@@ -3640,7 +3983,11 @@ function openEditOffer(fbid){
   document.getElementById('off_target_type').value=o.targetType||'all';
   document.getElementById('off_combo_val').value=o.comboVal||0;
   document.getElementById('off_combo_free_qty').value=o.comboFreeQty||1;
+  const _imgPrev=document.getElementById('off_img_preview');
+  if(o.img){document.getElementById('off_img').value=o.img;_imgPrev.src=o.img;_imgPrev.style.display='block';document.getElementById('offImgLabel').textContent='✅ صورة موجودة';}
+  else{document.getElementById('off_img').value='';_imgPrev.src='';_imgPrev.style.display='none';document.getElementById('offImgLabel').textContent='🖼️ اضغط لرفع صورة جديدة';}
   offerTypeChanged();
+  buildOfferImgPicker();
   offerTargetChanged();
   // restore specific users
   if(o.targetType==='specific') {
@@ -3722,7 +4069,8 @@ async function saveOffer(){
     extra.comboVal    = parseFloat(document.getElementById('off_combo_val')?.value)||0;
   }
 
-  const offerData = {title,desc,type,status,from,to,targetType,targetUsers,maxUsesPerUser,totalMaxUses,...extra};
+  const img = document.getElementById('off_img').value;
+  const offerData = {title,desc,type,status,from,to,targetType,targetUsers,maxUsesPerUser,totalMaxUses,img,...extra};
 
   if(fbid){
     await fbUpdate('offers',fbid,offerData).catch(()=>{});
@@ -3766,24 +4114,77 @@ async function renderRepTracking(){
 // ═══════════════════════════════════════════════════════
 // NOTIFICATIONS
 // ═══════════════════════════════════════════════════════
+/* ── صوت الإشعار ── */
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    [[880, now, 0.22], [1100, now+0.13, 0.2], [1320, now+0.26, 0.16]].forEach(([freq, t, vol]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      o.start(t); o.stop(t + 0.3);
+    });
+  } catch(e) {}
+}
+
 function renderNotifBadge(){
   const unread=notifications.filter(n=>!n.read&&(n.target==='all'||n.target===CU?.username||n.target===CU?.type)).length;
   document.querySelectorAll('#sbNav .nav-badge').forEach(b=>b.textContent=unread);
 }
 
 function renderNotifications(){
-  const myNotifs=notifications.filter(n=>n.target==='all'||n.target===CU?.username||n.target===CU?.type);
-  document.getElementById('notifList').innerHTML=myNotifs.length?[...myNotifs].reverse().map(n=>`
-    <div class="notif-item ${n.read?'read':'unread'}" onclick="markRead('${n._id}')">
-      <div class="notif-ico notif-ico-${n.type==='order'?'order':n.type==='warn'?'warn':'info'}">${n.type==='order'?'📦':n.type==='warn'?'⚠️':'ℹ️'}</div>
-      <div style="flex:1">
+  const now5 = Date.now() - 5*24*60*60*1000;
+  const myNotifs = notifications
+    .filter(n => (n.target==='all' || n.target===CU?.username || n.target===CU?.type) && (!n._ts || n._ts >= now5))
+    .sort((a,b) => (b._ts||0) - (a._ts||0));
+
+  const typeIco  = t => t==='order'?'📦':t==='warn'?'⚠️':'ℹ️';
+  const typeClass= t => t==='order'?'order':t==='warn'?'warn':'info';
+  const isAdmin  = CU?.type === 'admin';
+
+  document.getElementById('notifList').innerHTML = myNotifs.length ? myNotifs.map(n=>`
+    <div class="notif-item ${n.read?'read':'unread'}">
+      <div class="notif-ico notif-ico-${typeClass(n.type)}" style="cursor:pointer" onclick="viewNotif('${n._id}')">
+        ${typeIco(n.type)}
+      </div>
+      <div style="flex:1;min-width:0" onclick="markRead('${n._id}')">
         <div class="notif-title">${n.title}</div>
         <div class="notif-body">${n.body}</div>
-        <div class="notif-time">${n.date}</div>
+        <div class="notif-time">🕐 ${n.date}</div>
       </div>
-      ${!n.read?'<div style="width:8px;height:8px;border-radius:50%;background:var(--sky);flex-shrink:0;margin-top:4px"></div>':''}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0">
+        ${!n.read?'<div style="width:8px;height:8px;border-radius:50%;background:var(--sky)"></div>':''}
+        <button class="notif-view-btn" onclick="viewNotif('${n._id}')">عرض</button>
+        ${isAdmin?`<button class="notif-view-btn" style="color:#e11d48;background:rgba(244,63,94,.08)" onclick="deleteNotif('${n._id}')">🗑️</button>`:''}
+      </div>
     </div>`).join('')
-  :'<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)">لا توجد إشعارات</div>';
+  : '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)">لا توجد إشعارات</div>';
+}
+
+async function deleteNotif(id) {
+  if (!confirm('حذف هذا الإشعار؟')) return;
+  await fbDel('notifications', id).catch(()=>{});
+  notifications = notifications.filter(n => n._id !== id);
+  renderNotifications();
+  renderNotifBadge();
+}
+
+function viewNotif(id) {
+  const n = notifications.find(x=>x._id===id); if(!n) return;
+  const t = n.type==='order'?'order':n.type==='warn'?'warn':'info';
+  const ico = n.type==='order'?'📦':n.type==='warn'?'⚠️':'ℹ️';
+  const el = document.getElementById('notifDetailIcon');
+  el.textContent = ico;
+  el.className = `notif-detail-icon notif-ico-${t}`;
+  document.getElementById('notifDetailTitle').textContent = n.title;
+  document.getElementById('notifDetailBody').textContent  = n.body || '—';
+  document.getElementById('notifDetailTime').textContent  = '🕐 ' + n.date;
+  openModal('notifDetailModal');
+  if(!n.read) markRead(id);
 }
 
 async function markRead(id){
@@ -3796,12 +4197,14 @@ async function markRead(id){
 }
 
 async function markAllRead(){
+  const updates = [];
   for(const n of notifications){
-    if(!n.read&&(n.target==='all'||n.target===CU?.username)){
+    if(!n.read&&(n.target==='all'||n.target===CU?.username||n.target===CU?.type)){
       n.read=true;
-      if(n._id) await fbUpdate('notifications',n._id,{read:true}).catch(()=>{});
+      if(n._id) updates.push(fbUpdate('notifications',n._id,{read:true}).catch(()=>{}));
     }
   }
+  await Promise.all(updates);
   renderNotifications();renderNotifBadge();buildSidebar();
   toast('✅ تم تحديد الكل كمقروء');
 }
@@ -3864,23 +4267,8 @@ function getRepOrders() {
   return base;
 }
 
-function isAfterDate(dateStr, d) {
-  if(!dateStr||dateStr==='—') return false;
-  try {
-    const parts = dateStr.replace(/[٠-٩]/g,(c)=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).split('/');
-    const od = parts.length===3 ? new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0])) : new Date(dateStr);
-    return od >= d;
-  } catch { return false; }
-}
-
-function isBeforeDate(dateStr, d) {
-  if(!dateStr||dateStr==='—') return false;
-  try {
-    const parts = dateStr.replace(/[٠-٩]/g,(c)=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).split('/');
-    const od = parts.length===3 ? new Date(parseInt(parts[2]),parseInt(parts[1])-1,parseInt(parts[0])) : new Date(dateStr);
-    return od <= d;
-  } catch { return false; }
-}
+function isAfterDate(dateStr, d)  { const t=parseArabicDate(dateStr); return t>0 && t>=d.getTime(); }
+function isBeforeDate(dateStr, d) { const t=parseArabicDate(dateStr); return t>0 && t<=d.getTime(); }
 
 function renderReports() {
   // ✅ FIX: التحقق من تحميل البيانات أولاً
@@ -4048,11 +4436,6 @@ function parseArabicDate(dateStr) {
 
 
 
-function isBeforeDate(dateStr, d) {
-  const t = parseArabicDate(dateStr);
-  return t > 0 && t <= d.getTime();
-}
-  
 function isThisMonth(dateStr){
   if(!dateStr||dateStr==='—') return false;
   try{
@@ -4085,7 +4468,7 @@ function safeName(s){return(s||'').replace(/[^\w\u0621-\u064A]/g,'_');}
 function renderOffersBanner() {
   const wrap = document.getElementById('offersBannerWrap');
   if (!wrap) return;
-  const activeOffers = offers.filter(o => o.status === 'active');
+  const activeOffers = offers.filter(o => o.status === 'active' && !isOfferExpired(o));
   if (!activeOffers.length) {
     // Default promotional slides when no offers
     const defaults = [
@@ -4101,6 +4484,7 @@ function renderOffersBanner() {
     val: o.type==='percent' ? o.value+'%' : o.type==='free' ? 'مجاني' : (parseFloat(o.value)||0).toLocaleString()+' د.ع',
     sub: o.type==='percent' ? 'خصم' : o.type==='free' ? 'هدية' : 'توفير',
     color: i % 5,
+    img: o.img || null,
     idx: i
   }));
   renderBannerSlides(slides);
@@ -4116,7 +4500,9 @@ function renderBannerSlides(slides) {
       <div class="offers-banner-track" id="bannerTrack">
         ${slides.map((s,i) => `
           <div class="offer-slide offer-slide-${s.color}">
-            <div class="offer-slide-icon">${['🎁','⭐','🔥','💎','🚀'][s.color]}</div>
+            ${s.img
+              ? `<img class="offer-slide-img" src="${s.img}" alt="">`
+              : `<div class="offer-slide-icon">${['🎁','⭐','🔥','💎','🚀'][s.color]}</div>`}
             <div class="offer-slide-text">
               <div class="offer-slide-title">${s.title}</div>
               <div class="offer-slide-desc">${s.desc}</div>
@@ -5249,6 +5635,69 @@ function renderMarketingKpi() {
     <div class="kpi-card kpi-gold"><div class="kpi-icon">✅</div><div class="kpi-val">${withNewsLetter}</div><div class="kpi-lbl">مشتركون بالإشعارات</div></div>`;
 }
 
+function switchMktTab(tab) {
+  const usersEl    = document.getElementById('contactsList');
+  const visitorsEl = document.getElementById('visitorsList');
+  const tabU = document.getElementById('mktTabUsers');
+  const tabV = document.getElementById('mktTabVisitors');
+  if (!usersEl || !visitorsEl) return;
+  if (tab === 'visitors') {
+    usersEl.style.display    = 'none';
+    visitorsEl.style.display = 'block';
+    tabV.style.color         = 'var(--sky2)';
+    tabV.style.borderBottom  = '2.5px solid var(--sky2)';
+    tabU.style.color         = 'rgba(9,50,87,.45)';
+    tabU.style.borderBottom  = 'none';
+    renderVisitors();
+  } else {
+    visitorsEl.style.display = 'none';
+    usersEl.style.display    = 'block';
+    tabU.style.color         = 'var(--sky2)';
+    tabU.style.borderBottom  = '2.5px solid var(--sky2)';
+    tabV.style.color         = 'rgba(9,50,87,.45)';
+    tabV.style.borderBottom  = 'none';
+  }
+}
+
+function renderVisitors() {
+  const el = document.getElementById('visitorsList');
+  if (!el) return;
+  const q = (document.getElementById('contactSearch')?.value||'').toLowerCase();
+  // تجميع الزوار الفريدين من الطلبات
+  const visMap = new Map();
+  orders.filter(o => o.visitorPhone).forEach(o => {
+    const ph = o.visitorPhone;
+    if (!visMap.has(ph)) {
+      visMap.set(ph, { phone: ph, shopName: o.shopName||'—', addr: o.shopAddress||o.addr||'—', orders: 0, total: 0, lastDate: o.date||'' });
+    }
+    const v = visMap.get(ph);
+    v.orders++;
+    v.total += parseFloat(o.total)||0;
+    v.lastDate = o.date || v.lastDate;
+  });
+  let visitors = [...visMap.values()];
+  if (q) visitors = visitors.filter(v => v.phone.includes(q) || v.shopName.toLowerCase().includes(q) || v.addr.toLowerCase().includes(q));
+  const badge = document.getElementById('visitorsCountBadge');
+  if (badge) badge.textContent = visMap.size;
+  el.innerHTML = visitors.length ? visitors.map(v => `
+    <div class="contact-row">
+      <div class="contact-av">👤</div>
+      <div class="contact-info">
+        <div class="contact-name">${v.shopName}</div>
+        <div class="contact-meta">📞 ${v.phone} · 📍 ${v.addr}</div>
+        <div class="contact-badges">
+          <span class="badge b-sky">${v.orders} طلب</span>
+          <span class="badge b-green">${v.total.toLocaleString()} د.ع</span>
+          <span class="badge b-teal">آخر طلب: ${v.lastDate}</span>
+        </div>
+      </div>
+      <div style="flex-shrink:0">
+        <a href="https://wa.me/${v.phone.replace(/\D/g,'')}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;text-decoration:none">💬</a>
+      </div>
+    </div>`).join('')
+  : '<div style="text-align:center;padding:35px;color:rgba(9,50,87,.35)">لا يوجد زوار بعد</div>';
+}
+
 function renderContacts() {
   const el = document.getElementById('contactsList');
   if (!el) return;
@@ -5478,133 +5927,14 @@ document.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
-<!-- ═══ MARKETING PAGE ═══ -->
-<div class="page" id="pageMarketing">
-  <div class="ph"><h1>📣 التسويق</h1><p>إرسال رسائل ترويجية للعملاء</p></div>
-
-  <!-- Stats Row -->
-  <div class="kpi-grid" id="mktKpi" style="margin-bottom:16px"></div>
-
-  <!-- Compose Section -->
-  <div class="mkt-compose">
-    <div style="font-size:.9rem;font-weight:800;color:var(--deep);margin-bottom:14px">✉️ إنشاء رسالة تسويقية</div>
-
-    <!-- Channel -->
-    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:6px">القناة</div>
-    <div class="mkt-channel-tabs">
-      <button class="mkt-ch on email" id="mktChEmail" onclick="setMktChannel('email')">📧 إيميل</button>
-      <button class="mkt-ch wa" id="mktChWa" onclick="setMktChannel('wa')">💬 واتساب</button>
-      <button class="mkt-ch both" id="mktChBoth" onclick="setMktChannel('both')">🔁 الاثنين</button>
-    </div>
-
-    <!-- Templates -->
-    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">قوالب جاهزة</div>
-    <div class="template-cards" id="mktTemplates"></div>
-
-    <!-- Subject (email only) -->
-    <div class="fg" id="mktSubjectWrap">
-      <label class="fl">موضوع الإيميل *</label>
-      <input id="mktSubject" type="text" class="fi" placeholder="مثال: عرض خاص — خصم 20% هذا الأسبوع">
-    </div>
-
-    <!-- Message Body -->
-    <div class="fg"><label class="fl">نص الرسالة *</label>
-      <textarea id="mktBody" class="fta" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updateMktPreview()"></textarea>
-    </div>
-
-    <!-- Variables hint -->
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700;align-self:center">متغيرات:</span>
-      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 {name}</span>
-      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 {shop}</span>
-      <span class="badge b-mint" style="cursor:pointer" onclick="insertVar('{points}')">⭐ {points}</span>
-      <span class="badge b-gold" style="cursor:pointer" onclick="insertVar('{balance}')">💰 {balance}</span>
-      <span class="badge b-violet" style="cursor:pointer" onclick="insertVar('{city}')">📍 {city}</span>
-    </div>
-
-    <!-- Audience -->
-    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">👥 الجمهور المستهدف</div>
-    <div class="audience-selector">
-      <label class="aud-chip" id="aud_all">
-        <input type="checkbox" id="aud_all_cb" checked onchange="toggleAud('all')">
-        <span>🌐 الجميع</span>
-        <span class="badge b-sky" id="aud_all_cnt">0</span>
-      </label>
-      <label class="aud-chip" id="aud_rep">
-        <input type="checkbox" id="aud_rep_cb" onchange="toggleAud('rep')">
-        <span>🤝 المندوبون</span>
-        <span class="badge b-teal" id="aud_rep_cnt">0</span>
-      </label>
-      <label class="aud-chip" id="aud_mkt">
-        <input type="checkbox" id="aud_mkt_cb" onchange="toggleAud('market_owner')">
-        <span>🏪 الماركتات</span>
-        <span class="badge b-mint" id="aud_mkt_cnt">0</span>
-      </label>
-      <label class="aud-chip" id="aud_city">
-        <input type="checkbox" id="aud_city_cb" onchange="toggleAud('city')">
-        <span>📍 مدينة محددة</span>
-      </label>
-    </div>
-
-    <!-- City filter (shown when city selected) -->
-    <div id="mktCityFilter" style="display:none" class="fg">
-      <label class="fl">اختر المدينة</label>
-      <select id="mktCitySelect" class="fsel" onchange="updateMktAudience()">
-        <option value="">— اختر —</option>
-        <option>بغداد</option><option>البصرة</option><option>الموصل</option>
-        <option>أربيل</option><option>كربلاء</option><option>النجف</option>
-        <option>كركوك</option><option>السليمانية</option>
-      </select>
-    </div>
-
-    <!-- Preview -->
-    <div class="mkt-preview-box" id="mktPreviewBox" style="display:none">
-      <div class="mkt-preview-label">👁️ معاينة الرسالة (كما سيستلمها العميل)</div>
-      <div class="mkt-preview-content" id="mktPreviewContent"></div>
-    </div>
-
-    <!-- Recipient count -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:8px">
-      <div class="stats-bar" id="mktAudStats">
-        <span class="stat-pill sp-total">📤 سيُرسل لـ <span id="mktRecipCount">0</span> شخص</span>
-      </div>
-      <button class="btn btn-gold btn-lg" onclick="sendCampaign()" id="mktSendBtn" style="min-width:140px">
-        🚀 إرسال الحملة
-      </button>
-    </div>
-
-    <!-- Send Progress -->
-    <div class="send-progress-wrap" id="sendProgressWrap">
-      <div style="display:flex;justify-content:space-between;font-size:.8rem;font-weight:800;color:var(--sky2)">
-        <span id="sendStatusTxt">جاري الإرسال...</span>
-        <span id="sendPct">0%</span>
-      </div>
-      <div class="send-prog-bar"><div class="send-prog-fill" id="sendProgFill"></div></div>
-      <div class="send-log" id="sendLog"></div>
-    </div>
-  </div>
-
-  <!-- Contacts Database -->
-  <div class="card">
-    <div class="card-hd">
-      <div class="card-title">📋 قاعدة بيانات العملاء</div>
-      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
-        <input type="text" id="contactSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderContacts()">
-        <button class="btn btn-ghost btn-sm" onclick="exportContacts()">📥 تصدير Excel</button>
-      </div>
-    </div>
-    <div class="contacts-tbl-wrap" id="contactsList"></div>
-  </div>
-
-  <!-- Campaign History -->
-  <div class="card">
-    <div class="card-title" style="margin-bottom:14px">📊 سجل الحملات</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>التاريخ</th><th>موضوع الحملة</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th></tr></thead>
-        <tbody id="campaignHistory"></tbody>
-      </table>
-    </div>
+<!-- ═══ NOTIFICATION DETAIL MODAL ═══ -->
+<div class="modal z1" id="notifDetailModal">
+  <div class="m-box" style="max-width:420px">
+    <button class="m-close" onclick="closeModal('notifDetailModal')">✕</button>
+    <div id="notifDetailIcon" class="notif-detail-icon notif-ico-info">ℹ️</div>
+    <div class="m-title" id="notifDetailTitle" style="margin-bottom:8px"></div>
+    <div id="notifDetailBody" style="font-size:.85rem;color:rgba(9,50,87,.6);line-height:1.7;text-align:center;margin-bottom:12px;white-space:pre-wrap"></div>
+    <div id="notifDetailTime" style="font-size:.72rem;color:rgba(9,50,87,.35);text-align:center"></div>
   </div>
 </div>
 

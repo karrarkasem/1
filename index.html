@@ -1247,13 +1247,10 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     <div class="fg"><label class="fl">نص الرسالة *</label>
       <textarea id="mktBody" class="fta" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updateMktPreview()"></textarea>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px">
-      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700;align-self:center">متغيرات:</span>
-      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 {name}</span>
-      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 {shop}</span>
-      <span class="badge b-mint" style="cursor:pointer" onclick="insertVar('{points}')">⭐ {points}</span>
-      <span class="badge b-gold" style="cursor:pointer" onclick="insertVar('{balance}')">💰 {balance}</span>
-      <span class="badge b-violet" style="cursor:pointer" onclick="insertVar('{city}')">📍 {city}</span>
+    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700">متغيرات:</span>
+      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 الاسم</span>
+      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 الماركت</span>
     </div>
     <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">👥 الجمهور المستهدف</div>
     <div class="audience-selector">
@@ -1324,10 +1321,16 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     <div id="visitorsList" style="display:none"></div>
   </div>
   <div class="card">
-    <div class="card-title" style="margin-bottom:14px">📊 سجل الحملات</div>
+    <div class="card-hd">
+      <div class="card-title">📊 سجل الحملات</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="campaignSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderCampaignHistory()">
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:1px solid rgba(244,63,94,.18)" onclick="deleteAllCampaigns()">🗑️ حذف الكل</button>
+      </div>
+    </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>التاريخ</th><th>موضوع الحملة</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th></tr></thead>
+        <thead><tr><th>التاريخ</th><th>الموضوع</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th><th></th></tr></thead>
         <tbody id="campaignHistory"></tbody>
       </table>
     </div>
@@ -5496,82 +5499,65 @@ async function sendCampaign() {
   const btn = document.getElementById('mktSendBtn');
   if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الإرسال...'; }
 
-  const progWrap = document.getElementById('sendProgressWrap');
-  const progFill = document.getElementById('sendProgFill');
-  const progPct  = document.getElementById('sendPct');
-  const statusTxt= document.getElementById('sendStatusTxt');
-  const logEl    = document.getElementById('sendLog');
+  const progWrap  = document.getElementById('sendProgressWrap');
+  const progFill  = document.getElementById('sendProgFill');
+  const progPct   = document.getElementById('sendPct');
+  const statusTxt = document.getElementById('sendStatusTxt');
+  const logEl     = document.getElementById('sendLog');
   if (progWrap) progWrap.style.display = 'block';
   if (logEl) logEl.innerHTML = '';
 
-  let sent=0, failed=0;
+  let emailSent=0, emailFailed=0;
   const campaignId = 'CAM'+Date.now();
+  const emailRecips = (mktChannel==='email'||mktChannel==='both') ? recipients.filter(u=>u.email) : [];
 
-  for (let i=0; i<recipients.length; i++) {
-    const user = recipients[i];
+  // ── إرسال الإيميلات ──
+  for (let i=0; i<emailRecips.length; i++) {
+    const user = emailRecips[i];
     const msgText = personalizeMsg(body, user);
-    const pct = Math.round(((i+1)/recipients.length)*100);
+    const pct = Math.round(((i+1)/emailRecips.length)*100);
     if (progFill) progFill.style.width = pct+'%';
-    if (progPct)  progPct.textContent = pct+'%';
-    if (statusTxt) statusTxt.textContent = `إرسال لـ ${user.name} (${i+1}/${recipients.length})`;
+    if (progPct)  progPct.textContent  = pct+'%';
+    if (statusTxt) statusTxt.textContent = `📧 إرسال لـ ${user.name} (${i+1}/${emailRecips.length})`;
 
-    let ok = false;
-    // Email sending
-    if ((mktChannel==='email'||mktChannel==='both') && user.email) {
-      try {
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          to_email: user.email,
-          subject,
-          rep_name: user.name,
-          shop_name: user.shopName || '',
-          order_id: campaignId,
-          order_date: new Date().toLocaleString('ar-IQ'),
-          products: msgText,
-          total:'', commission:'', net:'', shop_addr:'', shop_note:'', location:'',
-        });
-        ok = true;
-        addSendLog(logEl, `✅ إيميل → ${user.name} (${user.email})`, true);
-      } catch(e) {
-        addSendLog(logEl, `❌ فشل إيميل → ${user.name}: ${e.message||e}`, false);
-      }
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email:   user.email,
+        subject,
+        rep_name:   user.name,
+        shop_name:  user.shopName || '',
+        order_id:   campaignId,
+        order_date: new Date().toLocaleString('ar-IQ'),
+        products:   msgText,
+        total:'', commission:'', net:'', shop_addr:'', shop_note:'', location:'',
+      });
+      emailSent++;
+      addSendLog(logEl, `✅ ${user.name} — ${user.email}`, true);
+    } catch(e) {
+      emailFailed++;
+      addSendLog(logEl, `❌ ${user.name} — ${e.text||e.message||'خطأ'}`, false);
     }
-
-    // WhatsApp sending
-    if ((mktChannel==='wa'||mktChannel==='both') && user.phone) {
-      try {
-        const waPhone = user.phone.replace(/\+|\s/g,'');
-        // For bulk WA, we open links — in production use WA Business API
-        // Here we log the message for admin to send
-        await fbAdd('waCampaignQueue', {
-          campaignId, phone: waPhone, name: user.name,
-          message: msgText, status:'pending',
-          date: new Date().toISOString()
-        });
-        ok = true;
-        addSendLog(logEl, `💬 واتساب مُجدوَل → ${user.name} (${user.phone})`, true);
-      } catch(e) {
-        addSendLog(logEl, `❌ فشل واتساب → ${user.name}`, false);
-      }
-    }
-
-    // Fallback: save notification in app
-    await fbAdd('notifications', {
+    // إشعار داخل التطبيق
+    fbAdd('notifications', {
       title: `📣 ${subject}`,
-      body: msgText.substring(0, 120) + (msgText.length > 120 ? '...' : ''),
-      type: 'info', read: false,
+      body: msgText.substring(0,120),
+      type:'info', read:false,
       targetUser: user.username,
       date: new Date().toLocaleDateString('ar-IQ')
     }).catch(()=>{});
 
-    if (ok) sent++; else failed++;
-    await new Promise(r => setTimeout(r, 80)); // small delay
+    await new Promise(r=>setTimeout(r, 120));
   }
 
-  // Save campaign record
+  if (statusTxt) statusTxt.textContent = emailRecips.length
+    ? `✅ الإيميلات: ${emailSent} نجاح${emailFailed?' | '+emailFailed+' فشل':''}`
+    : '—';
+
+  // ── حفظ سجل الحملة ──
   const campData = {
     campaignId, subject, channel: mktChannel,
     bodyPreview: body.substring(0,100),
-    totalSent: sent, totalFailed: failed,
+    totalSent: emailSent, totalFailed: emailFailed,
     recipientCount: recipients.length,
     sentBy: CU?.name || '—',
     date: new Date().toLocaleDateString('ar-IQ')
@@ -5579,19 +5565,23 @@ async function sendCampaign() {
   await fbAdd('campaigns', campData).catch(()=>{});
   campaigns.unshift({ ...campData, _id: campaignId });
 
-  if (statusTxt) statusTxt.textContent = `✅ اكتمل الإرسال`;
-  setTimeout(() => {
-    if (progWrap) progWrap.style.display = 'none';
-  }, 5000);
-
+  setTimeout(() => { if(progWrap) progWrap.style.display='none'; }, 4000);
   if (btn) { btn.disabled=false; btn.textContent='🚀 إرسال الحملة'; }
-  toast(`✅ تم الإرسال: ${sent} نجاح${failed?' | '+failed+' فشل':''}`);
-  renderCampaignHistory();
 
-  // Open WA bulk sender if WA channel selected
-  if (mktChannel === 'wa' || mktChannel === 'both') {
-    openWaBulkSender(recipients, body);
+  if (emailRecips.length)
+    toast(`✅ إيميلات: ${emailSent} وصلت${emailFailed?' | '+emailFailed+' فشلت':''}`);
+
+  // ── واتساب: فتح نافذة الإرسال الجماعي ──
+  if (mktChannel==='wa' || mktChannel==='both') {
+    const waRecips = recipients.filter(u=>u.phone);
+    if (waRecips.length) {
+      openWaBulkSender(waRecips, body);
+    } else {
+      toast('⚠️ لا يوجد مستلمون بأرقام واتساب', false);
+    }
   }
+
+  renderCampaignHistory();
 }
 
 function addSendLog(el, msg, ok) {
@@ -5604,21 +5594,36 @@ function addSendLog(el, msg, ok) {
 }
 
 function openWaBulkSender(recipients, bodyTemplate) {
-  // Build WA links for all recipients with phones
   const withPhone = recipients.filter(u => u.phone);
   if (!withPhone.length) { toast('⚠️ لا يوجد أرقام واتساب', false); return; }
 
-  // Open first one (browser popup restriction — user can loop)
-  const first = withPhone[0];
-  const msg = personalizeMsg(bodyTemplate, first);
-  const waPhone = first.phone.replace(/\+|\s/g,'');
-  window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+  const infoEl = document.getElementById('waBulkInfo');
+  const listEl = document.getElementById('waBulkList');
+  if (!infoEl || !listEl) return;
 
-  if (withPhone.length > 1) {
-    toast(`💡 تم فتح واتساب للأول. لإرسال الباقين (${withPhone.length-1}) راجع لوحة إدارة الواتساب.`, 'info');
-    // Store remaining for admin panel
-    sessionStorage.setItem('waPendingBulk', JSON.stringify({ recipients: withPhone.slice(1), bodyTemplate }));
-  }
+  infoEl.textContent = `${withPhone.length} مستلم — اضغط "فتح" لكل شخص لإرسال الرسالة`;
+
+  listEl.innerHTML = '';
+  withPhone.forEach(u => {
+    const msg = personalizeMsg(bodyTemplate, u);
+    const waPhone = (u.phone || '').replace(/\+|\s|-/g, '');
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(9,50,87,.04);border-radius:8px;border:1px solid rgba(9,50,87,.08)';
+    row.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:.82rem;color:#093257">${u.name||'—'}</div>
+        <div style="font-size:.73rem;color:rgba(9,50,87,.45);direction:ltr;text-align:right">${u.phone||''}</div>
+      </div>
+      <button onclick="window.open('${url}','_blank');this.textContent='✅';this.disabled=true;this.style.background='rgba(16,185,129,.12)';this.style.color='#059669'"
+        style="flex-shrink:0;padding:6px 14px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:.8rem;cursor:pointer;font-family:inherit">
+        فتح 💬
+      </button>`;
+    listEl.appendChild(row);
+  });
+
+  openModal('waBulkModal');
 }
 
 function renderMarketingKpi() {
@@ -5758,18 +5763,48 @@ async function renderCampaignHistory() {
     campaigns = raw.sort((a,b)=>{
       const da=a.createdAt?.seconds||0, db_=b.createdAt?.seconds||0;
       return db_-da;
-    }).slice(0,20);
+    });
   }
-  el.innerHTML = campaigns.length ? campaigns.map(c=>`
+  const q = (document.getElementById('campaignSearch')?.value||'').toLowerCase();
+  const filtered = q ? campaigns.filter(c=>
+    (c.subject||'').toLowerCase().includes(q) ||
+    (c.channel||'').includes(q) ||
+    (c.date||'').includes(q) ||
+    (c.sentBy||'').toLowerCase().includes(q)
+  ) : campaigns;
+
+  el.innerHTML = filtered.length ? filtered.map(c=>`
     <tr>
-      <td>${tsToStr(c.createdAt)||c.date||'—'}</td>
-      <td style="font-weight:700;color:var(--deep);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.subject||'—'}</td>
+      <td style="white-space:nowrap;font-size:.75rem;color:rgba(9,50,87,.5)">${tsToStr(c.createdAt)||c.date||'—'}</td>
+      <td style="font-weight:700;color:var(--deep);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.subject||'—'}</td>
       <td><span class="badge ${c.channel==='email'?'b-sky':c.channel==='wa'?'b-green':'b-violet'}">${c.channel==='email'?'📧 إيميل':c.channel==='wa'?'💬 واتساب':'🔁 الاثنين'}</span></td>
       <td>${c.recipientCount||0}</td>
       <td style="color:var(--mint2);font-weight:700">${c.totalSent||0}</td>
       <td style="color:var(--rose);font-weight:700">${c.totalFailed||0}</td>
+      <td><button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:none;padding:4px 8px" onclick="deleteCampaign('${c._id||c.campaignId||''}')">🗑️</button></td>
     </tr>`).join('')
-  : '<tr><td colspan="6" style="text-align:center;padding:25px;color:rgba(9,50,87,.33)">لا توجد حملات بعد</td></tr>';
+  : `<tr><td colspan="7" style="text-align:center;padding:25px;color:rgba(9,50,87,.33)">لا توجد حملات${q?' بهذا البحث':' بعد'}</td></tr>`;
+}
+
+async function deleteCampaign(id) {
+  if (!id || !confirm('حذف هذه الحملة؟')) return;
+  await fbDel('campaigns', id).catch(()=>{});
+  campaigns = campaigns.filter(c => (c._id||c.campaignId||'') !== id);
+  renderCampaignHistory();
+  toast('✅ تم حذف الحملة');
+}
+
+async function deleteAllCampaigns() {
+  const q = (document.getElementById('campaignSearch')?.value||'').toLowerCase();
+  const toDelete = q
+    ? campaigns.filter(c=>(c.subject||'').toLowerCase().includes(q)||(c.channel||'').includes(q))
+    : campaigns;
+  if (!toDelete.length || !confirm(`حذف ${toDelete.length} حملة؟`)) return;
+  await Promise.all(toDelete.map(c => fbDel('campaigns', c._id||c.campaignId||'').catch(()=>{})));
+  const deleteIds = new Set(toDelete.map(c=>c._id||c.campaignId||''));
+  campaigns = campaigns.filter(c => !deleteIds.has(c._id||c.campaignId||''));
+  renderCampaignHistory();
+  toast(`✅ تم حذف ${toDelete.length} حملة`);
 }
 
 function exportContacts() {
@@ -5935,6 +5970,17 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="m-title" id="notifDetailTitle" style="margin-bottom:8px"></div>
     <div id="notifDetailBody" style="font-size:.85rem;color:rgba(9,50,87,.6);line-height:1.7;text-align:center;margin-bottom:12px;white-space:pre-wrap"></div>
     <div id="notifDetailTime" style="font-size:.72rem;color:rgba(9,50,87,.35);text-align:center"></div>
+  </div>
+</div>
+
+<!-- ═══ WA BULK SENDER MODAL ═══ -->
+<div class="modal z1" id="waBulkModal">
+  <div class="m-box" style="max-width:460px">
+    <button class="m-close" onclick="closeModal('waBulkModal')">✕</button>
+    <div class="m-title">💬 إرسال واتساب</div>
+    <div id="waBulkInfo" style="font-size:.78rem;color:rgba(9,50,87,.45);text-align:center;margin-bottom:12px;background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.18);border-radius:var(--r12);padding:10px"></div>
+    <div id="waBulkList" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:7px"></div>
+    <div style="margin-top:12px;text-align:center;font-size:.74rem;color:rgba(9,50,87,.38)">اضغط "فتح" لكل شخص لإرسال الرسالة مباشرة عبر واتساب</div>
   </div>
 </div>
 

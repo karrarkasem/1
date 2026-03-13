@@ -31,6 +31,40 @@ const firebaseConfig = {
   messagingSenderId: "177984721378",
   appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
 };
+// ✅ متغيرات المجهز
+let preparerWhatsApp = '';
+let preparerTelegram = '';
+
+// ✅ دالة تحميل إعدادات المجهز من Firebase
+async function loadPreparerSettings() {
+  try {
+    if (!fbReady) return;
+    
+    const settingsRef = fb().collection(db(), 'settings');
+    const snapshot = await fb().getDocs(settingsRef);
+    
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.key === 'preparer_whatsapp') {
+        preparerWhatsApp = data.value;
+      }
+      if (data.key === 'preparer_telegram') {
+        preparerTelegram = data.value;
+      }
+    });
+    
+    console.log('✅ إعدادات المجهز:', { preparerWhatsApp, preparerTelegram });
+  } catch (error) {
+    console.error('خطأ في تحميل إعدادات المجهز:', error);
+  }
+}
+
+// ✅ نضيفها لدالة init
+const originalInit = init;
+init = async function() {
+  await loadPreparerSettings(); // ← نضيف هذا السطر
+  await originalInit();
+};
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
@@ -2750,6 +2784,8 @@ async function sendOrder(){
   const net=total-commission;
   const nowStr=new Date().toLocaleString('ar-IQ');
   const orderId='ORD'+Date.now();
+  // إنشاء رابط التتبع
+const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId}`;
 
   for(const k in cart){const p=products.find(x=>x.name===k);if(p) p.stock=Math.max(0,p.stock-cart[k].qty);}
 
@@ -2768,11 +2804,53 @@ async function sendOrder(){
   const _noteLine = note    ? `\n📝 ملاحظة: ${note}`    : '';
   const _phoneLine= visPhone? `\n📞 هاتف الزائر: ${visPhone}` : '';
   const _waMsg = CU
-    ? `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU.name}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`
-    : `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${_phoneLine}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
+  ? `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU.name}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}\n\n🔗 *رابط تتبع الطلب:*\n${trackingLink}`
+: `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${_phoneLine}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}\n\n🔗 *رابط تتبع الطلب:*\n${trackingLink}`
   window.open(`https://wa.me/${WA}?text=${encodeURIComponent(_waMsg)}`, '_blank');
 
   const fbId = await fbAdd('orders', orderData);
+// =============================================
+// ✅ هنا نضيف الكود حق المجهز
+// =============================================
+if (fbId) {
+  // حساب الحجم الكلي للطلب
+  let totalVolume = 0;
+  let itemsList = '';
+  for(const k in cart) {
+    const p = products.find(x => x.name === k);
+    if(p && p.carton_volume) {
+      const itemVol = p.carton_volume * cart[k].qty;
+      totalVolume += itemVol;
+      itemsList += `\n   • ${k} (${cart[k].qty}) - حجم الكرتون: ${p.carton_volume} م³ - الإجمالي: ${itemVol.toFixed(3)} م³`;
+    } else {
+      itemsList += `\n   • ${k} (${cart[k].qty}) - لا يوجد حجم محدد`;
+    }
+  }
+
+  // رابط التجهيز
+  const prepareLink = `https://karrarkasem.github.io/1/prepare.html?order=${orderId}`;
+  
+  // رسالة واتساب للمجهز
+  const preparerWhatsApp = `9647806852561`; // رقم واتساب المجهز
+  const waMsg = `📦 *طلب جديد للتجهيز*\n\n🏪 المحل: ${shop}\n🆔 رقم الطلب: ${orderId}\n📋 المنتجات:${itemsList}\n📐 إجمالي الحجم: ${totalVolume.toFixed(3)} م³\n\n🔗 رابط التجهيز:\n${prepareLink}`;
+  
+  // إرسال واتساب
+  window.open(`https://wa.me/${preparerWhatsApp}?text=${encodeURIComponent(waMsg)}`, '_blank');
+
+  // إرسال تلجرام (إذا تريد)
+  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+  const TG_CHAT  = '-5246620507'; // شات المجهز
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      chat_id: TG_CHAT,
+      text: waMsg.replace(/\*/g, ''),
+      parse_mode: 'Markdown'
+    })
+  }).catch(()=>{});
+}
+
 
   for(const k in cart){
     const p=products.find(x=>x.name===k);

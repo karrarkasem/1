@@ -1654,7 +1654,17 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
     </div>
     <div class="fg"><label class="fl">الحد الأدنى للتحذير</label><input id="pe_min" type="number" class="fi" value="10"></div>
     <div class="frow">
-      <div class="fg"><label class="fl">📦 حجم الكرتون (م³)</label><input id="pe_carton_volume" type="number" class="fi" step="0.001" placeholder="0.000"></div>
+      <div class="fg">
+        <label class="fl">📦 أبعاد الكرتون (سم) — طول × عرض × ارتفاع</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <input id="pe_carton_l" type="number" class="fi" step="0.1" placeholder="طول" oninput="calcCartonVolume()">
+          <input id="pe_carton_w" type="number" class="fi" step="0.1" placeholder="عرض" oninput="calcCartonVolume()">
+          <input id="pe_carton_h" type="number" class="fi" step="0.1" placeholder="ارتفاع" oninput="calcCartonVolume()">
+        </div>
+        <div id="pe_volume_calc" style="display:none;margin-top:6px;background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.18);border-radius:var(--r8);padding:8px 12px;font-size:.82rem;font-weight:700;color:var(--sky2)">
+          📐 الحجم: <span id="pe_volume_result">0.0000</span> م³
+        </div>
+      </div>
       <div class="fg"><label class="fl">⚖️ وزن الكرتون (كغ)</label><input id="pe_carton_weight" type="number" class="fi" step="0.01" placeholder="0.00"></div>
     </div>
     <div class="fg"><label class="fl">📷 رابط الصورة</label><input id="pe_img" type="text" class="fi" placeholder="https://..." oninput="peImgPreview()"></div>
@@ -2552,7 +2562,8 @@ async function doLogin() {
   // ✅ طلب إذن إشعارات المتصفح
 if (Notification && Notification.permission === 'default') {
   Notification.requestPermission();
-} showPage('pageDashboard'); toast('✅ مرحباً '+CU.name);
+} const _loginTarget=(CU.type==='preparer')?'pagePrep':(CU.type==='driver')?'pageDriver':'pageDashboard';
+showPage(_loginTarget); toast('✅ مرحباً '+CU.name);
 }
 
 function doLogout(){
@@ -2752,6 +2763,15 @@ async function sendOrder(){
     total, commission, net,
   };
 
+  // ✅ فتح واتساب قبل أي await لأن المتصفح يحجب window.open بعد العمليات غير المتزامنة
+  const _locLine  = selLoc  ? `\n🗺️ الموقع: ${selLoc}` : '';
+  const _noteLine = note    ? `\n📝 ملاحظة: ${note}`    : '';
+  const _phoneLine= visPhone? `\n📞 هاتف الزائر: ${visPhone}` : '';
+  const _waMsg = CU
+    ? `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU.name}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`
+    : `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${_phoneLine}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
+  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(_waMsg)}`, '_blank');
+
   const fbId = await fbAdd('orders', orderData);
 
   for(const k in cart){
@@ -2811,14 +2831,6 @@ if (Notification?.permission === 'granted') {
       });
   });
 }
-  // ✅ فتح واتساب مباشرة — أسرع وأموثق على الموبايل
-const locLine  = selLoc  ? `\n🗺️ الموقع: ${selLoc}` : '';
-const noteLine = note    ? `\n📝 ملاحظة: ${note}`    : '';
-const phoneLine= visPhone? `\n📞 هاتف الزائر: ${visPhone}` : '';
-const msg = CU
-  ? `🛍️ *طلب جديد — برجمان*\n\n📅 ${nowStr}\n👤 ${CU.name}\n🏪 ${shop}\n📍 ${addr}${locLine}${noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`
-  : `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${phoneLine}\n🏪 ${shop}\n📍 ${addr}${locLine}${noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}`;
-window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 
 // إرسال إيميل بنفس الوقت
 sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc});
@@ -2841,6 +2853,15 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
   }).catch(()=>{});
 
   toast(CU&&commission>0?`✅ الطلب أُرسل! عمولتك: ${commission.toLocaleString()} د.ع`:'✅ تم إرسال الطلب');
+
+  // Save guest order to localStorage for re-tracking
+  if (!CU && visPhone && fbId) {
+    localStorage.setItem('bj_guest_order', JSON.stringify({ orderId, fbId, phone: visPhone, shop, date: nowStr }));
+  }
+
+  // Show live tracking modal right after order
+  if (fbId) setTimeout(() => showOrderTrackingModal(orderId, fbId), 600);
+
   renderStore('الكل'); renderInventory(); renderOrders(); buildDashboard(); renderSalesList();
   }finally{
     _sendingOrder=false;
@@ -6332,6 +6353,23 @@ function parseCartItems(products) {
 // ── Cache products for volume/weight calcs ──
 function cacheProducts() { window._products_cache = products; }
 
+// ── Auto-calculate carton volume from L×W×H ──
+function calcCartonVolume() {
+  const l = parseFloat(document.getElementById('pe_carton_l')?.value) || 0;
+  const w = parseFloat(document.getElementById('pe_carton_w')?.value) || 0;
+  const h = parseFloat(document.getElementById('pe_carton_h')?.value) || 0;
+  const calcDiv = document.getElementById('pe_volume_calc');
+  const resultSpan = document.getElementById('pe_volume_result');
+  if (!calcDiv || !resultSpan) return;
+  if (l && w && h) {
+    const vol = (l * w * h) / 1000000;
+    resultSpan.textContent = vol.toFixed(6);
+    calcDiv.style.display = 'block';
+  } else {
+    calcDiv.style.display = 'none';
+  }
+}
+
 // ══════════════════════════════════════════════════════
 // FEATURE 1: carton_volume / carton_weight on products
 // ══════════════════════════════════════════════════════
@@ -6341,10 +6379,13 @@ saveProd = async function() {
   await _origSaveProd();
   // Update the last saved product with new fields
   const fbid = document.getElementById('pe_fbid').value;
-  const carton_volume = parseFloat(document.getElementById('pe_carton_volume')?.value) || 0;
+  const carton_l = parseFloat(document.getElementById('pe_carton_l')?.value) || 0;
+  const carton_w = parseFloat(document.getElementById('pe_carton_w')?.value) || 0;
+  const carton_h = parseFloat(document.getElementById('pe_carton_h')?.value) || 0;
+  const carton_volume = (carton_l && carton_w && carton_h) ? parseFloat(((carton_l * carton_w * carton_h) / 1000000).toFixed(6)) : 0;
   const carton_weight = parseFloat(document.getElementById('pe_carton_weight')?.value) || 0;
-  if (fbid && (carton_volume || carton_weight)) {
-    await fbUpdate('products', fbid, { carton_volume, carton_weight }).catch(() => {});
+  if (fbid && (carton_l || carton_w || carton_h || carton_weight)) {
+    await fbUpdate('products', fbid, { carton_l, carton_w, carton_h, carton_volume, carton_weight }).catch(() => {});
   }
   cacheProducts();
 };
@@ -6353,19 +6394,29 @@ const _origOpenEditProd = openEditProd;
 openEditProd = function(i) {
   _origOpenEditProd(i);
   const p = products[i];
-  const volEl = document.getElementById('pe_carton_volume');
+  const lEl = document.getElementById('pe_carton_l');
+  const wEl = document.getElementById('pe_carton_w');
+  const hEl = document.getElementById('pe_carton_h');
   const wgtEl = document.getElementById('pe_carton_weight');
-  if (volEl) volEl.value = p.carton_volume || '';
+  if (lEl) lEl.value = p.carton_l || '';
+  if (wEl) wEl.value = p.carton_w || '';
+  if (hEl) hEl.value = p.carton_h || '';
   if (wgtEl) wgtEl.value = p.carton_weight || '';
+  calcCartonVolume();
 };
 
 const _origOpenAddProd = openAddProd;
 openAddProd = function() {
   _origOpenAddProd();
-  const volEl = document.getElementById('pe_carton_volume');
+  const lEl = document.getElementById('pe_carton_l');
+  const wEl = document.getElementById('pe_carton_w');
+  const hEl = document.getElementById('pe_carton_h');
   const wgtEl = document.getElementById('pe_carton_weight');
-  if (volEl) volEl.value = '';
+  if (lEl) lEl.value = '';
+  if (wEl) wEl.value = '';
+  if (hEl) hEl.value = '';
   if (wgtEl) wgtEl.value = '';
+  calcCartonVolume();
 };
 
 // Also patch loadProducts to include new fields
@@ -6377,6 +6428,9 @@ loadProducts = async function() {
   raw.forEach(p => {
     const local = products.find(x => x._id === p._id);
     if (local) {
+      local.carton_l = parseFloat(p.carton_l) || 0;
+      local.carton_w = parseFloat(p.carton_w) || 0;
+      local.carton_h = parseFloat(p.carton_h) || 0;
       local.carton_volume = parseFloat(p.carton_volume) || 0;
       local.carton_weight = parseFloat(p.carton_weight) || 0;
     }
@@ -6617,15 +6671,32 @@ async function markAsPrepared(orderId) {
   }).catch(() => {});
   toast('✅ تم تحديد الطلب كـ "مجهز"');
   renderPrepDashboard();
+
+  const prepOrd = orders.find(o => o._id === orderId);
+
   // Notify drivers
   await fbAdd('notifications', {
     title: '🚗 طلب جاهز للتوصيل',
-    body: `طلب رقم ${orderId} جاهز للتحميل`,
+    body: `طلب رقم ${orderId}${prepOrd ? ' — ' + prepOrd.shopName : ''} جاهز للتحميل`,
     type: 'order', read: false, targetUser: 'driver',
+    orderId,
     date: new Date().toLocaleDateString('ar-IQ')
   }).catch(() => {});
-  // Browser notification to all drivers
   browserNotif('🚗 طلب جاهز للتوصيل', 'طلب جديد جاهز للتحميل');
+
+  // Notify customer that their order is prepared and leaving warehouse
+  if (prepOrd) {
+    const custUser = users.find(u => u.name === prepOrd.shopName || u.shop === prepOrd.shopName);
+    const targetUser = custUser?.username || prepOrd.repUsername || prepOrd.visitorPhone || 'customer';
+    await fbAdd('notifications', {
+      title: '🚛 تم تجهيز طلبك!',
+      body: `طلبك جاهز وخرج من المخزن — جارٍ تعيين السائق`,
+      type: 'order', read: false,
+      targetUser,
+      orderId,
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(() => {});
+  }
 }
 
 function openPrepEditModal(orderId) {
@@ -6717,11 +6788,11 @@ async function renderDriverDashboard() {
       const data = d.data();
       const st = data.status || '';
       if (st === 'Prepared') preparedOrders.push({ _id: d.id, ...data });
-      else if (st === 'In Delivery' && data.driver_id === CU.username) inDeliveryOrders.push({ _id: d.id, ...data });
+      else if ((st === 'In Delivery' || st === 'NearCustomer') && data.driver_id === CU.username) inDeliveryOrders.push({ _id: d.id, ...data });
     });
   } catch(e) {
     preparedOrders = orders.filter(o => o.status === 'Prepared');
-    inDeliveryOrders = orders.filter(o => o.status === 'In Delivery' && o.driver_id === CU.username);
+    inDeliveryOrders = orders.filter(o => (o.status === 'In Delivery' || o.status === 'NearCustomer') && o.driver_id === CU.username);
   }
 
   const myDelivered = orders.filter(o => o.status === 'Delivered' && o.driver_id === CU.username);
@@ -6740,8 +6811,13 @@ async function renderDriverDashboard() {
   }
 
   listEl.innerHTML = allDriverOrders.map(o => {
-    const isPrepared = o.status === 'Prepared';
-    const isInDelivery = o.status === 'In Delivery';
+    const isPrepared    = o.status === 'Prepared';
+    const isInDelivery  = o.status === 'In Delivery';
+    const isNear        = o.status === 'NearCustomer';
+    const isOnRoad      = isInDelivery || isNear;
+    const statusBadge   = isPrepared ? '<span class="badge b-green">✅ جاهز للتحميل</span>'
+                        : isNear     ? '<span class="badge b-mint" style="animation:pulse 1.5s infinite">📍 قريب من الزبون</span>'
+                        :              '<span class="badge b-sky">🚗 قيد التوصيل</span>';
     return `
     <div class="prep-order-card">
       <div class="prep-order-hd">
@@ -6749,9 +6825,7 @@ async function renderDriverDashboard() {
           <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
           <div class="prep-order-id">${o.orderId || o._id}</div>
         </div>
-        <div>
-          ${isPrepared ? '<span class="badge b-green">✅ جاهز للتحميل</span>' : '<span class="badge b-sky">🚗 قيد التوصيل</span>'}
-        </div>
+        <div>${statusBadge}</div>
       </div>
       <div class="prep-order-meta">
         <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
@@ -6762,7 +6836,8 @@ async function renderDriverDashboard() {
       ${o.location ? `<a href="${o.location}" target="_blank" class="btn btn-ghost btn-sm" style="margin-bottom:8px;display:inline-flex">🗺️ عرض الموقع</a>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${isPrepared ? `<button class="btn btn-sky btn-full" onclick="markAsLoaded('${o._id}')">🚛 تم التحميل</button>` : ''}
-        ${isInDelivery ? `<button class="btn btn-mint btn-full" onclick="openDeliveryProof('${o._id}','${o.driver_id || ''}')">✅ تأكيد التسليم</button>` : ''}
+        ${isInDelivery ? `<button class="btn btn-gold btn-sm" onclick="markAsNearCustomer('${o._id}')">📍 أنا قريب من الزبون</button>` : ''}
+        ${isOnRoad ? `<button class="btn btn-mint btn-full" onclick="openDeliveryProof('${o._id}','${o.driver_id || ''}')">✅ تأكيد التسليم</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -6783,14 +6858,38 @@ async function markAsLoaded(orderId) {
   // Notify customer (via notification)
   const ord = orders.find(o => o._id === orderId);
   if (ord) {
+    const custUser = users.find(u => u.name === ord.shopName || u.shop === ord.shopName);
+    const targetUser = custUser?.username || ord.repUsername || ord.visitorPhone || 'customer';
     await fbAdd('notifications', {
       title: '🚗 طلبك في الطريق إليك!',
-      body: `طلبك من ${ord.shopName || ''} أصبح في الطريق`,
+      body: `طلبك من ${ord.shopName || ''} أصبح في الطريق — السائق: ${CU.name}`,
       type: 'order', read: false,
-      targetUser: ord.repUser || ord.visitorPhone || 'customer',
+      targetUser,
+      orderId,
       date: new Date().toLocaleDateString('ar-IQ')
     }).catch(() => {});
     browserNotif('🚗 طلبك في الطريق', `طلبك من ${ord.shopName || ''} أصبح في الطريق`);
+  }
+}
+
+async function markAsNearCustomer(orderId) {
+  if (!CU) return;
+  await fbUpdate('orders', orderId, { status: 'NearCustomer', near_at: new Date().toISOString() }).catch(() => {});
+  toast('📍 تم إشعار الزبون بأنك قريب');
+  renderDriverDashboard();
+
+  const ord = orders.find(o => o._id === orderId);
+  if (ord) {
+    const custUser = users.find(u => u.name === ord.shopName || u.shop === ord.shopName);
+    const targetUser = custUser?.username || ord.repUsername || ord.visitorPhone || 'customer';
+    await fbAdd('notifications', {
+      title: '🚚 السائق قريب منك!',
+      body: `طلبك من ${ord.shopName || ''} سيصل خلال دقائق — ${CU.name} في طريقه إليك`,
+      type: 'order', read: false,
+      targetUser,
+      orderId,
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(() => {});
   }
 }
 
@@ -7143,7 +7242,7 @@ function renderTruckLoader(order) {
 
 // Order status tracker shown in order detail
 function renderOrderStatusTracker(order) {
-  const statusMap = { Pending: 0, pending: 0, Confirmed: 1, confirmed: 1, Prepared: 2, 'In Delivery': 3, Delivered: 4 };
+  const statusMap = { Pending: 0, pending: 0, Confirmed: 1, confirmed: 1, Prepared: 2, 'In Delivery': 3, NearCustomer: 3, Delivered: 4 };
   const stages = [
     { icon: '✅', label: 'مؤكد' },
     { icon: '📦', label: 'مجهز' },
@@ -7152,6 +7251,7 @@ function renderOrderStatusTracker(order) {
   ];
   const step = statusMap[order.status || 'Pending'] || 0;
   const pct = Math.min(100, (step / 3) * 100);
+  const isNear = order.status === 'NearCustomer';
 
   // Truck icon changes based on vehicle type
   const vehicleIcon = order.vehicle_type === 'ستوتة' ? '🛵'
@@ -7160,6 +7260,7 @@ function renderOrderStatusTracker(order) {
   return `
   <div class="order-tracker">
     <div style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:11px">📍 حالة طلبك</div>
+    ${isNear ? `<div style="background:linear-gradient(135deg,#10b981,#059669);color:white;border-radius:14px;padding:12px 16px;margin-bottom:12px;text-align:center;font-weight:700;font-size:.88rem;animation:pulse 1.5s infinite">🚚 السائق قريب منك! سيصل طلبك خلال دقائق</div>` : ''}
     <div style="position:relative;padding:0 0 20px">
       <div class="tracker-line"></div>
       <div class="tracker-progress" style="width:${pct}%"></div>
@@ -7392,15 +7493,37 @@ startRealtimeListeners = function() {
       if (change.type !== 'modified') return;
       const o = change.doc.data();
       const st = o.status || '';
-      if (st === 'In Delivery') {
-        // Notify customer that order is in delivery
-        if (CU && (CU.username === o.repUser || CU.name === o.shopName)) {
-          browserNotif('🚗 طلبك في الطريق إليك!', `طلب ${o.shopName || ''} خرج للتوصيل`);
+      const isMyOrder = CU && (CU.username === o.repUsername || CU.name === o.shopName);
+      const isGuestOrder = (() => {
+        try { const g = JSON.parse(localStorage.getItem('bj_guest_order') || '{}'); return g.fbId === change.doc.id; } catch(e) { return false; }
+      })();
+
+      if (st === 'Prepared' && (isMyOrder || isGuestOrder)) {
+        browserNotif('🚛 تم تجهيز طلبك!', 'طلبك جاهز وخارج من المخزن');
+      } else if (st === 'In Delivery' && (isMyOrder || isGuestOrder)) {
+        browserNotif('🚗 طلبك في الطريق إليك!', `طلبك من ${o.shopName || ''} خرج للتوصيل`);
+      } else if (st === 'NearCustomer' && (isMyOrder || isGuestOrder)) {
+        browserNotif('🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق`);
+        // If tracking modal is open, it auto-updates via its own listener
+        // Show flash even if modal is closed
+        const ex = document.getElementById('nearCustFlash');
+        if (!ex) {
+          const div = document.createElement('div');
+          div.id = 'nearCustFlash';
+          div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 28px;border-radius:20px;box-shadow:0 8px 32px rgba(16,185,129,.4);font-weight:700;font-size:.95rem;text-align:center;cursor:pointer';
+          div.innerHTML = '🚚 السائق قريب منك!<br><span style="font-size:.75rem;opacity:.85">اضغط لتتبع الطلب</span>';
+          div.onclick = () => {
+            const g = (() => { try { return JSON.parse(localStorage.getItem('bj_guest_order')||'{}'); } catch(e){return {};} })();
+            const ord = orders.find(x => x._id === change.doc.id);
+            if (ord) showOrderTrackingModal(ord.orderId || '', change.doc.id);
+            else if (g.fbId) showOrderTrackingModal(g.orderId||'', g.fbId);
+            div.remove();
+          };
+          document.body.appendChild(div);
+          setTimeout(() => div.remove(), 10000);
         }
-      } else if (st === 'Delivered') {
-        if (CU && (CU.username === o.repUser || CU.name === o.shopName)) {
-          browserNotif('✅ تم توصيل طلبك!', 'يمكنك تقييم السائق الآن');
-        }
+      } else if (st === 'Delivered' && (isMyOrder || isGuestOrder)) {
+        browserNotif('✅ تم توصيل طلبك!', 'يمكنك تقييم السائق الآن');
       }
     });
   });
@@ -7451,11 +7574,35 @@ showPage = function(id) {
 // ── Patch onSnapshot orders to notify preparer about new orders ──
 const _origOrdersSnapshot = null; // Already handled inside startRealtimeListeners
 
+// ── Guest tracking button on store page ──
+function renderGuestTrackBtn() {
+  const wrap = document.getElementById('guestBannerWrap');
+  if (!wrap) return;
+  if (CU) { wrap.innerHTML = ''; return; } // logged-in users don't need this
+  const saved = localStorage.getItem('bj_guest_order');
+  if (!saved) { wrap.innerHTML = ''; return; }
+  try {
+    const g = JSON.parse(saved);
+    wrap.innerHTML = `
+    <div style="background:linear-gradient(135deg,#0ea5e9,#0369a1);border-radius:18px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;color:white">
+      <div>
+        <div style="font-weight:800;font-size:.9rem">📦 لديك طلب سابق</div>
+        <div style="font-size:.75rem;opacity:.8;margin-top:2px">${g.shop || ''} — ${g.date || ''}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-sm" style="background:white;color:#0369a1;font-weight:700" onclick="showOrderTrackingModal('${g.orderId}','${g.fbId}')">🔍 تتبع الطلب</button>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white" onclick="localStorage.removeItem('bj_guest_order');renderGuestTrackBtn()">✕</button>
+      </div>
+    </div>`;
+  } catch(e) { localStorage.removeItem('bj_guest_order'); }
+}
+
 // ── Extend buildUI for new features init ──
 const _origBuildUIFinal = buildUI;
 buildUI = function() {
   _origBuildUIFinal();
   startNewRoleListeners();
+  renderGuestTrackBtn();
 };
 
 // ── Initialize on DOMContentLoaded ──
@@ -7463,8 +7610,97 @@ document.addEventListener('fbReady', () => {
   cacheProducts();
 });
 
+
+// ══════════════════════════════════════════════════════
+// CUSTOMER ORDER TRACKING MODAL
+// ══════════════════════════════════════════════════════
+let _trackUnsub = null;
+
+function showOrderTrackingModal(orderId, fbId) {
+  const titleEl = document.getElementById('trackModalOrderId');
+  const bodyEl  = document.getElementById('trackModalBody');
+  if (titleEl) titleEl.textContent = '🆔 ' + orderId;
+  if (bodyEl)  bodyEl.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(9,50,87,.4)">⏳ جاري تحميل حالة الطلب...</div>';
+  openModal('orderTrackingModal');
+
+  if (_trackUnsub) { try { _trackUnsub(); } catch(e){} _trackUnsub = null; }
+
+  function renderInModal(live) {
+    if (!bodyEl) return;
+    // Update local orders cache
+    const idx = orders.findIndex(x => (x._id || x.id) === fbId);
+    if (idx !== -1) orders[idx] = { ...orders[idx], ...live };
+    else orders.push(live);
+
+    bodyEl.innerHTML =
+      renderOrderStatusTracker(live) +
+      `<div style="background:rgba(14,165,233,.06);border-radius:16px;padding:14px 16px;margin-top:14px;font-size:.82rem">
+        <div style="font-weight:700;color:var(--deep);margin-bottom:6px">📦 تفاصيل الطلب</div>
+        <div style="color:rgba(9,50,87,.6)">${live.products || '—'}</div>
+        <div style="margin-top:6px;color:rgba(9,50,87,.45)">💰 ${(parseFloat(live.total)||0).toLocaleString()} د.ع</div>
+        <div style="margin-top:4px;color:rgba(9,50,87,.45)">📍 ${live.shopAddress || live.shopAddr || '—'}</div>
+      </div>`;
+
+    if (live.status === 'NearCustomer') {
+      // Pop a flash banner outside the modal too
+      const ex = document.getElementById('nearCustFlash');
+      if (!ex) {
+        const div = document.createElement('div');
+        div.id = 'nearCustFlash';
+        div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 28px;border-radius:20px;box-shadow:0 8px 32px rgba(16,185,129,.4);font-weight:700;font-size:.95rem;text-align:center';
+        div.innerHTML = '🚚 السائق قريب منك!<br><span style="font-size:.75rem;opacity:.85">سيصل طلبك خلال دقائق</span>';
+        document.body.appendChild(div);
+        browserNotif('🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق`);
+        setTimeout(() => div.remove(), 7000);
+      }
+    }
+  }
+
+  // Try real-time listener first
+  try {
+    const { onSnapshot, doc: fbDoc } = window._fb || {};
+    const _db = window._db;
+    if (onSnapshot && fbDoc && _db && fbId) {
+      _trackUnsub = onSnapshot(fbDoc(_db, 'orders', fbId), snap => {
+        if (!snap.exists()) return;
+        renderInModal({ _id: snap.id, ...snap.data() });
+      });
+      return;
+    }
+  } catch(e) { console.warn('Tracking listener:', e); }
+
+  // Fallback: use local cache
+  const o = orders.find(x => (x._id || x.id) === fbId || x.orderId === orderId);
+  if (o) renderInModal(o);
+}
+
+// Stop real-time listener when tracking modal closes
+document.addEventListener('click', e => {
+  if (e.target.closest('#orderTrackingModal') === null) return;
+  if (e.target.matches('[onclick*="closeModal"]') || e.target.closest('.modal-close')) {
+    if (_trackUnsub) { try { _trackUnsub(); } catch(ee){} _trackUnsub = null; }
+  }
+});
+
 </script>
 
+<!-- ══════════ ORDER TRACKING MODAL ══════════ -->
+<div class="modal" id="orderTrackingModal">
+  <div class="modal-box" style="max-width:520px;border-radius:24px;padding:0;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#093257,#0ea5e9);padding:22px 24px 16px;color:white;text-align:center;position:relative">
+      <button onclick="closeModal('orderTrackingModal')" style="position:absolute;left:14px;top:14px;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:30px;height:30px;color:white;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      <div style="font-size:2.2rem;margin-bottom:4px">🚚</div>
+      <h2 style="font-size:1.05rem;font-weight:800;margin:0">تتبع طلبك</h2>
+      <p id="trackModalOrderId" style="font-size:.72rem;opacity:.65;margin:4px 0 0"></p>
+    </div>
+    <div style="padding:18px;max-height:75vh;overflow-y:auto" id="trackModalBody">
+      <div style="text-align:center;padding:40px;color:rgba(9,50,87,.4)">⏳ جاري التحميل...</div>
+    </div>
+    <div style="padding:0 18px 18px;text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('orderTrackingModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

@@ -735,10 +735,183 @@ body.sidebar-open{overflow:hidden}
 .otp-timer span { color:var(--sky2); font-weight:800; }
 .otp-resend { color:var(--sky2); font-weight:700; cursor:pointer; text-decoration:underline; }
 
+/* ═══════════════════════════════════════════════════════
+   NEW FEATURES CSS
+   ═══════════════════════════════════════════════════════ */
 
+/* Order Status Tracker */
+.order-tracker{margin:18px 0;padding:16px;background:rgba(255,255,255,.78);border:1px solid rgba(14,165,233,.15);border-radius:var(--r20);position:relative;overflow:hidden}
+.tracker-stages{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+.tracker-line{position:absolute;top:20px;right:0;left:0;height:4px;background:rgba(14,165,233,.12);border-radius:99px;z-index:0}
+.tracker-progress{position:absolute;top:20px;right:0;height:4px;background:linear-gradient(90deg,var(--mint),var(--sky));border-radius:99px;z-index:0;transition:width .6s ease}
+.tracker-stage{display:flex;flex-direction:column;align-items:center;gap:5px;z-index:1;flex:1}
+.tracker-dot{width:40px;height:40px;border-radius:50%;background:rgba(14,165,233,.1);border:2.5px solid rgba(14,165,233,.2);display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .3s;position:relative}
+.tracker-dot.done{background:var(--mint);border-color:var(--mint);color:white;box-shadow:0 0 0 6px rgba(16,185,129,.12)}
+.tracker-dot.active{background:var(--sky);border-color:var(--sky);color:white;box-shadow:0 0 0 6px rgba(14,165,233,.15);animation:trackerPulse 2s infinite}
+@keyframes trackerPulse{0%,100%{box-shadow:0 0 0 6px rgba(14,165,233,.15)}50%{box-shadow:0 0 0 12px rgba(14,165,233,.05)}}
+.tracker-label{font-size:.62rem;font-weight:700;color:rgba(9,50,87,.45);text-align:center;white-space:nowrap}
+.tracker-label.active{color:var(--sky2)}
+.tracker-label.done{color:var(--mint2)}
+.tracker-car{position:absolute;top:11px;font-size:1.2rem;transition:right .6s ease;z-index:2;filter:drop-shadow(0 2px 4px rgba(14,165,233,.3))}
 
+/* Star Rating */
+.star-rating{display:flex;gap:6px;justify-content:center;margin:12px 0}
+.star-btn{font-size:1.8rem;cursor:pointer;transition:transform .2s;background:none;border:none;line-height:1}
+.star-btn:hover{transform:scale(1.2)}
+.star-btn.active{filter:drop-shadow(0 0 6px rgba(245,158,11,.6))}
 
-  
+/* Preparer & Driver Dashboard Cards */
+.prep-order-card{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.9);border-radius:var(--r20);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);transition:all .2s}
+.prep-order-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.prep-order-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex-wrap:wrap;gap:8px}
+.prep-order-id{font-size:.72rem;color:rgba(9,50,87,.4);font-family:monospace}
+.prep-order-shop{font-weight:800;color:var(--deep);font-size:.95rem}
+.prep-order-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.prep-order-stat{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+.prep-stat-box{background:rgba(14,165,233,.05);border-radius:var(--r12);padding:9px;text-align:center}
+.prep-stat-val{font-size:1rem;font-weight:900;color:var(--sky2)}
+.prep-stat-lbl{font-size:.62rem;color:rgba(9,50,87,.45);margin-top:2px}
+.prep-items-list{border:1px solid rgba(14,165,233,.1);border-radius:var(--r12);overflow:hidden;margin:10px 0}
+.prep-item-row{display:flex;align-items:center;gap:8px;padding:8px 11px;border-bottom:1px solid rgba(14,165,233,.07)}
+.prep-item-row:last-child{border:none}
+.prep-item-name{flex:1;font-size:.83rem;font-weight:600;color:var(--deep)}
+.prep-item-qty{display:flex;align-items:center;gap:5px}
+.vehicle-selector{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.vehicle-opt{flex:1;min-width:80px;padding:10px 8px;border-radius:var(--r12);border:2px solid rgba(14,165,233,.15);background:rgba(255,255,255,.8);cursor:pointer;text-align:center;font-size:.8rem;font-weight:700;color:var(--mid);transition:all .2s;font-family:'Tajawal'}
+.vehicle-opt:hover{border-color:var(--sky);background:white}
+.vehicle-opt.selected{border-color:var(--sky);background:rgba(14,165,233,.1);color:var(--sky2);box-shadow:0 0 0 3px rgba(14,165,233,.12)}
+.vehicle-opt .v-icon{font-size:1.4rem;display:block;margin-bottom:3px}
+
+/* Driver proof section */
+.proof-section{border:2px dashed rgba(14,165,233,.25);border-radius:var(--r16);padding:16px;background:rgba(14,165,233,.03);margin:12px 0}
+.proof-tabs{display:flex;gap:6px;margin-bottom:12px}
+.proof-tab{flex:1;padding:9px;border-radius:var(--r12);border:1.5px solid rgba(14,165,233,.15);background:rgba(255,255,255,.8);cursor:pointer;text-align:center;font-size:.8rem;font-weight:700;color:var(--mid);transition:all .2s;font-family:'Tajawal'}
+.proof-tab.active{background:linear-gradient(135deg,var(--sky),var(--sky2));border-color:transparent;color:white;box-shadow:var(--glow-sky)}
+.sig-canvas{border:2px solid rgba(14,165,233,.2);border-radius:var(--r12);background:white;touch-action:none;width:100%;display:block}
+
+/* Performance Reports */
+.perf-table-wrap{overflow-x:auto;border-radius:var(--r16);border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.5)}
+.rating-stars{display:inline-flex;gap:2px}
+.rating-star{color:var(--gold);font-size:.9rem}
+.rating-star.empty{color:rgba(9,50,87,.15)}
+
+/* Status badges for new workflow */
+.b-orange{background:rgba(249,115,22,.1);color:#c2410c}
+.b-indigo{background:rgba(99,102,241,.1);color:#4338ca}
+
+/* Receipt confirmation modal */
+.receipt-modal-inner{text-align:center;padding:8px 0}
+.receipt-check{width:70px;height:70px;border-radius:50%;background:rgba(16,185,129,.1);border:2px solid rgba(16,185,129,.2);display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 14px}
+
+/* Notification dot for new features */
+.notif-new-dot{width:8px;height:8px;border-radius:50%;background:var(--rose);position:absolute;top:4px;left:4px;animation:pulse 2s infinite}
+
+/* ══════════════════════════════════════
+   VISUAL TRUCK LOADER COMPONENT
+   ══════════════════════════════════════ */
+.vtl-wrap{
+  margin:14px 0 4px;
+  padding:18px 16px 14px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(14,165,233,.13);
+  border-radius:var(--r20);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+.vtl-title{
+  font-size:.72rem;font-weight:800;
+  color:rgba(9,50,87,.45);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  align-self:flex-start;
+}
+.vtl-scene{
+  display:flex;
+  align-items:flex-end;
+  gap:18px;
+  width:100%;
+  justify-content:center;
+}
+/* ── SVG truck rear-view ── */
+.vtl-svg-wrap{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.vtl-vehicle-name{
+  font-size:.68rem;font-weight:800;
+  color:var(--mid);
+  background:rgba(14,165,233,.09);
+  border:1px solid rgba(14,165,233,.18);
+  padding:3px 10px;
+  border-radius:var(--r99);
+  white-space:nowrap;
+}
+/* ── Info panel ── */
+.vtl-info{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:110px;
+}
+.vtl-pct-ring{
+  width:72px;height:72px;
+  border-radius:50%;
+  background:conic-gradient(var(--fill-color, #10b981) var(--fill-deg,0deg), rgba(14,165,233,.1) 0deg);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(16,185,129,.18);
+  position:relative;
+  margin:0 auto;
+  transition:background .7s ease;
+}
+.vtl-pct-ring::after{
+  content:'';
+  position:absolute;
+  width:52px;height:52px;
+  border-radius:50%;
+  background:#fff;
+}
+.vtl-pct-txt{
+  position:relative;z-index:1;
+  font-size:.98rem;font-weight:900;
+  color:var(--deep);
+}
+.vtl-stat-row{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  background:rgba(14,165,233,.06);
+  border:1px solid rgba(14,165,233,.12);
+  border-radius:var(--r12);
+  padding:8px 10px;
+}
+.vtl-stat-label{
+  font-size:.6rem;font-weight:700;
+  color:rgba(9,50,87,.4);
+  text-transform:uppercase;
+}
+.vtl-stat-val{
+  font-size:.82rem;font-weight:800;
+  color:var(--deep2);
+}
+/* ── Cargo bar inside SVG ── */
+.vtl-cargo-bar{
+  transition:height .7s cubic-bezier(.4,0,.2,1), fill .7s ease;
+}
+@keyframes cargoWave{
+  0%,100%{d:path("M0,0 Q20,4 40,0 Q60,4 80,0 L80,8 L0,8 Z")}
+  50%{d:path("M0,4 Q20,0 40,4 Q60,0 80,4 L80,8 L0,8 Z")}
+}
+.vtl-capacity-label{
+  font-size:.64rem;font-weight:700;
+  color:rgba(9,50,87,.38);
+  text-align:center;
+}
+
 </style>
 
 
@@ -1337,6 +1510,43 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
   </div>
 </div>
 
+    <!-- PREPARER DASHBOARD -->
+    <div class="page" id="pagePrep">
+      <div class="ph"><h1>📦 لوحة المجهز</h1><p>تجهيز الطلبات للتسليم</p></div>
+      <div class="kpi-grid" id="prepKpi"></div>
+      <div id="prepOrdersList"></div>
+    </div>
+
+    <!-- DRIVER DASHBOARD -->
+    <div class="page" id="pageDriver">
+      <div class="ph"><h1>🚗 لوحة السائق</h1><p>طلبات التوصيل</p></div>
+      <div class="kpi-grid" id="driverKpi"></div>
+      <div id="driverOrdersList"></div>
+    </div>
+
+    <!-- PERFORMANCE REPORTS -->
+    <div class="page" id="pagePerfReports">
+      <div class="ph"><h1>📊 تقارير الأداء</h1><p>أداء المجهزين والسائقين</p></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">🚗 أداء السائقين</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>السائق</th><th>عدد التوصيلات</th><th>متوسط التقييم</th><th>متوسط وقت التوصيل</th></tr></thead>
+            <tbody id="driverPerfBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📦 أداء المجهزين</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>المجهز</th><th>الطلبات المجهزة</th><th>متوسط وقت التجهيز</th><th>دقة الكميات</th></tr></thead>
+            <tbody id="prepPerfBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1443,6 +1653,10 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
       <div class="fg"><label class="fl">الكمية في المخزون</label><input id="pe_stock" type="number" class="fi" value="0"></div>
     </div>
     <div class="fg"><label class="fl">الحد الأدنى للتحذير</label><input id="pe_min" type="number" class="fi" value="10"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">📦 حجم الكرتون (م³)</label><input id="pe_carton_volume" type="number" class="fi" step="0.001" placeholder="0.000"></div>
+      <div class="fg"><label class="fl">⚖️ وزن الكرتون (كغ)</label><input id="pe_carton_weight" type="number" class="fi" step="0.01" placeholder="0.00"></div>
+    </div>
     <div class="fg"><label class="fl">📷 رابط الصورة</label><input id="pe_img" type="text" class="fi" placeholder="https://..." oninput="peImgPreview()"></div>
     <div class="fg" style="border:1.5px dashed rgba(14,165,233,.22);border-radius:var(--r12);padding:14px;text-align:center;cursor:pointer" onclick="document.getElementById('peFile').click()">
       <div style="font-size:1.7rem;margin-bottom:4px">📤</div>
@@ -1480,6 +1694,8 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
           <option value="market_owner">🏪 صاحب ماركت</option>
           <option value="sales_manager">📊 مشرف مبيعات</option>
           <option value="admin">🛡️ أدمن</option>
+          <option value="preparer">📦 مجهز</option>
+          <option value="driver">🚗 سائق</option>
         </select>
       </div>
     </div>
@@ -5992,6 +6208,1262 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="contactDetailContent"></div>
   </div>
 </div>
+
+<!-- ═══ PREPARER EDIT QUANTITIES MODAL ═══ -->
+<div class="modal z1" id="prepEditModal">
+  <div class="m-box" style="max-width:500px">
+    <button class="m-close" onclick="closeModal('prepEditModal')">✕</button>
+    <div class="m-title">✏️ تعديل كميات الطلب</div>
+    <div id="prepEditOrderInfo" style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.1);border-radius:var(--r12);padding:11px 13px;margin-bottom:14px;font-size:.84rem;font-weight:700;color:var(--sky2)"></div>
+    <div id="prepEditItemsList"></div>
+    <div style="background:rgba(16,185,129,.06);border-radius:var(--r12);padding:12px;text-align:center;font-size:.92rem;font-weight:900;color:var(--mint2);margin:13px 0">
+      الإجمالي المحدّث: <span id="prepEditTotal">0</span> د.ع
+    </div>
+    <input type="hidden" id="prepEditOrderId">
+    <button class="btn btn-sky btn-full btn-lg" onclick="savePrepEditQuantities()">💾 حفظ التعديلات</button>
+  </div>
+</div>
+
+<!-- ═══ DRIVER PROOF MODAL ═══ -->
+<div class="modal z1" id="driverProofModal">
+  <div class="m-box" style="max-width:500px">
+    <button class="m-close" onclick="closeModal('driverProofModal')">✕</button>
+    <div class="m-title">📸 تأكيد التسليم — إثبات الاستلام</div>
+    <div style="font-size:.82rem;color:rgba(9,50,87,.5);text-align:center;margin-bottom:14px">يجب تقديم صورة أو توقيع لتأكيد التسليم</div>
+    <div class="proof-tabs">
+      <button class="proof-tab active" id="proofTabPhoto" onclick="switchProofTab('photo')">📷 صورة</button>
+      <button class="proof-tab" id="proofTabSig" onclick="switchProofTab('sig')">✍️ توقيع</button>
+    </div>
+    <!-- Photo capture pane -->
+    <div id="proofPhotoPane">
+      <div style="border:2px dashed rgba(14,165,233,.25);border-radius:var(--r16);padding:20px;text-align:center;cursor:pointer;background:rgba(14,165,233,.03)" onclick="document.getElementById('proofPhotoInput').click()">
+        <div style="font-size:2.5rem;margin-bottom:8px">📷</div>
+        <div style="font-size:.85rem;font-weight:700;color:var(--sky2)">اضغط لالتقاط صورة</div>
+        <div style="font-size:.72rem;color:rgba(9,50,87,.4);margin-top:4px">أو اختر من المعرض</div>
+        <input type="file" id="proofPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleProofPhoto(event)">
+      </div>
+      <img id="proofPhotoPreview" src="" style="display:none;width:100%;max-height:220px;object-fit:contain;border-radius:var(--r12);margin-top:12px;border:2px solid rgba(14,165,233,.15)">
+    </div>
+    <!-- Signature pane -->
+    <div id="proofSigPane" style="display:none">
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-bottom:7px;text-align:center">ارسم توقيعك باستخدام الإصبع أو الماوس</div>
+      <canvas id="sigCanvas" class="sig-canvas" width="450" height="200"></canvas>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="clearSignature()">🔄 مسح التوقيع</button>
+    </div>
+    <input type="hidden" id="proofOrderId">
+    <input type="hidden" id="proofDriverId">
+    <div id="proofUploadStatus" style="display:none;background:rgba(14,165,233,.07);border-radius:var(--r12);padding:10px;text-align:center;font-size:.82rem;font-weight:700;color:var(--sky2);margin-top:10px">
+      ⏳ جاري الرفع...
+    </div>
+    <button class="btn btn-mint btn-full btn-lg" style="margin-top:14px" onclick="confirmDeliveryWithProof()">✅ تأكيد التسليم</button>
+  </div>
+</div>
+
+<!-- ═══ CUSTOMER RECEIPT CONFIRMATION MODAL ═══ -->
+<div class="modal z1" id="receiptConfirmModal">
+  <div class="m-box" style="max-width:440px">
+    <button class="m-close" onclick="closeModal('receiptConfirmModal')">✕</button>
+    <div class="receipt-modal-inner">
+      <div class="receipt-check">✅</div>
+      <div class="m-title">استلمت طلبك؟</div>
+      <div style="font-size:.83rem;color:rgba(9,50,87,.5);margin-bottom:16px">يسعدنا تقييم تجربتك مع السائق</div>
+      <div style="font-size:.85rem;font-weight:700;color:var(--deep);margin-bottom:8px">تقييم السائق</div>
+      <div class="star-rating" id="driverStarRating">
+        <button class="star-btn" onclick="setDriverRating(1)" data-val="1">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(2)" data-val="2">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(3)" data-val="3">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(4)" data-val="4">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(5)" data-val="5">⭐</button>
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <label class="fl">ملاحظات (اختياري)</label>
+        <textarea id="customerNotesInput" class="fta" rows="2" placeholder="شاركنا ملاحظاتك..."></textarea>
+      </div>
+      <input type="hidden" id="receiptOrderId">
+      <input type="hidden" id="receiptDriverId">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost" onclick="closeModal('receiptConfirmModal')" style="flex:1">لاحقاً</button>
+        <button class="btn btn-mint btn-full" onclick="submitReceipt()">✅ تأكيد الاستلام</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// FEATURE IMPLEMENTATIONS — All 7 Features
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Extend PERMS and ROLES ──
+PERMS.preparer = { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_write:0, offers:0, tracking:0, reports:0, notif:1, prep:1 };
+PERMS.driver   = { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_write:0, offers:0, tracking:0, reports:0, notif:1, driver:1 };
+ROLES.preparer = '📦 مجهز';
+ROLES.driver   = '🚗 سائق';
+
+// ── Notification permission request on first load ──
+(function requestNotifPermission() {
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    setTimeout(() => Notification.requestPermission(), 3000);
+  }
+})();
+
+// ── Helper: send browser notification ──
+function browserNotif(title, body, icon) {
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try { new Notification(title, { body, icon: icon || 'https://via.placeholder.com/64?text=🏪' }); } catch(e) {}
+  }
+}
+
+// ── Helper: parse cart items from order products string ──
+function parseCartItems(products) {
+  if (!products) return [];
+  if (Array.isArray(products)) return products;
+  const matches = String(products).match(/([^،,\n()]+)\((\d+)\)/g) || [];
+  return matches.map(m => {
+    const mm = m.match(/(.+)\((\d+)\)/);
+    if (!mm) return null;
+    const name = mm[1].trim();
+    const qty  = parseInt(mm[2]) || 1;
+    const prod = window._products_cache?.find(p => p.name === name) || products.find?.(p => p.name === name);
+    return { name, qty, price: prod?.price || 0, carton_volume: prod?.carton_volume || 0, carton_weight: prod?.carton_weight || 0 };
+  }).filter(Boolean);
+}
+
+// ── Cache products for volume/weight calcs ──
+function cacheProducts() { window._products_cache = products; }
+
+// ══════════════════════════════════════════════════════
+// FEATURE 1: carton_volume / carton_weight on products
+// ══════════════════════════════════════════════════════
+const _origSaveProd = saveProd;
+saveProd = async function() {
+  // We'll patch inside the original by reading new fields after saving
+  await _origSaveProd();
+  // Update the last saved product with new fields
+  const fbid = document.getElementById('pe_fbid').value;
+  const carton_volume = parseFloat(document.getElementById('pe_carton_volume')?.value) || 0;
+  const carton_weight = parseFloat(document.getElementById('pe_carton_weight')?.value) || 0;
+  if (fbid && (carton_volume || carton_weight)) {
+    await fbUpdate('products', fbid, { carton_volume, carton_weight }).catch(() => {});
+  }
+  cacheProducts();
+};
+
+const _origOpenEditProd = openEditProd;
+openEditProd = function(i) {
+  _origOpenEditProd(i);
+  const p = products[i];
+  const volEl = document.getElementById('pe_carton_volume');
+  const wgtEl = document.getElementById('pe_carton_weight');
+  if (volEl) volEl.value = p.carton_volume || '';
+  if (wgtEl) wgtEl.value = p.carton_weight || '';
+};
+
+const _origOpenAddProd = openAddProd;
+openAddProd = function() {
+  _origOpenAddProd();
+  const volEl = document.getElementById('pe_carton_volume');
+  const wgtEl = document.getElementById('pe_carton_weight');
+  if (volEl) volEl.value = '';
+  if (wgtEl) wgtEl.value = '';
+};
+
+// Also patch loadProducts to include new fields
+const _origLoadProducts = loadProducts;
+loadProducts = async function() {
+  await _origLoadProducts();
+  // Re-fetch to get new fields
+  const raw = await fbGet('products');
+  raw.forEach(p => {
+    const local = products.find(x => x._id === p._id);
+    if (local) {
+      local.carton_volume = parseFloat(p.carton_volume) || 0;
+      local.carton_weight = parseFloat(p.carton_weight) || 0;
+    }
+  });
+  cacheProducts();
+};
+
+// ══════════════════════════════════════════════════════
+// FEATURE 2: Update sidebar nav for Preparer/Driver
+// ══════════════════════════════════════════════════════
+const _orig2BuildSidebar = buildSidebar;
+buildSidebar = function() {
+  _orig2BuildSidebar();
+  if (!CU) return;
+  const sbNav = document.getElementById('sbNav');
+  if (!sbNav) return;
+
+  if (CU.type === 'preparer') {
+    // Replace nav entirely for preparer
+    sbNav.innerHTML = `
+      <div class="nav-item active" id="nav_pagePrep" onclick="showPage('pagePrep')">
+        <span class="nav-icon">📦</span>لوحة المجهز
+      </div>
+      <div class="nav-item" id="nav_pageNotifications" onclick="showPage('pageNotifications')">
+        <span class="nav-icon">🔔</span>الإشعارات
+      </div>`;
+    renderPrepDashboard();
+  } else if (CU.type === 'driver') {
+    sbNav.innerHTML = `
+      <div class="nav-item active" id="nav_pageDriver" onclick="showPage('pageDriver')">
+        <span class="nav-icon">🚗</span>لوحة السائق
+      </div>
+      <div class="nav-item" id="nav_pageNotifications" onclick="showPage('pageNotifications')">
+        <span class="nav-icon">🔔</span>الإشعارات
+      </div>`;
+    renderDriverDashboard();
+  } else if (CU && (CU.type === 'admin' || CU.type === 'sales_manager')) {
+    // Add performance reports nav if not exists
+    if (!sbNav.querySelector('#nav_pagePerfReports')) {
+      const div = document.createElement('div');
+      div.className = 'nav-item';
+      div.id = 'nav_pagePerfReports';
+      div.innerHTML = '<span class="nav-icon">📊</span>تقارير الأداء';
+      div.onclick = () => showPage('pagePerfReports');
+      sbNav.appendChild(div);
+    }
+  }
+};
+
+// After login, redirect preparer/driver to correct page
+const _origBuildUI2 = buildUI;
+buildUI = function() {
+  _origBuildUI2();
+  if (CU && CU.type === 'preparer') {
+    setTimeout(() => showPage('pagePrep'), 100);
+  } else if (CU && CU.type === 'driver') {
+    setTimeout(() => showPage('pageDriver'), 100);
+  }
+};
+
+// ══════════════════════════════════════════════════════
+// FEATURE 3: PREPARER DASHBOARD
+// ══════════════════════════════════════════════════════
+
+// onSnapshot for orders — extended
+let _prepSnapshot = null, _driverSnapshot = null;
+function startNewRoleListeners() {
+  if (!fbReady || !CU) return;
+
+  if (CU.type === 'preparer' && !_prepSnapshot) {
+    _prepSnapshot = fb().onSnapshot(
+      fb().query(fb().collection(db(), 'orders'),
+        fb().where('status', 'in', ['Pending', 'Confirmed', 'pending', 'confirmed'])),
+      snap => {
+        renderPrepDashboard();
+        // Notify preparer of new orders
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const o = change.doc.data();
+            browserNotif('📦 طلب جديد للتجهيز', `${o.shopName || ''} — ${(o.total || 0).toLocaleString()} د.ع`);
+            fbAdd('notifications', {
+              title: '📦 طلب جديد للتجهيز',
+              body: `${o.shopName || ''} — ${(o.total || 0).toLocaleString()} د.ع`,
+              type: 'order', read: false, targetUser: CU.username,
+              date: new Date().toLocaleDateString('ar-IQ')
+            }).catch(() => {});
+          }
+        });
+      }
+    );
+  }
+
+  if (CU.type === 'driver' && !_driverSnapshot) {
+    _driverSnapshot = fb().onSnapshot(
+      fb().query(fb().collection(db(), 'orders'), fb().where('status', '==', 'Prepared')),
+      snap => {
+        renderDriverDashboard();
+        snap.docChanges().forEach(change => {
+          if (change.type === 'added') {
+            const o = change.doc.data();
+            browserNotif('🚗 طلب جاهز للتوصيل', `${o.shopName || ''}`);
+            fbAdd('notifications', {
+              title: '🚗 طلب جاهز للتوصيل',
+              body: `طلب ${o.shopName || ''} جاهز للتحميل`,
+              type: 'order', read: false, targetUser: CU.username,
+              date: new Date().toLocaleDateString('ar-IQ')
+            }).catch(() => {});
+          }
+        });
+      }
+    );
+  }
+}
+
+// Calc order volume & weight from items
+function calcOrderVolumeWeight(order) {
+  let totalVol = 0, totalWgt = 0;
+  const items = order.cartItemsArray || parseCartItems(order.products);
+  items.forEach(item => {
+    const prod = products.find(p => p.name === item.name);
+    if (prod) {
+      totalVol += (prod.carton_volume || 0) * (item.qty || 1);
+      totalWgt += (prod.carton_weight || 0) * (item.qty || 1);
+    }
+  });
+  return { vol: totalVol.toFixed(3), wgt: totalWgt.toFixed(2) };
+}
+
+// Render Preparer Dashboard
+async function renderPrepDashboard() {
+  const listEl = document.getElementById('prepOrdersList');
+  const kpiEl  = document.getElementById('prepKpi');
+  if (!listEl || !kpiEl) return;
+
+  // Load all orders with status Pending or Confirmed
+  let prepOrders = [];
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const st = (data.status || 'Pending').toLowerCase();
+      if (['pending', 'confirmed'].includes(st)) {
+        prepOrders.push({ _id: d.id, ...data });
+      }
+    });
+  } catch(e) {
+    prepOrders = orders.filter(o => {
+      const st = (o.status || 'pending').toLowerCase();
+      return ['pending', 'confirmed'].includes(st);
+    });
+  }
+
+  const totalVol = prepOrders.reduce((s, o) => { const {vol} = calcOrderVolumeWeight(o); return s + parseFloat(vol); }, 0);
+  const totalWgt = prepOrders.reduce((s, o) => { const {wgt} = calcOrderVolumeWeight(o); return s + parseFloat(wgt); }, 0);
+
+  kpiEl.innerHTML = `
+    <div class="kpi-card kpi-sky"><div class="kpi-icon">📦</div><div class="kpi-val">${prepOrders.length}</div><div class="kpi-lbl">طلبات للتجهيز</div></div>
+    <div class="kpi-card kpi-teal"><div class="kpi-icon">📐</div><div class="kpi-val">${totalVol.toFixed(2)}</div><div class="kpi-lbl">إجمالي الحجم (م³)</div></div>
+    <div class="kpi-card kpi-mint"><div class="kpi-icon">⚖️</div><div class="kpi-val">${totalWgt.toFixed(1)}</div><div class="kpi-lbl">إجمالي الوزن (كغ)</div></div>`;
+
+  if (!prepOrders.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)"><div style="font-size:2.5rem;margin-bottom:10px">✅</div><p>لا توجد طلبات للتجهيز حالياً</p></div>';
+    return;
+  }
+
+  listEl.innerHTML = prepOrders.map(o => {
+    const { vol, wgt } = calcOrderVolumeWeight(o);
+    const items = o.cartItemsArray || parseCartItems(o.products);
+    const statusBadge = (o.status || 'Pending') === 'Confirmed' ? '<span class="badge b-sky">✅ مؤكد</span>' : '<span class="badge b-gold">⏳ معلق</span>';
+    return `
+    <div class="prep-order-card">
+      <div class="prep-order-hd">
+        <div>
+          <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
+          <div class="prep-order-id">${o.orderId || o._id}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${statusBadge}
+        </div>
+      </div>
+      <div class="prep-order-meta">
+        <span class="badge b-teal">📐 ${vol} م³</span>
+        <span class="badge b-mint">⚖️ ${wgt} كغ</span>
+        <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
+        <span class="badge b-violet">📅 ${o.date || tsToStr(o.createdAt) || '—'}</span>
+      </div>
+      ${items.length ? `
+      <div class="prep-items-list">
+        ${items.map(item => `
+          <div class="prep-item-row">
+            <span class="prep-item-name">${item.name}</span>
+            <span class="badge b-sky">${item.qty} وحدة</span>
+          </div>`).join('')}
+      </div>` : `<div style="font-size:.8rem;color:rgba(9,50,87,.4);padding:7px">${o.products || '—'}</div>`}
+
+      <!-- Vehicle Selector -->
+      <div style="margin-top:10px">
+        <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:7px">🚚 نوع المركبة</div>
+        <div class="vehicle-selector" id="vehicle_${o._id}">
+          <button class="vehicle-opt ${(o.vehicle_type==='ستوتة')?'selected':''}" onclick="selectVehicle('${o._id}','ستوتة',this)">
+            <span class="v-icon">🛵</span>ستوتة
+          </button>
+          <button class="vehicle-opt ${(o.vehicle_type==='حمل صغيرة')?'selected':''}" onclick="selectVehicle('${o._id}','حمل صغيرة',this)">
+            <span class="v-icon">🚐</span>حمل صغيرة
+          </button>
+          <button class="vehicle-opt ${(o.vehicle_type==='شاحنة')?'selected':''}" onclick="selectVehicle('${o._id}','شاحنة',this)">
+            <span class="v-icon">🚛</span>شاحنة
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="openPrepEditModal('${o._id}')">✏️ تعديل الكميات</button>
+        <button class="btn btn-mint" style="flex:1" onclick="markAsPrepared('${o._id}')">✅ تم التجهيز</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selectVehicle(orderId, vehicleType, btn) {
+  // Update UI
+  const wrap = document.getElementById('vehicle_' + orderId);
+  if (wrap) wrap.querySelectorAll('.vehicle-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  // Save to Firebase
+  await fbUpdate('orders', orderId, { vehicle_type: vehicleType }).catch(() => {});
+  toast(`✅ تم اختيار: ${vehicleType}`);
+}
+
+async function markAsPrepared(orderId) {
+  if (!CU) return;
+  const now = new Date().toISOString();
+  await fbUpdate('orders', orderId, {
+    status: 'Prepared',
+    prepared_by: CU.username,
+    prepared_by_name: CU.name,
+    prepared_at: now
+  }).catch(() => {});
+  toast('✅ تم تحديد الطلب كـ "مجهز"');
+  renderPrepDashboard();
+  // Notify drivers
+  await fbAdd('notifications', {
+    title: '🚗 طلب جاهز للتوصيل',
+    body: `طلب رقم ${orderId} جاهز للتحميل`,
+    type: 'order', read: false, targetUser: 'driver',
+    date: new Date().toLocaleDateString('ar-IQ')
+  }).catch(() => {});
+  // Browser notification to all drivers
+  browserNotif('🚗 طلب جاهز للتوصيل', 'طلب جديد جاهز للتحميل');
+}
+
+function openPrepEditModal(orderId) {
+  // Find order
+  fbGet('orders').then(allOrds => {
+    const rawOrd = allOrds.find(o => o._id === orderId);
+    if (!rawOrd) { toast('لم يتم العثور على الطلب', false); return; }
+
+    document.getElementById('prepEditOrderId').value = orderId;
+    document.getElementById('prepEditOrderInfo').innerHTML =
+      `🏪 ${rawOrd.shopName || '—'} — 💰 ${(parseFloat(rawOrd.total)||0).toLocaleString()} د.ع`;
+
+    const items = rawOrd.cartItemsArray || parseCartItems(rawOrd.products);
+    let itemsHtml = '';
+    if (items.length) {
+      itemsHtml = items.map((item, i) => {
+        const prod = products.find(p => p.name === item.name);
+        return `
+        <div class="prep-item-row" style="flex-direction:column;align-items:flex-start;gap:7px">
+          <div style="font-weight:700;color:var(--deep)">${item.name}</div>
+          <div style="display:flex;align-items:center;gap:9px;width:100%">
+            <span style="font-size:.75rem;color:rgba(9,50,87,.45)">الكمية الأصلية: ${item.qty}</span>
+            <input type="number" class="fi prep-edit-qty" data-name="${esc(item.name)}" data-price="${prod?.price || item.price || 0}"
+              style="width:90px;padding:6px 9px;font-size:.85rem" value="${item.qty}" min="0" oninput="recalcPrepEditTotal()">
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      itemsHtml = `<div style="padding:10px;text-align:center;color:rgba(9,50,87,.4)">${rawOrd.products || '—'}</div>`;
+    }
+    document.getElementById('prepEditItemsList').innerHTML = itemsHtml;
+    recalcPrepEditTotal();
+    openModal('prepEditModal');
+  });
+}
+
+function recalcPrepEditTotal() {
+  let total = 0;
+  document.querySelectorAll('.prep-edit-qty').forEach(input => {
+    const qty   = parseInt(input.value) || 0;
+    const price = parseFloat(input.dataset.price) || 0;
+    total += qty * price;
+  });
+  const el = document.getElementById('prepEditTotal');
+  if (el) el.textContent = total.toLocaleString();
+}
+
+async function savePrepEditQuantities() {
+  const orderId = document.getElementById('prepEditOrderId').value;
+  if (!orderId) return;
+
+  const updatedItems = [];
+  document.querySelectorAll('.prep-edit-qty').forEach(input => {
+    updatedItems.push({ name: input.dataset.name, qty: parseInt(input.value) || 0, price: parseFloat(input.dataset.price) || 0 });
+  });
+
+  let newTotal = updatedItems.reduce((s, i) => s + i.qty * i.price, 0);
+  const newProducts = updatedItems.map(i => `${i.name}(${i.qty})`).join('، ');
+  const commPct = orders.find(o => o._id === orderId)?.commPct || 0;
+  const commission = Math.round(newTotal * commPct / 100);
+
+  await fbUpdate('orders', orderId, {
+    products: newProducts,
+    cartItemsArray: updatedItems,
+    total: newTotal,
+    commission,
+    net: newTotal - commission,
+    qty_edited_by: CU?.username,
+    qty_edited_at: new Date().toISOString()
+  }).catch(() => {});
+
+  closeModal('prepEditModal');
+  toast('✅ تم تحديث الكميات والإجمالي');
+  renderPrepDashboard();
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 4: DRIVER DASHBOARD
+// ══════════════════════════════════════════════════════
+async function renderDriverDashboard() {
+  const listEl = document.getElementById('driverOrdersList');
+  const kpiEl  = document.getElementById('driverKpi');
+  if (!listEl || !kpiEl) return;
+
+  let preparedOrders = [], inDeliveryOrders = [];
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const st = data.status || '';
+      if (st === 'Prepared') preparedOrders.push({ _id: d.id, ...data });
+      else if (st === 'In Delivery' && data.driver_id === CU.username) inDeliveryOrders.push({ _id: d.id, ...data });
+    });
+  } catch(e) {
+    preparedOrders = orders.filter(o => o.status === 'Prepared');
+    inDeliveryOrders = orders.filter(o => o.status === 'In Delivery' && o.driver_id === CU.username);
+  }
+
+  const myDelivered = orders.filter(o => o.status === 'Delivered' && o.driver_id === CU.username);
+  const avgRating = myDelivered.filter(o => o.driver_rating).reduce((s, o, _, a) => s + o.driver_rating / a.length, 0);
+
+  kpiEl.innerHTML = `
+    <div class="kpi-card kpi-sky"><div class="kpi-icon">📦</div><div class="kpi-val">${preparedOrders.length}</div><div class="kpi-lbl">جاهزة للتحميل</div></div>
+    <div class="kpi-card kpi-teal"><div class="kpi-icon">🚗</div><div class="kpi-val">${inDeliveryOrders.length}</div><div class="kpi-lbl">قيد التوصيل</div></div>
+    <div class="kpi-card kpi-mint"><div class="kpi-icon">✅</div><div class="kpi-val">${myDelivered.length}</div><div class="kpi-lbl">تم تسليمها</div></div>
+    <div class="kpi-card kpi-gold"><div class="kpi-icon">⭐</div><div class="kpi-val">${avgRating ? avgRating.toFixed(1) : '—'}</div><div class="kpi-lbl">متوسط التقييم</div></div>`;
+
+  const allDriverOrders = [...preparedOrders, ...inDeliveryOrders];
+  if (!allDriverOrders.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)"><div style="font-size:2.5rem;margin-bottom:10px">✅</div><p>لا توجد طلبات حالياً</p></div>';
+    return;
+  }
+
+  listEl.innerHTML = allDriverOrders.map(o => {
+    const isPrepared = o.status === 'Prepared';
+    const isInDelivery = o.status === 'In Delivery';
+    return `
+    <div class="prep-order-card">
+      <div class="prep-order-hd">
+        <div>
+          <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
+          <div class="prep-order-id">${o.orderId || o._id}</div>
+        </div>
+        <div>
+          ${isPrepared ? '<span class="badge b-green">✅ جاهز للتحميل</span>' : '<span class="badge b-sky">🚗 قيد التوصيل</span>'}
+        </div>
+      </div>
+      <div class="prep-order-meta">
+        <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
+        <span class="badge b-teal">📍 ${o.shopAddress || o.shopAddr || '—'}</span>
+        ${o.vehicle_type ? `<span class="badge b-violet">🚚 ${o.vehicle_type}</span>` : ''}
+      </div>
+      <div style="font-size:.8rem;color:rgba(9,50,87,.5);margin-bottom:10px">${o.products || '—'}</div>
+      ${o.location ? `<a href="${o.location}" target="_blank" class="btn btn-ghost btn-sm" style="margin-bottom:8px;display:inline-flex">🗺️ عرض الموقع</a>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${isPrepared ? `<button class="btn btn-sky btn-full" onclick="markAsLoaded('${o._id}')">🚛 تم التحميل</button>` : ''}
+        ${isInDelivery ? `<button class="btn btn-mint btn-full" onclick="openDeliveryProof('${o._id}','${o.driver_id || ''}')">✅ تأكيد التسليم</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markAsLoaded(orderId) {
+  if (!CU) return;
+  const now = new Date().toISOString();
+  await fbUpdate('orders', orderId, {
+    status: 'In Delivery',
+    driver_id: CU.username,
+    driver_name: CU.name,
+    loaded_at: now
+  }).catch(() => {});
+  toast('✅ تم تحديد الطلب كـ "قيد التوصيل"');
+  renderDriverDashboard();
+
+  // Notify customer (via notification)
+  const ord = orders.find(o => o._id === orderId);
+  if (ord) {
+    await fbAdd('notifications', {
+      title: '🚗 طلبك في الطريق إليك!',
+      body: `طلبك من ${ord.shopName || ''} أصبح في الطريق`,
+      type: 'order', read: false,
+      targetUser: ord.repUser || ord.visitorPhone || 'customer',
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(() => {});
+    browserNotif('🚗 طلبك في الطريق', `طلبك من ${ord.shopName || ''} أصبح في الطريق`);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// Driver Proof (Photo/Signature)
+// ══════════════════════════════════════════════════════
+let _proofPhotoDataUrl = null, _sigDrawing = false, _sigCtx = null;
+let _currentProofTab = 'photo';
+
+function openDeliveryProof(orderId, driverId) {
+  document.getElementById('proofOrderId').value = orderId;
+  const driverIdEl = document.getElementById('proofDriverId');
+  if (driverIdEl) driverIdEl.value = driverId || CU?.username || '';
+  _proofPhotoDataUrl = null;
+  // Reset photo preview
+  const preview = document.getElementById('proofPhotoPreview');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  const photoInput = document.getElementById('proofPhotoInput');
+  if (photoInput) photoInput.value = '';
+  // Reset signature canvas context so it re-initializes each open
+  _sigCtx = null;
+  switchProofTab('photo');
+  openModal('driverProofModal');
+  setTimeout(initSigCanvas, 200);
+}
+
+function switchProofTab(tab) {
+  _currentProofTab = tab;
+  document.getElementById('proofPhotoPane').style.display = tab === 'photo' ? 'block' : 'none';
+  document.getElementById('proofSigPane').style.display   = tab === 'sig' ? 'block' : 'none';
+  document.getElementById('proofTabPhoto').classList.toggle('active', tab === 'photo');
+  document.getElementById('proofTabSig').classList.toggle('active', tab === 'sig');
+}
+
+function handleProofPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _proofPhotoDataUrl = ev.target.result;
+    const preview = document.getElementById('proofPhotoPreview');
+    preview.src = _proofPhotoDataUrl;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function initSigCanvas() {
+  const canvas = document.getElementById('sigCanvas');
+  if (!canvas || _sigCtx) return;
+  _sigCtx = canvas.getContext('2d');
+  _sigCtx.strokeStyle = '#093257';
+  _sigCtx.lineWidth = 2.5;
+  _sigCtx.lineCap = 'round';
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if (e.touches) {
+      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
+    }
+    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  }
+
+  const start = e => { _sigDrawing = true; _sigCtx.beginPath(); const p = getPos(e); _sigCtx.moveTo(p.x, p.y); e.preventDefault(); };
+  const draw  = e => { if (!_sigDrawing) return; const p = getPos(e); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke(); e.preventDefault(); };
+  const end   = () => { _sigDrawing = false; };
+
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', draw, { passive: false });
+  canvas.addEventListener('touchend', end);
+}
+
+function clearSignature() {
+  const canvas = document.getElementById('sigCanvas');
+  if (!canvas || !_sigCtx) return;
+  _sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+async function confirmDeliveryWithProof() {
+  const orderId  = document.getElementById('proofOrderId').value;
+  const statusEl = document.getElementById('proofUploadStatus');
+
+  let proofDataUrl = null;
+
+  if (_currentProofTab === 'photo') {
+    if (!_proofPhotoDataUrl) { toast('⚠️ يرجى التقاط صورة أولاً', false); return; }
+    proofDataUrl = _proofPhotoDataUrl;
+  } else {
+    const canvas = document.getElementById('sigCanvas');
+    if (!canvas) { toast('خطأ في التوقيع', false); return; }
+    const blank = document.createElement('canvas');
+    blank.width = canvas.width; blank.height = canvas.height;
+    if (canvas.toDataURL() === blank.toDataURL()) { toast('⚠️ يرجى رسم توقيعك أولاً', false); return; }
+    proofDataUrl = canvas.toDataURL('image/png');
+  }
+
+  statusEl.style.display = 'block';
+  statusEl.textContent = '⏳ جاري الرفع...';
+
+  let proofUrl = '';
+  try {
+    // Upload to ImgBB
+    const base64 = proofDataUrl.split(',')[1];
+    const fd = new FormData();
+    fd.append('image', base64);
+    fd.append('key', IMGBB_API_KEY);
+    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (data.success) proofUrl = data.data.url;
+  } catch(e) {
+    proofUrl = proofDataUrl; // Fallback: store base64 locally
+  }
+
+  const now = new Date().toISOString();
+  await fbUpdate('orders', orderId, {
+    status: 'Delivered',
+    delivered_at: now,
+    proof_url: proofUrl,
+    driver_id: CU?.username,
+    driver_name: CU?.name
+  }).catch(() => {});
+
+  statusEl.textContent = '✅ تم التسليم!';
+  setTimeout(() => { closeModal('driverProofModal'); statusEl.style.display = 'none'; }, 800);
+
+  toast('✅ تم تأكيد التسليم');
+  renderDriverDashboard();
+
+  // Notify customer
+  await fbAdd('notifications', {
+    title: '✅ تم توصيل طلبك!',
+    body: `تم توصيل طلبك بنجاح — برجمان`,
+    type: 'order', read: false, targetUser: 'customer',
+    date: new Date().toLocaleDateString('ar-IQ')
+  }).catch(() => {});
+  browserNotif('✅ تم توصيل طلبك!', 'طلبك تم توصيله بنجاح');
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 5: Customer Tracking & Rating
+// ══════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════
+// VISUAL TRUCK LOADER
+// ══════════════════════════════════════════════════════
+
+// Vehicle capacities in m³
+const VEHICLE_CAPS = {
+  'ستوتة':     { m3: 0.4,  label: 'ستوتة 🛵',   color: '#f59e0b' },
+  'حمل صغيرة': { m3: 6,    label: 'حمل صغيرة 🚐', color: '#0ea5e9' },
+  'شاحنة':     { m3: 30,   label: 'شاحنة 🚛',    color: '#8b5cf6' }
+};
+
+/**
+ * Build the SVG rear-view truck with dynamic cargo fill.
+ * truckType: 'ستوتة' | 'حمل صغيرة' | 'شاحنة'
+ * fillPct: 0-100
+ */
+function buildTruckSVG(truckType, fillPct) {
+  const clamped = Math.max(0, Math.min(100, fillPct));
+
+  // Choose SVG path based on type
+  if (truckType === 'ستوتة') {
+    return buildScooterSVG(clamped);
+  } else if (truckType === 'حمل صغيرة') {
+    return buildPickupSVG(clamped);
+  } else {
+    return buildBigTruckSVG(clamped);
+  }
+}
+
+function _cargoGradientDefs(id, pct) {
+  // Green at bottom → lighter green, cut at fill height
+  const g = pct > 70 ? '#10b981' : pct > 35 ? '#0ea5e9' : '#f59e0b';
+  return `<defs>
+    <linearGradient id="cargoGrad${id}" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${g}" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="${g}" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="emptyGrad${id}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(148,163,184,0.18)"/>
+      <stop offset="100%" stop-color="rgba(148,163,184,0.06)"/>
+    </linearGradient>
+  </defs>`;
+}
+
+function buildScooterSVG(pct) {
+  // Scooter cargo box: 120×90 viewBox
+  const boxH = 52, boxY = 18, boxX = 20, boxW = 80;
+  const fillH = Math.round((pct / 100) * boxH);
+  const fillY = boxY + boxH - fillH;
+  return `<svg viewBox="0 0 120 110" width="120" height="110" xmlns="http://www.w3.org/2000/svg">
+    ${_cargoGradientDefs('sc', pct)}
+    <!-- body -->
+    <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="6" fill="url(#bodyGrad_sc)" stroke="#64748b" stroke-width="2"/>
+    <!-- empty space -->
+    <rect x="${boxX+2}" y="${boxY+2}" width="${boxW-4}" height="${boxH-4}" rx="4" fill="url(#emptyGrad_sc)"/>
+    <!-- cargo fill -->
+    <rect class="vtl-cargo-bar" x="${boxX+2}" y="${fillY}" width="${boxW-4}" height="${fillH}" rx="3" fill="url(#cargoGradsc)" opacity="0.95"/>
+    <!-- door line -->
+    <line x1="${boxX + boxW/2}" y1="${boxY+2}" x2="${boxX + boxW/2}" y2="${boxY + boxH - 2}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+    <!-- hinge bolts -->
+    <circle cx="${boxX + boxW/2}" cy="${boxY + 12}" r="2.5" fill="#64748b"/>
+    <circle cx="${boxX + boxW/2}" cy="${boxY + boxH - 12}" r="2.5" fill="#64748b"/>
+    <!-- wheels -->
+    <circle cx="28" cy="88" r="13" fill="#334155" stroke="#1e293b" stroke-width="2"/>
+    <circle cx="28" cy="88" r="6" fill="#64748b"/>
+    <circle cx="92" cy="88" r="13" fill="#334155" stroke="#1e293b" stroke-width="2"/>
+    <circle cx="92" cy="88" r="6" fill="#64748b"/>
+    <!-- chassis bar -->
+    <rect x="15" y="75" width="90" height="6" rx="3" fill="#475569"/>
+    <!-- pct label inside box -->
+    <text x="60" y="${boxY + boxH/2 + 5}" text-anchor="middle" fill="white" font-size="12" font-weight="800" opacity="0.9">${Math.round(pct)}%</text>
+  </svg>`;
+}
+
+function buildPickupSVG(pct) {
+  // Small truck rear: 140×120 viewBox
+  const boxH = 64, boxY = 20, boxX = 14, boxW = 112;
+  const fillH = Math.round((pct / 100) * boxH);
+  const fillY = boxY + boxH - fillH;
+  return `<svg viewBox="0 0 140 130" width="140" height="130" xmlns="http://www.w3.org/2000/svg">
+    ${_cargoGradientDefs('pk', pct)}
+    <!-- outer body -->
+    <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="7" fill="url(#bodyGradpk)" stroke="#475569" stroke-width="2.5"/>
+    <!-- inner void -->
+    <rect x="${boxX+3}" y="${boxY+3}" width="${boxW-6}" height="${boxH-6}" rx="5" fill="url(#emptyGradpk)"/>
+    <!-- cargo fill -->
+    <rect class="vtl-cargo-bar" x="${boxX+3}" y="${fillY}" width="${boxW-6}" height="${fillH}" rx="4" fill="url(#cargoGradpk)" opacity="0.95"/>
+    <!-- rear door divider -->
+    <line x1="${boxX + boxW/2}" y1="${boxY+4}" x2="${boxX + boxW/2}" y2="${boxY + boxH - 4}" stroke="rgba(255,255,255,.5)" stroke-width="2"/>
+    <!-- lock bar -->
+    <rect x="${boxX + boxW/2 - 10}" y="${boxY + boxH/2 - 3}" width="20" height="6" rx="3" fill="rgba(255,255,255,0.7)"/>
+    <!-- side lights -->
+    <rect x="${boxX + 5}" y="${boxY - 7}" width="18" height="8" rx="3" fill="#fef08a" opacity="0.8"/>
+    <rect x="${boxX + boxW - 23}" y="${boxY - 7}" width="18" height="8" rx="3" fill="#fca5a5" opacity="0.8"/>
+    <!-- wheels -->
+    <circle cx="30" cy="106" r="16" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="30" cy="106" r="8" fill="#475569"/>
+    <circle cx="110" cy="106" r="16" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="110" cy="106" r="8" fill="#475569"/>
+    <!-- bumper -->
+    <rect x="10" y="90" width="120" height="9" rx="4" fill="#334155"/>
+    <!-- pct -->
+    <text x="70" y="${boxY + boxH/2 + 6}" text-anchor="middle" fill="white" font-size="14" font-weight="900" opacity="0.9">${Math.round(pct)}%</text>
+  </svg>`;
+}
+
+function buildBigTruckSVG(pct) {
+  // Big truck rear: 180×155 viewBox
+  const boxH = 90, boxY = 16, boxX = 10, boxW = 160;
+  const fillH = Math.round((pct / 100) * boxH);
+  const fillY = boxY + boxH - fillH;
+  return `<svg viewBox="0 0 180 160" width="180" height="160" xmlns="http://www.w3.org/2000/svg">
+    ${_cargoGradientDefs('bt', pct)}
+    <!-- outer body -->
+    <rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="8" fill="url(#bodyGradbt)" stroke="#475569" stroke-width="3"/>
+    <!-- roof ridge -->
+    <rect x="${boxX+8}" y="${boxY-4}" width="${boxW-16}" height="8" rx="4" fill="#64748b"/>
+    <!-- inner void -->
+    <rect x="${boxX+4}" y="${boxY+4}" width="${boxW-8}" height="${boxH-8}" rx="6" fill="url(#emptyGradbt)"/>
+    <!-- cargo fill -->
+    <rect class="vtl-cargo-bar" x="${boxX+4}" y="${fillY}" width="${boxW-8}" height="${fillH}" rx="5" fill="url(#cargoGradbt)" opacity="0.95"/>
+    <!-- door divider -->
+    <line x1="${boxX + boxW/2}" y1="${boxY+5}" x2="${boxX + boxW/2}" y2="${boxY + boxH - 5}" stroke="rgba(255,255,255,.55)" stroke-width="2.5"/>
+    <!-- door hinges -->
+    <rect x="${boxX + boxW/2 - 12}" y="${boxY + 20}" width="24" height="7" rx="3.5" fill="rgba(255,255,255,0.65)"/>
+    <rect x="${boxX + boxW/2 - 12}" y="${boxY + boxH - 28}" width="24" height="7" rx="3.5" fill="rgba(255,255,255,0.65)"/>
+    <!-- tail lights -->
+    <rect x="${boxX+6}" y="${boxY + boxH - 16}" width="22" height="12" rx="4" fill="#fca5a5" opacity="0.9"/>
+    <rect x="${boxX + boxW - 28}" y="${boxY + boxH - 16}" width="22" height="12" rx="4" fill="#fca5a5" opacity="0.9"/>
+    <!-- top lights -->
+    <rect x="${boxX+6}" y="${boxY - 2}" width="14" height="6" rx="3" fill="#fef08a" opacity="0.8"/>
+    <rect x="${boxX + boxW - 20}" y="${boxY - 2}" width="14" height="6" rx="3" fill="#fef08a" opacity="0.8"/>
+    <!-- dual rear wheels -->
+    <circle cx="34" cy="132" r="19" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="34" cy="132" r="10" fill="#334155"/>
+    <circle cx="58" cy="132" r="14" fill="#263548" stroke="#0f172a" stroke-width="1.5"/>
+    <circle cx="122" cy="132" r="14" fill="#263548" stroke="#0f172a" stroke-width="1.5"/>
+    <circle cx="146" cy="132" r="19" fill="#1e293b" stroke="#0f172a" stroke-width="2"/>
+    <circle cx="146" cy="132" r="10" fill="#334155"/>
+    <!-- underframe -->
+    <rect x="8" y="115" width="164" height="10" rx="5" fill="#334155"/>
+    <!-- pct text -->
+    <text x="90" y="${boxY + boxH/2 + 7}" text-anchor="middle" fill="white" font-size="17" font-weight="900" opacity="0.9">${Math.round(pct)}%</text>
+  </svg>`;
+}
+
+function renderTruckLoader(order) {
+  // Calculate total volume of this order
+  let totalVol = 0;
+  const items = order.items || [];
+  items.forEach(item => {
+    totalVol += (parseFloat(item.carton_volume) || 0) * (parseInt(item.qty) || 1);
+  });
+
+  const vehicleType = order.vehicle_type || null;
+  const cap = vehicleType ? VEHICLE_CAPS[vehicleType] : null;
+
+  // If no vehicle assigned yet
+  if (!cap) {
+    return `
+    <div class="vtl-wrap">
+      <div class="vtl-title">🚚 حجم الشحنة</div>
+      <div style="font-size:.78rem;color:rgba(9,50,87,.4);padding:10px 0;text-align:center">
+        في انتظار اختيار المجهز للمركبة…
+      </div>
+    </div>`;
+  }
+
+  const fillPct = cap.m3 > 0 ? Math.min(100, (totalVol / cap.m3) * 100) : 0;
+  const fillDeg = Math.round((fillPct / 100) * 360);
+  const ringColor = fillPct > 70 ? '#10b981' : fillPct > 35 ? '#0ea5e9' : '#f59e0b';
+  const statusMsg = fillPct >= 95 ? 'ممتلئة تقريباً' : fillPct >= 60 ? 'أكثر من النصف' : fillPct >= 30 ? 'ربع إلى نصف' : 'خفيفة';
+
+  return `
+  <div class="vtl-wrap" id="vtl_${order._id || order.id || ''}">
+    <div class="vtl-title">🚚 حجم شحنتك في المركبة</div>
+    <div class="vtl-scene">
+      <div class="vtl-svg-wrap">
+        ${buildTruckSVG(vehicleType, fillPct)}
+        <div class="vtl-vehicle-name">${cap.label}</div>
+        <div class="vtl-capacity-label">السعة الكلية: ${cap.m3} م³</div>
+      </div>
+      <div class="vtl-info">
+        <div class="vtl-pct-ring" style="--fill-color:${ringColor};--fill-deg:${fillDeg}deg">
+          <span class="vtl-pct-txt">${Math.round(fillPct)}%</span>
+        </div>
+        <div class="vtl-stat-row">
+          <span class="vtl-stat-label">حجم طلبك</span>
+          <span class="vtl-stat-val">${totalVol.toFixed(3)} م³</span>
+        </div>
+        <div class="vtl-stat-row">
+          <span class="vtl-stat-label">الحالة</span>
+          <span class="vtl-stat-val" style="color:${ringColor}">${statusMsg}</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Order status tracker shown in order detail
+function renderOrderStatusTracker(order) {
+  const statusMap = { Pending: 0, pending: 0, Confirmed: 1, confirmed: 1, Prepared: 2, 'In Delivery': 3, Delivered: 4 };
+  const stages = [
+    { icon: '✅', label: 'مؤكد' },
+    { icon: '📦', label: 'مجهز' },
+    { icon: '🚗', label: 'في الطريق' },
+    { icon: '🏠', label: 'تم التسليم' }
+  ];
+  const step = statusMap[order.status || 'Pending'] || 0;
+  const pct = Math.min(100, (step / 3) * 100);
+
+  // Truck icon changes based on vehicle type
+  const vehicleIcon = order.vehicle_type === 'ستوتة' ? '🛵'
+                    : order.vehicle_type === 'شاحنة'  ? '🚛' : '🚐';
+
+  return `
+  <div class="order-tracker">
+    <div style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:11px">📍 حالة طلبك</div>
+    <div style="position:relative;padding:0 0 20px">
+      <div class="tracker-line"></div>
+      <div class="tracker-progress" style="width:${pct}%"></div>
+      <span class="tracker-car" style="right:${pct}%">${vehicleIcon}</span>
+      <div class="tracker-stages">
+        ${stages.map((s, i) => `
+          <div class="tracker-stage">
+            <div class="tracker-dot ${i < step ? 'done' : i === step ? 'active' : ''}">${s.icon}</div>
+            <div class="tracker-label ${i < step ? 'done' : i === step ? 'active' : ''}">${s.label}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${renderTruckLoader(order)}
+    ${order.status === 'Delivered' ? renderReceiptConfirmUI(order) : ''}
+  </div>`;
+}
+
+function renderReceiptConfirmUI(order) {
+  if (order.customer_confirmed) return `<div style="text-align:center;color:var(--mint2);font-weight:700;font-size:.85rem;margin-top:8px">✅ تم تأكيد الاستلام</div>`;
+  return `
+  <div style="text-align:center;margin-top:12px">
+    <button class="btn btn-mint" onclick="openReceiptConfirm('${order._id}', '${order.driver_id || ''}')">
+      ✅ تأكيد الاستلام وتقييم السائق
+    </button>
+  </div>`;
+}
+
+function openReceiptConfirm(orderId, driverId) {
+  document.getElementById('receiptOrderId').value = orderId;
+  document.getElementById('receiptDriverId').value = driverId;
+  _selectedDriverRating = 0;
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('customerNotesInput').value = '';
+  openModal('receiptConfirmModal');
+}
+
+let _selectedDriverRating = 0;
+function setDriverRating(val) {
+  _selectedDriverRating = val;
+  document.querySelectorAll('#driverStarRating .star-btn').forEach((b, i) => {
+    b.classList.toggle('active', i < val);
+    b.textContent = i < val ? '⭐' : '☆';
+  });
+}
+
+async function submitReceipt() {
+  const orderId  = document.getElementById('receiptOrderId').value;
+  const driverId = document.getElementById('receiptDriverId').value;
+  const notes    = document.getElementById('customerNotesInput').value.trim();
+  const rating   = _selectedDriverRating;
+
+  await fbUpdate('orders', orderId, {
+    customer_confirmed: true,
+    customer_notes: notes,
+    driver_rating: rating,
+    confirmed_at: new Date().toISOString()
+  }).catch(() => {});
+
+  // Aggregate rating to driver user doc
+  if (driverId && rating > 0) {
+    const driverUser = users.find(u => u.username === driverId);
+    if (driverUser) {
+      const prevCount = parseInt(driverUser.rating_count) || 0;
+      const prevAvg   = parseFloat(driverUser.avg_rating) || 0;
+      const newCount  = prevCount + 1;
+      const newAvg    = ((prevAvg * prevCount) + rating) / newCount;
+      if (driverUser._id) {
+        await fbUpdate('users', driverUser._id, { avg_rating: newAvg, rating_count: newCount }).catch(() => {});
+        driverUser.avg_rating = newAvg;
+        driverUser.rating_count = newCount;
+      }
+    }
+  }
+
+  closeModal('receiptConfirmModal');
+  toast('⭐ شكراً على تقييمك!');
+}
+
+// Patch showOrdDetail to include tracker
+// Keep real-time unsubscribe handle for order detail
+let _ordDetailUnsub = null;
+
+const _origShowOrdDetail = showOrdDetail;
+showOrdDetail = function(id) {
+  // Cancel previous real-time listener
+  if (_ordDetailUnsub) { try { _ordDetailUnsub(); } catch(e){} _ordDetailUnsub = null; }
+
+  _origShowOrdDetail(id);
+  const o = orders.find(x => (x._id || x.id) === id);
+  if (!o || !o.status) return;
+
+  const detailContent = document.getElementById('ordDetailContent');
+  if (detailContent) {
+    const trackerHtml = renderOrderStatusTracker(o);
+    detailContent.insertAdjacentHTML('afterbegin', trackerHtml);
+  }
+
+  // Real-time listener: re-render truck loader when vehicle_type or items change
+  try {
+    const { onSnapshot, doc: fbDoc } = window._fb || {};
+    const _db = window._db;
+    if (onSnapshot && fbDoc && _db) {
+      _ordDetailUnsub = onSnapshot(fbDoc(_db, 'orders', id), (snap) => {
+        if (!snap.exists()) return;
+        const live = { _id: snap.id, ...snap.data() };
+        // Merge into local orders cache
+        const idx = orders.findIndex(x => (x._id || x.id) === id);
+        if (idx !== -1) orders[idx] = { ...orders[idx], ...live };
+
+        // Update truck loader block in-place
+        const vtlEl = document.getElementById(`vtl_${id}`);
+        if (vtlEl) {
+          const newVtl = document.createElement('div');
+          newVtl.innerHTML = renderTruckLoader(live);
+          const newChild = newVtl.firstElementChild;
+          if (newChild) vtlEl.replaceWith(newChild);
+        }
+
+        // Update tracker-car icon if vehicle changed
+        const carEl = document.querySelector('.tracker-car');
+        if (carEl && live.vehicle_type) {
+          carEl.textContent = live.vehicle_type === 'ستوتة' ? '🛵'
+                            : live.vehicle_type === 'شاحنة'  ? '🚛' : '🚐';
+        }
+      });
+    }
+  } catch(e) { console.warn('VTL realtime:', e); }
+};
+
+// ══════════════════════════════════════════════════════
+// FEATURE 6: Performance Reports
+// ══════════════════════════════════════════════════════
+async function renderPerfReports() {
+  await renderDriverPerfTable();
+  await renderPrepPerfTable();
+}
+
+async function renderDriverPerfTable() {
+  const bodyEl = document.getElementById('driverPerfBody');
+  if (!bodyEl) return;
+
+  let allOrders = [];
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
+    allOrders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) { allOrders = orders; }
+
+  const deliveredOrds = allOrders.filter(o => o.status === 'Delivered' && o.driver_id);
+  const driverMap = {};
+
+  deliveredOrds.forEach(o => {
+    const did = o.driver_id;
+    if (!driverMap[did]) {
+      const u = users.find(x => x.username === did);
+      driverMap[did] = { name: u?.name || did, count: 0, ratingSum: 0, ratingCount: 0, totalMinutes: 0 };
+    }
+    driverMap[did].count++;
+    if (o.driver_rating) { driverMap[did].ratingSum += o.driver_rating; driverMap[did].ratingCount++; }
+    if (o.loaded_at && o.delivered_at) {
+      const diff = (new Date(o.delivered_at) - new Date(o.loaded_at)) / 60000;
+      if (diff > 0 && diff < 1440) driverMap[did].totalMinutes += diff;
+    }
+  });
+
+  bodyEl.innerHTML = Object.values(driverMap).sort((a, b) => b.count - a.count).map(d => {
+    const avgRating = d.ratingCount ? (d.ratingSum / d.ratingCount).toFixed(1) : '—';
+    const avgTime   = d.count ? Math.round(d.totalMinutes / d.count) : 0;
+    const stars = d.ratingCount ? '⭐'.repeat(Math.round(parseFloat(avgRating))) : '—';
+    return `<tr>
+      <td style="font-weight:700">${d.name}</td>
+      <td>${d.count}</td>
+      <td>${stars} ${avgRating !== '—' ? `(${avgRating})` : ''}</td>
+      <td>${avgTime ? avgTime + ' دقيقة' : '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;padding:22px">لا توجد بيانات</td></tr>';
+}
+
+async function renderPrepPerfTable() {
+  const bodyEl = document.getElementById('prepPerfBody');
+  if (!bodyEl) return;
+
+  let allOrders = [];
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
+    allOrders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) { allOrders = orders; }
+
+  const preparedOrds = allOrders.filter(o => o.prepared_by);
+  const prepMap = {};
+
+  preparedOrds.forEach(o => {
+    const pid = o.prepared_by;
+    if (!prepMap[pid]) {
+      const u = users.find(x => x.username === pid);
+      prepMap[pid] = { name: u?.name || pid, count: 0, totalMinutes: 0, editCount: 0 };
+    }
+    prepMap[pid].count++;
+    if (o.qty_edited_by === pid) prepMap[pid].editCount++;
+    if (o.createdAt && o.prepared_at) {
+      const diff = (new Date(o.prepared_at) - new Date(o.createdAt?.toDate ? o.createdAt.toDate() : o.createdAt)) / 60000;
+      if (diff > 0 && diff < 1440) prepMap[pid].totalMinutes += diff;
+    }
+  });
+
+  bodyEl.innerHTML = Object.values(prepMap).sort((a, b) => b.count - a.count).map(p => {
+    const avgTime = p.count ? Math.round(p.totalMinutes / p.count) : 0;
+    const accuracy = p.count ? (((p.count - p.editCount) / p.count) * 100).toFixed(0) + '%' : '—';
+    return `<tr>
+      <td style="font-weight:700">${p.name}</td>
+      <td>${p.count}</td>
+      <td>${avgTime ? avgTime + ' دقيقة' : '—'}</td>
+      <td>${accuracy}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;padding:22px">لا توجد بيانات</td></tr>';
+}
+
+// ══════════════════════════════════════════════════════
+// FEATURE 7: Real-time updates + notifications
+// ══════════════════════════════════════════════════════
+
+// Extend startRealtimeListeners to handle order status changes
+const _origStartRealtime = startRealtimeListeners;
+startRealtimeListeners = function() {
+  _origStartRealtime();
+  startNewRoleListeners();
+
+  // Listen for order status changes to notify customers
+  fb().onSnapshot(fb().collection(db(), 'orders'), snap => {
+    snap.docChanges().forEach(change => {
+      if (change.type !== 'modified') return;
+      const o = change.doc.data();
+      const st = o.status || '';
+      if (st === 'In Delivery') {
+        // Notify customer that order is in delivery
+        if (CU && (CU.username === o.repUser || CU.name === o.shopName)) {
+          browserNotif('🚗 طلبك في الطريق إليك!', `طلب ${o.shopName || ''} خرج للتوصيل`);
+        }
+      } else if (st === 'Delivered') {
+        if (CU && (CU.username === o.repUser || CU.name === o.shopName)) {
+          browserNotif('✅ تم توصيل طلبك!', 'يمكنك تقييم السائق الآن');
+        }
+      }
+    });
+  });
+};
+
+// Extend showPage to handle new pages
+const _origShowPage = showPage;
+showPage = function(id) {
+  // Allow preparer/driver pages without auth restriction bypass
+  if (id === 'pagePrep' && CU?.type === 'preparer') {
+    document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    setActive(id);
+    const nav = document.getElementById('nav_' + id);
+    if (nav) document.getElementById('topbarTitle').innerHTML = nav.innerHTML;
+    closeSidebar();
+    renderPrepDashboard();
+    startNewRoleListeners();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  if (id === 'pageDriver' && CU?.type === 'driver') {
+    document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    setActive(id);
+    closeSidebar();
+    renderDriverDashboard();
+    startNewRoleListeners();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  if (id === 'pagePerfReports') {
+    if (!CU || (CU.type !== 'admin' && CU.type !== 'sales_manager')) {
+      toast('🔒 هذه الصفحة للأدمن فقط', false);
+      return;
+    }
+    document.querySelectorAll('.page').forEach(pg => pg.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+    setActive(id);
+    closeSidebar();
+    renderPerfReports();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  _origShowPage(id);
+};
+
+// ── Patch onSnapshot orders to notify preparer about new orders ──
+const _origOrdersSnapshot = null; // Already handled inside startRealtimeListeners
+
+// ── Extend buildUI for new features init ──
+const _origBuildUIFinal = buildUI;
+buildUI = function() {
+  _origBuildUIFinal();
+  startNewRoleListeners();
+};
+
+// ── Initialize on DOMContentLoaded ──
+document.addEventListener('fbReady', () => {
+  cacheProducts();
+});
+
+</script>
 
 
 </body>

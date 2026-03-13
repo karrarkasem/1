@@ -8,7 +8,6 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -74,6 +73,7 @@
             padding: 6px 12px;
             border-radius: 20px;
             display: inline-block;
+            margin-top: 10px;
         }
         .login-section {
             margin: 20px 0;
@@ -114,10 +114,74 @@
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
         .btn-success {
             background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .error-message {
+            color: #dc2626;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .success-message {
+            color: #10b981;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .info-message {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 10px;
+            color: #b45309;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .user-info {
+            background: #0ea5e910;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #093257, #0ea5e9);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .user-details {
+            flex: 1;
+        }
+        .user-name {
+            font-weight: 800;
+            color: #093257;
+            font-size: 1rem;
+        }
+        .user-role {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .logout-btn {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
         }
         .product-item {
             background: white;
@@ -222,101 +286,50 @@
             animation: bounce 1.4s infinite ease-in-out both;
         }
         @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
+            0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
         }
-        .error {
-            color: #dc2626;
-            text-align: center;
-            padding: 20px;
-        }
-        .success {
-            color: #10b981;
-            text-align: center;
-            padding: 20px;
-        }
-        .warning {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 12px;
-            padding: 10px;
-            color: #b45309;
-            text-align: center;
-            margin: 10px 0;
-        }
-        .user-info {
-            background: #0ea5e910;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #093257, #0ea5e9);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-        }
-        .user-details {
-            flex: 1;
-        }
-        .user-name {
-            font-weight: 800;
-            color: #093257;
-        }
-        .user-role {
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .logout-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="prepare-card" id="prepareCard">
+    <div class="prepare-card">
         <div class="header">
             <div class="logo">📦</div>
             <h1>تجهيز الطلب</h1>
             <div class="order-id" id="orderId">...</div>
         </div>
 
-        <!-- قسم تسجيل الدخول -->
+        <!-- ✅ قسم تسجيل الدخول -->
         <div id="loginSection" class="login-section">
             <h2 style="margin-bottom:15px; color:#093257;">🔐 تسجيل دخول المجهز</h2>
-            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
+            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
             <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-            <button class="btn" onclick="login()">دخول</button>
-            <div id="loginError" style="color:#dc2626; margin-top:10px; text-align:center;"></div>
+            <button class="btn" onclick="login()" id="loginBtn">دخول</button>
+            <div id="loginError" class="error-message"></div>
+            <div id="loginInfo" class="info-message hidden">
+                ⚠️ استخدم بيانات حساب من نوع "مجهز" مضاف من لوحة الأدمن
+            </div>
         </div>
 
-        <!-- قسم معلومات المستخدم (يظهر بعد تسجيل الدخول) -->
-        <div id="userSection" style="display:none;">
+        <!-- ✅ قسم معلومات المستخدم (يظهر بعد تسجيل الدخول) -->
+        <div id="userSection" class="hidden">
             <div class="user-info">
                 <div class="user-avatar">👤</div>
                 <div class="user-details">
                     <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole"></div>
+                    <div class="user-role" id="userRole">📦 مجهز</div>
                 </div>
                 <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
             </div>
         </div>
 
-        <!-- قسم الطلب (يظهر بعد تسجيل الدخول) -->
-        <div id="orderSection" style="display:none;"></div>
+        <!-- ✅ قسم تفاصيل الطلب (يظهر بعد تسجيل الدخول) -->
+        <div id="orderSection" class="hidden">
+            <!-- المحتوى راح يتحمل هنا -->
+        </div>
     </div>
 
     <script>
@@ -333,12 +346,11 @@
         // ✅ تشغيل Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth();
 
         // ✅ قراءة رقم الطلب من الرابط
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order');
-        document.getElementById('orderId').textContent = orderId || 'غير موجود';
+        document.getElementById('orderId').textContent = orderId || 'لا يوجد رقم طلب';
 
         // ✅ سعة المركبات
         const VEHICLES = {
@@ -347,194 +359,172 @@
             'truck': { name: 'شاحنة', icon: '🚛', capacity: 30 }
         };
 
-        let selectedVehicle = null;
+        // ✅ متغيرات
+        let currentUser = null;
         let orderData = null;
         let totalVolume = 0;
-        let currentUser = null;
+        let selectedVehicle = null;
 
-        // ✅ التحقق من حالة تسجيل الدخول عند تحميل الصفحة
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // المستخدم مسجل دخوله
-                currentUser = user;
-                
-                // جلب بيانات المستخدم من Firestore
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    
-                    // التحقق من أن نوع الحساب مجهز
-                    if (userData.type === 'preparer') {
-                        // ✅ عرض معلومات المستخدم
-                        document.getElementById('userName').textContent = userData.name || user.email;
-                        document.getElementById('userRole').textContent = '📦 مجهز';
-                        
-                        document.getElementById('loginSection').style.display = 'none';
-                        document.getElementById('userSection').style.display = 'block';
-                        
-                        // تحميل الطلب
-                        loadOrder();
-                    } else {
-                        // ❌ ليس مجهزاً - تسجيل خروج
-                        alert('⚠️ هذا الحساب ليس لمجهز');
-                        logout();
-                    }
-                } else {
-                    // ❌ مستخدم غير موجود في Firestore
-                    alert('⚠️ بيانات المستخدم غير موجودة');
-                    logout();
-                }
-            } else {
-                // المستخدم غير مسجل - نعرض واجهة تسجيل الدخول
-                document.getElementById('loginSection').style.display = 'block';
-                document.getElementById('userSection').style.display = 'none';
-                document.getElementById('orderSection').style.display = 'none';
-            }
-        });
+        // ✅ التحقق من وجود رقم طلب
+        if (!orderId) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('orderSection').classList.remove('hidden');
+            document.getElementById('orderSection').innerHTML = '<div class="error-message">❌ رابط غير صحيح - رقم الطلب مطلوب</div>';
+        }
 
         // ✅ دالة تسجيل الدخول
         window.login = async function() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
             const errorEl = document.getElementById('loginError');
+            const infoEl = document.getElementById('loginInfo');
 
+            // التحقق من المدخلات
             if (!username || !password) {
                 errorEl.textContent = '⚠️ أدخل اسم المستخدم وكلمة المرور';
                 return;
             }
 
-            errorEl.textContent = '⏳ جاري التحقق...';
+            // تغيير حالة الزر
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ جاري التحقق...';
+            errorEl.textContent = '';
+            infoEl.classList.add('hidden');
 
             try {
-                // البحث عن المستخدم في Firestore
+                // ✅ البحث عن المستخدم في Firestore
                 const usersRef = db.collection('users');
                 const snapshot = await usersRef.where('username', '==', username).get();
 
                 if (snapshot.empty) {
                     errorEl.textContent = '❌ اسم المستخدم غير صحيح';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
                     return;
                 }
 
                 const userDoc = snapshot.docs[0];
                 const userData = userDoc.data();
                 
-                // تحقق من كلمة المرور
+                // ✅ التحقق من كلمة المرور
                 if (userData.password !== password) {
                     errorEl.textContent = '❌ كلمة المرور غير صحيحة';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
                     return;
                 }
 
-                // تحقق من نوع الحساب (مجهز)
-                if (userData.type !== 'preparer') {
-                    errorEl.textContent = '❌ هذا الحساب ليس لمجهز';
+                // ✅ التحقق من نوع الحساب (يجب أن يكون مجهز)
+                if (userData.type !== 'preparer' && userData.accountType !== 'preparer') {
+                    errorEl.textContent = '❌ هذا الحساب ليس لمجهز - يجب أن يكون نوع الحساب "مجهز"';
+                    infoEl.classList.remove('hidden');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
                     return;
                 }
 
-                // ✅ تسجيل الدخول ناجح - نستخدم Firebase Auth
-                // ننشئ حساب في Firebase Auth إذا ما موجود
-                try {
-                    // نحاول تسجيل الدخول باستخدام الإيميل (إذا موجود)
-                    if (userData.email) {
-                        await auth.signInWithEmailAndPassword(userData.email, password);
-                    } else {
-                        // إذا ماكو إيميل، ننشئ حساب مؤقت
-                        // هذا الجزء يحتاج تعديل حسب نظامك
-                        errorEl.textContent = '⚠️ المستخدم لا يملك إيميل';
-                    }
-                } catch (authError) {
-                    console.error('Auth error:', authError);
-                    errorEl.textContent = '❌ خطأ في المصادقة';
-                }
+                // ✅ تسجيل الدخول ناجح
+                currentUser = {
+                    username: userData.username,
+                    name: userData.name || userData.username,
+                    type: 'preparer'
+                };
+
+                // إخفاء واجهة تسجيل الدخول وإظهار معلومات المستخدم
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('userSection').classList.remove('hidden');
+                document.getElementById('userName').textContent = currentUser.name;
+                
+                // تحميل الطلب
+                loadOrder();
 
             } catch (error) {
-                console.error(error);
-                errorEl.textContent = '❌ حدث خطأ، حاول مجدداً';
+                console.error('خطأ في تسجيل الدخول:', error);
+                errorEl.textContent = '❌ حدث خطأ في الاتصال بقاعدة البيانات';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'دخول';
             }
         };
 
         // ✅ دالة تسجيل الخروج
         window.logout = function() {
-            auth.signOut();
             currentUser = null;
-            document.getElementById('loginSection').style.display = 'block';
-            document.getElementById('userSection').style.display = 'none';
-            document.getElementById('orderSection').style.display = 'none';
+            orderData = null;
+            selectedVehicle = null;
+            
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('userSection').classList.add('hidden');
+            document.getElementById('orderSection').classList.add('hidden');
+            
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
+            document.getElementById('loginError').textContent = '';
         };
 
         // ✅ دالة تحميل الطلب
         async function loadOrder() {
             const orderSection = document.getElementById('orderSection');
             
-            if (!orderId) {
-                orderSection.innerHTML = '<div class="error">❌ رقم الطلب غير موجود</div>';
-                orderSection.style.display = 'block';
-                return;
-            }
-
+            orderSection.classList.remove('hidden');
             orderSection.innerHTML = `
                 <div class="loader">
                     <span></span><span></span><span></span>
                     <p style="margin-top:15px;">جاري تحميل الطلب...</p>
                 </div>
             `;
-            orderSection.style.display = 'block';
 
             try {
-                // البحث عن الطلب
+                // ✅ البحث عن الطلب في Firestore
                 let orderDoc = null;
                 const ordersRef = db.collection('orders');
                 
-                // حاول بالـ orderId
+                // حاول البحث باستخدام orderId
                 const snapshot = await ordersRef.where('orderId', '==', orderId).get();
                 
                 if (!snapshot.empty) {
                     orderDoc = snapshot.docs[0];
                 } else {
-                    // جرب بالـ id نفسه
+                    // جرب البحث باستخدام الـ ID نفسه
                     orderDoc = await ordersRef.doc(orderId).get();
                     if (!orderDoc.exists) {
-                        orderSection.innerHTML = '<div class="error">❌ الطلب غير موجود</div>';
+                        orderSection.innerHTML = '<div class="error-message">❌ الطلب غير موجود</div>';
                         return;
                     }
                 }
 
                 orderData = { id: orderDoc.id, ...orderDoc.data() };
 
-                // إذا كان الطلب مجهز مسبقاً
+                // ✅ التحقق إذا كان الطلب مجهز مسبقاً
                 if (orderData.status === 'Prepared' || orderData.status === 'prepared') {
                     orderSection.innerHTML = `
-                        <div class="warning">
-                            ⚠️ هذا الطلب تم تجهيزه مسبقاً بواسطة ${orderData.prepared_by_name || orderData.prepared_by}
+                        <div class="info-message">
+                            ⚠️ هذا الطلب تم تجهيزه مسبقاً بواسطة ${orderData.prepared_by_name || orderData.prepared_by || 'مجهز آخر'}
                         </div>
-                        <div style="text-align:center; margin-top:20px;">
-                            <a href="https://karrarkasem.github.io/1/" class="btn">العودة للرئيسية</a>
-                        </div>
+                        <button class="btn" onclick="logout()" style="margin-top:15px;">⬅️ رجوع</button>
                     `;
                     return;
                 }
 
-                // عرض تفاصيل الطلب
+                // ✅ عرض تفاصيل الطلب
                 displayOrderDetails();
 
-                // استماع لتغييرات الطلب
+                // ✅ استماع للتحديثات المباشرة
                 db.collection('orders').doc(orderData.id).onSnapshot((snap) => {
                     if (snap.exists) {
                         const updated = snap.data();
                         if (updated.status === 'Prepared' || updated.status === 'prepared') {
                             document.getElementById('prepareBtn').disabled = true;
                             document.getElementById('prepareMessage').innerHTML = `
-                                <div class="warning">✅ تم تجهيز هذا الطلب</div>
+                                <div class="info-message">✅ تم تجهيز هذا الطلب</div>
                             `;
                         }
                     }
                 });
 
             } catch (error) {
-                console.error(error);
-                orderSection.innerHTML = '<div class="error">❌ حدث خطأ في تحميل الطلب</div>';
+                console.error('خطأ في تحميل الطلب:', error);
+                orderSection.innerHTML = '<div class="error-message">❌ حدث خطأ في تحميل الطلب</div>';
             }
         }
 
@@ -542,12 +532,12 @@
         function displayOrderDetails() {
             const orderSection = document.getElementById('orderSection');
             
-            // تحليل المنتجات
+            // ✅ تحليل المنتجات من نص الطلب
             const productsList = orderData.products || '';
             const items = [];
             totalVolume = 0;
 
-            // محاولة استخراج المنتجات من النص
+            // استخراج المنتجات والكميات (مثال: "كولا(2)، شيبس(3)")
             const matches = productsList.match(/([^،,\n()]+)\((\d+)\)/g) || [];
             
             matches.forEach(m => {
@@ -555,7 +545,9 @@
                 if (mm) {
                     const name = mm[1].trim();
                     const qty = parseInt(mm[2]) || 1;
-                    // حجم تجريبي (المفروض تجيب الحجم من قاعدة البيانات)
+                    
+                    // ✅ هنا المفروض تجيب حجم المنتج من قاعدة البيانات
+                    // حالياً نستخدم حجم تجريبي 0.024 م³
                     const volume = 0.024;
                     const itemVol = volume * qty;
                     totalVolume += itemVol;
@@ -615,7 +607,7 @@
                 </div>
 
                 <h3 style="color:#093257; margin-bottom:10px;">📋 المنتجات</h3>
-                ${productsHtml}
+                ${productsHtml || '<div style="text-align:center; padding:15px;">لا توجد منتجات محددة</div>'}
 
                 <div class="total-volume">
                     <div style="font-size:0.9rem; color:#666;">إجمالي حجم الطلب</div>
@@ -623,7 +615,7 @@
                 </div>
 
                 <h3 style="color:#093257; margin-bottom:10px;">🚚 اختر المركبة</h3>
-                <div class="vehicle-selector" id="vehicleSelector">
+                <div class="vehicle-selector">
                     ${vehiclesHtml}
                 </div>
 
@@ -654,7 +646,7 @@
                 }
             }
 
-            // عرض نسبة التحميل
+            // حساب نسبة التحميل
             const vehicle = VEHICLES[vehicleKey];
             const fillPercent = (totalVolume / vehicle.capacity) * 100;
             const cappedPercent = Math.min(100, fillPercent);
@@ -690,27 +682,22 @@
             btn.textContent = '⏳ جاري التجهيز...';
 
             try {
-                // جلب معلومات المستخدم الحالي
-                const user = auth.currentUser;
-                const userDoc = await db.collection('users').where('username', '==', user.email?.split('@')[0]).get();
-                const userName = userDoc.empty ? 'مجهز' : userDoc.docs[0].data().name;
-
                 // تحديث الطلب في Firebase
                 await db.collection('orders').doc(orderData.id).update({
                     status: 'Prepared',
-                    prepared_by: user.email,
-                    prepared_by_name: userName,
+                    prepared_by: currentUser.username,
+                    prepared_by_name: currentUser.name,
                     prepared_at: new Date().toISOString(),
                     vehicle_type: VEHICLES[selectedVehicle].name
                 });
 
                 document.getElementById('prepareMessage').innerHTML = `
-                    <div class="success">
+                    <div class="success-message">
                         ✅ تم تجهيز الطلب بنجاح
                     </div>
                 `;
 
-                // إرسال إشعار للسائقين
+                // إرسال إشعار للسائقين (اختياري)
                 const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
                 const TG_CHAT  = '-5246620507';
                 fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
@@ -720,12 +707,12 @@
                         chat_id: TG_CHAT,
                         text: `🚗 طلب جاهز للتوصيل\n🏪 ${orderData.shopName}\n🆔 ${orderId}\n🚚 المركبة: ${VEHICLES[selectedVehicle].name}`,
                     })
-                }).catch(()=>{});
+                }).catch(() => {});
 
             } catch (error) {
                 console.error(error);
                 document.getElementById('prepareMessage').innerHTML = `
-                    <div class="error">
+                    <div class="error-message">
                         ❌ حدث خطأ: ${error.message}
                     </div>
                 `;
@@ -733,13 +720,6 @@
                 btn.textContent = '✅ تأكيد التجهيز';
             }
         };
-
-        // ✅ إذا ماكو رقم طلب
-        if (!orderId) {
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('orderSection').style.display = 'block';
-            document.getElementById('orderSection').innerHTML = '<div class="error">❌ رابط غير صحيح - رقم الطلب مطلوب</div>';
-        }
     </script>
 </body>
 </html>

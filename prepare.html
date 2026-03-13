@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
+        /* نفس التنسيقات السابقة */
         * {
             margin: 0;
             padding: 0;
@@ -93,6 +94,20 @@
         .input-field:focus {
             border-color: #0ea5e9;
             outline: none;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            color: #555;
+        }
+        .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #0ea5e9;
         }
         .btn {
             background: linear-gradient(135deg, #0ea5e9, #0284c7);
@@ -292,6 +307,12 @@
         .hidden {
             display: none;
         }
+        .remember-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -307,6 +328,13 @@
             <h2 style="margin-bottom:15px; color:#093257;">🔐 تسجيل دخول المجهز</h2>
             <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
             <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+            
+            <!-- ✅ إضافة خيار "تذكرني" -->
+            <label class="checkbox-label">
+                <input type="checkbox" id="rememberMe" checked>
+                <span>🔓 تذكرني (ما يحتاج تسجيل دخول في المرات القادمة)</span>
+            </label>
+            
             <button class="btn" onclick="login()" id="loginBtn">دخول</button>
             <div id="loginError" class="error-message"></div>
             <div id="loginInfo" class="info-message hidden">
@@ -365,17 +393,62 @@
         let totalVolume = 0;
         let selectedVehicle = null;
 
-        // ✅ التحقق من وجود رقم طلب
-        if (!orderId) {
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('orderSection').classList.remove('hidden');
-            document.getElementById('orderSection').innerHTML = '<div class="error-message">❌ رابط غير صحيح - رقم الطلب مطلوب</div>';
+        // ✅ مفتاح التخزين في localStorage
+        const STORAGE_KEY = 'preparer_session';
+
+        // ✅ عند تحميل الصفحة، نتحقق من وجود جلسة محفوظة
+        window.onload = function() {
+            loadSavedSession();
+        };
+
+        // ✅ دالة تحميل الجلسة المحفوظة
+        function loadSavedSession() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const session = JSON.parse(saved);
+                    // التحقق من أن الجلسة صالحة (أقل من 24 ساعة)
+                    const now = Date.now();
+                    if (now - session.timestamp < 24 * 60 * 60 * 1000) { // 24 ساعة
+                        // استخدام الجلسة المحفوظة
+                        currentUser = {
+                            username: session.username,
+                            name: session.name,
+                            type: 'preparer'
+                        };
+                        
+                        // إخفاء واجهة تسجيل الدخول
+                        document.getElementById('loginSection').classList.add('hidden');
+                        document.getElementById('userSection').classList.remove('hidden');
+                        document.getElementById('userName').textContent = currentUser.name;
+                        
+                        // تحميل الطلب
+                        loadOrder();
+                    } else {
+                        // الجلسة منتهية الصلاحية
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                } catch (e) {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            }
+        }
+
+        // ✅ دالة حفظ الجلسة
+        function saveSession(username, name) {
+            const session = {
+                username: username,
+                name: name,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
         }
 
         // ✅ دالة تسجيل الدخول
         window.login = async function() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
             const loginBtn = document.getElementById('loginBtn');
             const errorEl = document.getElementById('loginError');
             const infoEl = document.getElementById('loginInfo');
@@ -431,6 +504,11 @@
                     type: 'preparer'
                 };
 
+                // ✅ حفظ الجلسة إذا اختار "تذكرني"
+                if (rememberMe) {
+                    saveSession(currentUser.username, currentUser.name);
+                }
+
                 // إخفاء واجهة تسجيل الدخول وإظهار معلومات المستخدم
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('userSection').classList.remove('hidden');
@@ -452,6 +530,9 @@
             currentUser = null;
             orderData = null;
             selectedVehicle = null;
+            
+            // حذف الجلسة المحفوظة
+            localStorage.removeItem(STORAGE_KEY);
             
             document.getElementById('loginSection').classList.remove('hidden');
             document.getElementById('userSection').classList.add('hidden');
@@ -631,6 +712,7 @@
                 </button>
 
                 <div id="prepareMessage" style="margin-top:15px;"></div>
+                <div class="remember-info">🔓 جلسة الدخول محفوظة لمدة 24 ساعة</div>
             `;
         }
 
@@ -720,6 +802,13 @@
                 btn.textContent = '✅ تأكيد التجهيز';
             }
         };
+
+        // ✅ إذا ماكو رقم طلب
+        if (!orderId) {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('orderSection').classList.remove('hidden');
+            document.getElementById('orderSection').innerHTML = '<div class="error-message">❌ رابط غير صحيح - رقم الطلب مطلوب</div>';
+        }
     </script>
 </body>
 </html>

@@ -6805,12 +6805,13 @@ async function renderDriverDashboard() {
     <div class="kpi-card kpi-gold"><div class="kpi-icon">⭐</div><div class="kpi-val">${avgRating ? avgRating.toFixed(1) : '—'}</div><div class="kpi-lbl">متوسط التقييم</div></div>`;
 
   const allDriverOrders = [...preparedOrders, ...inDeliveryOrders];
-  if (!allDriverOrders.length) {
+
+  if (!allDriverOrders.length && !myDelivered.length) {
     listEl.innerHTML = '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)"><div style="font-size:2.5rem;margin-bottom:10px">✅</div><p>لا توجد طلبات حالياً</p></div>';
     return;
   }
 
-  listEl.innerHTML = allDriverOrders.map(o => {
+  const activeHtml = allDriverOrders.map(o => {
     const isPrepared    = o.status === 'Prepared';
     const isInDelivery  = o.status === 'In Delivery';
     const isNear        = o.status === 'NearCustomer';
@@ -6841,6 +6842,40 @@ async function renderDriverDashboard() {
       </div>
     </div>`;
   }).join('');
+
+  const deliveredHtml = myDelivered.length ? `
+    <div style="margin-top:${allDriverOrders.length ? '20' : '0'}px;padding-top:${allDriverOrders.length ? '16' : '0'}px;${allDriverOrders.length ? 'border-top:1px solid rgba(14,165,233,.15);' : ''}margin-bottom:10px;font-weight:800;color:var(--deep);font-size:.9rem">
+      📋 سجل التوصيلات (${myDelivered.length})
+    </div>
+    ${myDelivered.map(o => {
+      const confirmed = !!o.customer_confirmed;
+      return `
+      <div class="prep-order-card" style="border:1.5px solid ${confirmed ? 'rgba(16,185,129,.35)' : 'rgba(245,158,11,.3)'};pointer-events:none;user-select:none">
+        <div class="prep-order-hd">
+          <div>
+            <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
+            <div class="prep-order-id">${o.orderId || o._id}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="badge b-teal">📦 مُسلَّم</span>
+            ${confirmed
+              ? '<span class="badge b-mint">✅ أكد الزبون الاستلام</span>'
+              : '<span class="badge b-gold">⏳ انتظار تأكيد الزبون</span>'}
+          </div>
+        </div>
+        <div class="prep-order-meta">
+          <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
+          ${o.driver_rating ? `<span class="badge b-gold">⭐ ${o.driver_rating}/5</span>` : ''}
+          ${o.delivered_at ? `<span class="badge b-teal">🕐 ${new Date(o.delivered_at).toLocaleDateString('ar-IQ')}</span>` : ''}
+        </div>
+        <div style="font-size:.8rem;color:rgba(9,50,87,.5);margin-bottom:6px">${o.products || '—'}</div>
+        ${confirmed && o.customer_notes ? `<div style="font-size:.75rem;color:rgba(9,50,87,.55);padding:6px 8px;background:rgba(16,185,129,.08);border-radius:8px;margin-bottom:6px">💬 ملاحظة الزبون: ${o.customer_notes}</div>` : ''}
+        ${o.proof_url ? `<a href="${o.proof_url}" target="_blank" class="btn btn-ghost btn-sm" style="display:inline-flex;pointer-events:auto">📸 عرض إثبات التسليم</a>` : ''}
+      </div>`;
+    }).join('')}
+  ` : '';
+
+  listEl.innerHTML = activeHtml + deliveredHtml;
 }
 
 async function markAsLoaded(orderId) {

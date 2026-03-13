@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تتبع الطلب - برجمان</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .track-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 30px 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 12px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+        }
+        h1 {
+            color: #333;
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .order-id {
+            color: #666;
+            font-size: 0.9rem;
+            background: #f5f5f5;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .progress-container {
+            margin: 30px 0;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .step:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            right: 20px;
+            top: 40px;
+            width: 2px;
+            height: calc(100% + 10px);
+            background: #e0e0e0;
+        }
+        .step.completed:not(:last-child)::before {
+            background: linear-gradient(to bottom, #0ea5e9, #0284c7);
+        }
+        .step-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-left: 15px;
+            position: relative;
+            z-index: 2;
+            border: 2px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        .step.completed .step-icon {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            border-color: transparent;
+            color: white;
+        }
+        .step.active .step-icon {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+        .step-content {
+            flex: 1;
+        }
+        .step-title {
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        .step-time {
+            font-size: 0.75rem;
+            color: #999;
+        }
+        .info-card {
+            background: linear-gradient(135deg, #0ea5e910, #0284c710);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(14, 165, 233, 0.2);
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value {
+            font-weight: 800;
+            color: #333;
+        }
+        .driver-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+        .driver-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .driver-details {
+            flex: 1;
+        }
+        .driver-name {
+            font-weight: 800;
+            color: #333;
+        }
+        .driver-phone {
+            font-size: 0.85rem;
+            color: #666;
+            direction: ltr;
+            text-align: right;
+        }
+        .vehicle-tag {
+            background: #0ea5e920;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: #0284c7;
+            font-weight: 700;
+        }
+        .btn {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .loader {
+            text-align: center;
+            padding: 40px;
+        }
+        .loader span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .loader span:nth-child(1) { animation-delay: -0.32s; }
+        .loader span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .error {
+            text-align: center;
+            color: #dc3545;
+            padding: 20px;
+        }
+        .whatsapp-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="track-card" id="trackCard">
+        <div class="header">
+            <div class="logo">🏪</div>
+            <h1>برجمان</h1>
+            <div class="order-id" id="orderId">...</div>
+        </div>
+
+        <div id="content">
+            <div class="loader">
+                <span></span><span></span><span></span>
+                <p style="margin-top:15px; color:#666;">جاري التحميل...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2025 برجمان
+        </div>
+    </div>
+
+    <script>
+        // ✅ Firebase Config من مشروعك
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+            authDomain: "burjuman-6cb83.firebaseapp.com",
+            projectId: "burjuman-6cb83",
+            storageBucket: "burjuman-6cb83.firebasestorage.app",
+            messagingSenderId: "177984721378",
+            appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+        };
+
+        // ✅ تشغيل Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ✅ قراءة رقم الطلب من الرابط
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('order');
+        
+        document.getElementById('orderId').textContent = orderId || 'غير موجود';
+
+        // ✅ إذا ماكو رقم طلب
+        if (!orderId) {
+            document.getElementById('content').innerHTML = '<div class="error">❌ رابط غير صحيح</div>';
+        } else {
+            // ✅ البحث عن الطلب
+            db.collection('orders').where('orderId', '==', orderId).get()
+                .then((snapshot) => {
+                    if (snapshot.empty) {
+                        // جرب البحث بالـ ID نفسه
+                        return db.collection('orders').doc(orderId).get();
+                    } else {
+                        return snapshot.docs[0];
+                    }
+                })
+                .then((doc) => {
+                    if (!doc || !doc.exists) {
+                        document.getElementById('content').innerHTML = '<div class="error">❌ الطلب غير موجود</div>';
+                        return;
+                    }
+
+                    const order = { id: doc.id, ...doc.data() };
+                    showOrderStatus(order);
+
+                    // ✅ تحديث مباشر
+                    db.collection('orders').doc(order.id).onSnapshot((snap) => {
+                        if (snap.exists) {
+                            showOrderStatus({ id: snap.id, ...snap.data() });
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error(error);
+                    document.getElementById('content').innerHTML = '<div class="error">❌ حدث خطأ</div>';
+                });
+        }
+
+        // ✅ دالة عرض حالة الطلب
+        function showOrderStatus(order) {
+            const steps = [
+                { status: 'confirmed', icon: '✅', title: 'تم تأكيد الطلب' },
+                { status: 'prepared', icon: '📦', title: 'تم التجهيز' },
+                { status: 'delivery', icon: '🚗', title: 'في الطريق' },
+                { status: 'delivered', icon: '🏠', title: 'تم التسليم' }
+            ];
+
+            let currentStep = 0;
+            if (order.status === 'Delivered') currentStep = 4;
+            else if (order.status === 'In Delivery' || order.status === 'NearCustomer') currentStep = 3;
+            else if (order.status === 'Prepared') currentStep = 2;
+            else if (order.status === 'Confirmed') currentStep = 1;
+
+            let stepsHtml = '';
+            steps.forEach((step, i) => {
+                const isCompleted = i < currentStep;
+                const isActive = i === currentStep - 1;
+                stepsHtml += `
+                    <div class="step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}">
+                        <div class="step-icon">${step.icon}</div>
+                        <div class="step-content">
+                            <div class="step-title">${step.title}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            let driverHtml = '';
+            if (order.driver_name && currentStep >= 3) {
+                driverHtml = `
+                    <div class="driver-info">
+                        <div class="driver-avatar">🚗</div>
+                        <div class="driver-details">
+                            <div class="driver-name">${order.driver_name}</div>
+                            ${order.vehicle_type ? `<span class="vehicle-tag">🚚 ${order.vehicle_type}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let nearMsg = '';
+            if (order.status === 'NearCustomer') {
+                nearMsg = `
+                    <div style="background: #10b981; color:white; padding:15px; border-radius:15px; text-align:center; margin:15px 0;">
+                        🚚 السائق قرب منك! خلال دقائق
+                    </div>
+                `;
+            }
+
+            document.getElementById('content').innerHTML = `
+                <div class="progress-container">${stepsHtml}</div>
+                ${nearMsg}
+                <div class="info-card">
+                    <div class="info-row">
+                        <span>🏪 المحل</span>
+                        <span>${order.shopName || '—'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>📍 العنوان</span>
+                        <span>${order.shopAddress || '—'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span>💰 الإجمالي</span>
+                        <span>${(order.total || 0).toLocaleString()} د.ع</span>
+                    </div>
+                </div>
+                ${driverHtml}
+            `;
+        }
+    </script>
+</body>
+</html>

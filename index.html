@@ -1122,6 +1122,17 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 <!-- ORDERS -->
 <div class="page" id="pageOrders">
   <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
+
+  <!-- ✅ قسم الطلبات بانتظار الموافقة — للادمن والمشرف فقط -->
+  <div id="pendingApprovalSection" style="display:none;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></div>
+      <span style="font-weight:800;font-size:.9rem;color:#b45309">طلبات بانتظار موافقتك</span>
+      <span id="pendingApprovalCount" class="badge" style="background:rgba(245,158,11,.2);color:#b45309;border:1px solid rgba(245,158,11,.4)"></span>
+    </div>
+    <div id="pendingApprovalList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
   <div id="ordSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:16px"></div>
   
   <!-- ✅ فلاتر متقدمة -->
@@ -1622,32 +1633,53 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
 <!-- CART MODAL -->
 <div class="modal z1" id="cartModal">
-  <div class="m-box" style="max-width:520px">
-    <button class="m-close" onclick="closeModal('cartModal')">✕</button>
-    <div class="m-title">🛍️ تأكيد الطلب</div>
-    <div class="cart-box" id="cartBox"></div>
-    <div class="frow">
-      <div class="fg"><label class="fl">🏪 اسم المحل *</label><input id="shopName" type="text" class="fi" placeholder="اسم المحل"></div>
-      <div class="fg"><label class="fl">📍 العنوان *</label><input id="shopAddr" type="text" class="fi" placeholder="المنطقة / العنوان"></div>
+  <div class="m-box" style="max-width:520px;padding:0;overflow:hidden;border-radius:var(--r24)">
+
+    <!-- ── حالة 1: نموذج الطلب ── -->
+    <div id="cartFormView" style="padding:24px 18px 18px">
+      <button class="m-close" onclick="closeModal('cartModal')">✕</button>
+      <div class="m-title">🛍️ تأكيد الطلب</div>
+      <div class="cart-box" id="cartBox"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">🏪 اسم المحل *</label><input id="shopName" type="text" class="fi" placeholder="اسم المحل"></div>
+        <div class="fg"><label class="fl">📍 العنوان *</label><input id="shopAddr" type="text" class="fi" placeholder="المنطقة / العنوان"></div>
+      </div>
+      <div class="fg" id="visitorPhoneWrap" style="display:none"><label class="fl">📞 رقم هاتفك *</label><input id="visitorPhone" type="tel" class="fi" placeholder="07xxxxxxxxxx"></div>
+      <div class="fg"><label class="fl">📝 ملاحظة</label><textarea id="orderNote" class="fta" rows="2" placeholder="ملاحظات..."></textarea></div>
+      <button id="mapBtn" class="btn btn-ghost btn-full" style="margin-bottom:9px" onclick="toggleMap()">
+        📍 تحديد الموقع <span id="mapOptLabel" style="font-size:.7rem;opacity:.55">(اختياري)</span>
+      </button>
+      <div id="mapContainer" style="display:none">
+        <div class="map-wrap"><div id="map"></div><div class="map-pin"></div></div>
+        <button class="btn btn-sky btn-full" style="margin-top:9px" onclick="confirmLoc()">✅ تأكيد الموقع</button>
+      </div>
+      <div id="locOk" style="display:none;background:rgba(16,185,129,.09);border:1px solid rgba(16,185,129,.22);border-radius:var(--r12);padding:9px 13px;font-size:.82rem;font-weight:700;color:var(--mint2);margin-bottom:9px">✅ تم تحديد الموقع</div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
+        <span style="font-weight:800;color:var(--deep)">المجموع الكلي:</span>
+        <span id="cartTotalDisp" style="font-size:1.3rem;font-weight:900;color:var(--mint2)">0 د.ع</span>
+      </div>
+      <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;box-shadow:0 8px 25px rgba(37,211,102,.33)" onclick="sendOrder()">
+        📱 إرسال الطلب عبر الواتساب
+      </button>
     </div>
-    <div class="fg" id="visitorPhoneWrap" style="display:none"><label class="fl">📞 رقم هاتفك *</label><input id="visitorPhone" type="tel" class="fi" placeholder="07xxxxxxxxxx"></div>
-    <div class="fg"><label class="fl">📝 ملاحظة</label><textarea id="orderNote" class="fta" rows="2" placeholder="ملاحظات..."></textarea></div>
-    <button id="mapBtn" class="btn btn-ghost btn-full" style="margin-bottom:9px" onclick="toggleMap()">
-      📍 تحديد الموقع <span id="mapOptLabel" style="font-size:.7rem;opacity:.55">(اختياري)</span>
-    </button>
-    <div id="mapContainer" style="display:none">
-      <div class="map-wrap"><div id="map"></div><div class="map-pin"></div></div>
-      <button class="btn btn-sky btn-full" style="margin-top:9px" onclick="confirmLoc()">✅ تأكيد الموقع</button>
+
+    <!-- ── حالة 2: شاشة النجاح بعد الإرسال ── -->
+    <div id="cartSuccessView" style="display:none;padding:36px 24px 32px;text-align:center">
+      <div style="width:72px;height:72px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 16px;box-shadow:0 8px 28px rgba(16,185,129,.35)">✅</div>
+      <h2 style="font-size:1.15rem;font-weight:900;color:var(--deep);margin-bottom:6px">تم إرسال طلبك!</h2>
+      <p style="font-size:.82rem;color:rgba(9,50,87,.5);margin-bottom:4px">طلبك قيد المراجعة من المشرف</p>
+      <p id="cartSuccessOrderId" style="font-size:.72rem;color:var(--sky2);font-weight:700;margin-bottom:24px"></p>
+
+      <a id="cartTrackBtn" href="#" target="_blank"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r16);background:linear-gradient(135deg,var(--sky),var(--sky2));color:white;font-weight:800;font-size:.95rem;text-decoration:none;box-shadow:0 8px 24px rgba(14,165,233,.35);margin-bottom:12px">
+        🚚 متابعة الطلب
+      </a>
+      <button onclick="closeModal('cartModal')" style="width:100%;padding:12px;border-radius:var(--r16);background:rgba(9,50,87,.06);border:1.5px solid rgba(9,50,87,.1);color:var(--deep);font-family:'Tajawal';font-weight:700;font-size:.9rem;cursor:pointer">
+        إغلاق
+      </button>
     </div>
-    <div id="locOk" style="display:none;background:rgba(16,185,129,.09);border:1px solid rgba(16,185,129,.22);border-radius:var(--r12);padding:9px 13px;font-size:.82rem;font-weight:700;color:var(--mint2);margin-bottom:9px">✅ تم تحديد الموقع</div>
-    <hr>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
-      <span style="font-weight:800;color:var(--deep)">المجموع الكلي:</span>
-      <span id="cartTotalDisp" style="font-size:1.3rem;font-weight:900;color:var(--mint2)">0 د.ع</span>
-    </div>
-    <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;box-shadow:0 8px 25px rgba(37,211,102,.33)" onclick="sendOrder()">
-      📱 إرسال الطلب عبر الواتساب
-    </button>
+
   </div>
 </div>
 
@@ -2355,10 +2387,14 @@ function parseOrder(o) {
     shopAddr:   o.shopAddress || o.shopAddr || '',
     note:       o.note || '',
     location:   o.location || '',
-    products:   parseProducts(o.products || o.cartItems),
-    total:      parseFloat(o.total) || 0,
-    commission: parseFloat(o.commission) || 0,
-    net:        parseFloat(o.net) || 0,
+    products:          parseProducts(o.products || o.cartItems),
+    cartItemsArray:    o.cartItemsArray || null,
+    total:             parseFloat(o.total) || 0,
+    commission:        parseFloat(o.commission) || 0,
+    net:               parseFloat(o.net) || 0,
+    status:            o.status || '',
+    orderId:           o.orderId || o._id || '',
+    visitorPhone:      o.visitorPhone || '',
   };
 }
 
@@ -2450,7 +2486,7 @@ function buildSidebar() {
   const nav=[
     {id:'pageStore',       icon:'🛍️', lbl:'المتجر',             always:true},
     {id:'pageDashboard',   icon:'🏠',  lbl:'الإحصائيات',        perm:'dash'},
-    {id:'pageOrders',      icon:'📦',  lbl:'الطلبات',            perm:'order'},
+    {id:'pageOrders',      icon:'📦',  lbl:'الطلبات',            perm:'order', pendingApproval:true},
     {id:'pageWallet',      icon:'💰',  lbl:'المحفظة',            perm:'wallet'},
     {id:'pageInventory',   icon:'📊',  lbl:'المخزون',            perm:'inv', section:'الإدارة'},
     {id:'pageInvoices',    icon:'🧾',  lbl:'الفواتير',           perm:'inv'},
@@ -2468,9 +2504,12 @@ function buildSidebar() {
     if(!n.always&&!p[n.perm]) return;
     if(n.section&&n.section!==lastSec){html+=`<div class="sb-section">${n.section}</div>`;lastSec=n.section;}
     const unread = n.badge ? notifications.filter(x=>!x.read&&(x.target==='all'||x.target===CU?.username)).length : 0;
+    const pendingCnt = (n.pendingApproval && (CU?.type==='admin'||CU?.type==='sales_manager'))
+      ? orders.filter(o=>(o.status||'')==='pending_approval').length : 0;
+    const badgeVal = unread || pendingCnt;
     html+=`<div class="nav-item" id="nav_${n.id}" onclick="showPage('${n.id}')">
       <span class="nav-icon">${n.icon}</span>${n.lbl}
-      ${unread>0?`<span class="nav-badge">${unread}</span>`:''}
+      ${badgeVal>0?`<span class="nav-badge" style="${pendingCnt>0?'background:#f59e0b':''}">${badgeVal}</span>`:''}
     </div>`;
   });
   document.getElementById('sbNav').innerHTML=html;
@@ -2593,10 +2632,7 @@ async function doLogin() {
   if(document.getElementById('remMe').checked) localStorage.setItem('bjUser',JSON.stringify({username:CU.username}));
   if(found._id) fbUpdate('users',found._id,{lastLogin:new Date().toLocaleDateString('ar-IQ')}).catch(()=>{});
   hideLogin(); buildUI();
-  // ✅ طلب إذن إشعارات المتصفح
-if (Notification && Notification.permission === 'default') {
-  Notification.requestPermission();
-} const _loginTarget=(CU.type==='preparer')?'pagePrep':(CU.type==='driver')?'pageDriver':'pageDashboard';
+  const _loginTarget=(CU.type==='preparer')?'pagePrep':(CU.type==='driver')?'pageDriver':'pageDashboard';
 showPage(_loginTarget); toast('✅ مرحباً '+CU.name);
 }
 
@@ -2689,6 +2725,11 @@ function updateCartUI(){
 }
 
 function openCartModal(){
+  // إعادة حالة النموذج عند كل فتح
+  const formV = document.getElementById('cartFormView');
+  const succV = document.getElementById('cartSuccessView');
+  if (formV) formV.style.display = 'block';
+  if (succV) succV.style.display = 'none';
   renderCartItems();
   const phoneWrap = document.getElementById('visitorPhoneWrap');
   if (phoneWrap) phoneWrap.style.display = CU ? 'none' : 'block';
@@ -2773,7 +2814,7 @@ async function sendOrder(){
   if(hasErr){toast('⚠️ أكمل الحقول المطلوبة — رقم الهاتف 11 رقم بالضبط',false);return;}
   if(CU?.type==='rep'&&!selLoc){toast('⚠️ المندوب مطلوب منه تحديد الموقع',false);return;}
   _sendingOrder = true;
-  const sendBtn = document.querySelector('#cartModal .btn-full.btn-lg');
+  const sendBtn = document.querySelector('#cartFormView .btn-full.btn-lg');
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='⏳ جاري الإرسال...';}
   try{
 
@@ -2797,6 +2838,7 @@ const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId
     visitorPhone: CU ? '' : visPhone,
     products:prodList.join('، '),
     total, commission, net,
+    status: 'pending_approval',
   };
 
   // ✅ فتح واتساب قبل أي await لأن المتصفح يحجب window.open بعد العمليات غير المتزامنة
@@ -2810,47 +2852,8 @@ const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId
 
   const fbId = await fbAdd('orders', orderData);
 // =============================================
-// ✅ هنا نضيف الكود حق المجهز
+// ✅ الطلب بانتظار موافقة الادمن — لا يُرسل للمجهز حتى التأكيد
 // =============================================
-if (fbId) {
-  // حساب الحجم الكلي للطلب
-  let totalVolume = 0;
-  let itemsList = '';
-  for(const k in cart) {
-    const p = products.find(x => x.name === k);
-    if(p && p.carton_volume) {
-      const itemVol = p.carton_volume * cart[k].qty;
-      totalVolume += itemVol;
-      itemsList += `\n   • ${k} (${cart[k].qty}) - حجم الكرتون: ${p.carton_volume} م³ - الإجمالي: ${itemVol.toFixed(3)} م³`;
-    } else {
-      itemsList += `\n   • ${k} (${cart[k].qty}) - لا يوجد حجم محدد`;
-    }
-  }
-
-  // رابط التجهيز
-  const prepareLink = `https://karrarkasem.github.io/1/prepare.html?order=${orderId}`;
-  
-  // رسالة واتساب للمجهز
-  const preparerWhatsApp = `9647806852561`; // رقم واتساب المجهز
-  const waMsg = `📦 *طلب جديد للتجهيز*\n\n🏪 المحل: ${shop}\n🆔 رقم الطلب: ${orderId}\n📋 المنتجات:${itemsList}\n📐 إجمالي الحجم: ${totalVolume.toFixed(3)} م³\n\n🔗 رابط التجهيز:\n${prepareLink}`;
-  
-  // إرسال واتساب
-  window.open(`https://wa.me/${preparerWhatsApp}?text=${encodeURIComponent(waMsg)}`, '_blank');
-
-  // إرسال تلجرام (إذا تريد)
-  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
-  const TG_CHAT  = '-5246620507'; // شات المجهز
-  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      chat_id: TG_CHAT,
-      text: waMsg.replace(/\*/g, ''),
-      parse_mode: 'Markdown'
-    })
-  }).catch(()=>{});
-}
-
 
   for(const k in cart){
     const p=products.find(x=>x.name===k);
@@ -2896,27 +2899,25 @@ if (notifId) {
   renderNotifBadge();
   buildSidebar();
 }
-if (Notification?.permission === 'granted') {
-  new Notification('📦 طلب جديد — برجمان', {
-    body: `${shop} — ${total.toLocaleString()} د.ع`,
-    icon: 'https://via.placeholder.com/64?text=🏪'
-  });
-} else if (Notification?.permission !== 'denied') {
-  Notification?.requestPermission().then(perm => {
-    if (perm === 'granted')
-      new Notification('📦 طلب جديد — برجمان', {
-        body: `${shop} — ${total.toLocaleString()} د.ع`
-      });
-  });
-}
 
 // إرسال إيميل بنفس الوقت
 sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc});
 
   orders.push(parseOrder({...orderData,_id:fbId||'',createdAt:nowStr}));
-  cart={}; updateCartUI(); closeModal('cartModal');
+  cart={}; updateCartUI();
   ['shopName','shopAddr','orderNote','visitorPhone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('locOk').style.display='none'; selLoc='';
+
+  // ── شاشة النجاح داخل المودال ──
+  const trackUrl = `https://karrarkasem.github.io/1/track.html?order=${orderId}`;
+  const formV = document.getElementById('cartFormView');
+  const succV = document.getElementById('cartSuccessView');
+  const succId = document.getElementById('cartSuccessOrderId');
+  const trackBtn = document.getElementById('cartTrackBtn');
+  if (formV) formV.style.display = 'none';
+  if (succV) succV.style.display = 'block';
+  if (succId) succId.textContent = '🆔 ' + orderId;
+  if (trackBtn) trackBtn.href = trackUrl;
   // إشعار تيليغرام
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
   const TG_CHAT  = '-5246620507';
@@ -2937,13 +2938,11 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
     localStorage.setItem('bj_guest_order', JSON.stringify({ orderId, fbId, phone: visPhone, shop, date: nowStr }));
   }
 
-  // Show live tracking modal right after order
-  if (fbId) setTimeout(() => showOrderTrackingModal(orderId, fbId), 600);
 
   renderStore('الكل'); renderInventory(); renderOrders(); buildDashboard(); renderSalesList();
   }finally{
     _sendingOrder=false;
-    const sb=document.querySelector('#cartModal .btn-full.btn-lg');
+    const sb=document.querySelector('#cartFormView .btn-full.btn-lg');
     if(sb){sb.disabled=false;sb.innerHTML='📱 إرسال الطلب عبر الواتساب';}
   }
 }
@@ -3066,8 +3065,43 @@ function buildDashboard(){
 // ═══════════════════════════════════════════════════════
 // ORDERS
 // ═══════════════════════════════════════════════════════
+function renderPendingApprovalSection() {
+  const isAdmin = CU?.type === 'admin' || CU?.type === 'sales_manager';
+  const section = document.getElementById('pendingApprovalSection');
+  const list    = document.getElementById('pendingApprovalList');
+  const count   = document.getElementById('pendingApprovalCount');
+  if (!section || !list) return;
+
+  if (!isAdmin) { section.style.display = 'none'; return; }
+
+  const pending = orders.filter(o => (o.status || '') === 'pending_approval');
+  if (!pending.length) { section.style.display = 'none'; return; }
+
+  section.style.display = 'block';
+  if (count) count.textContent = pending.length;
+
+  list.innerHTML = pending.map(o => `
+    <div style="background:rgba(255,255,255,.9);border:1.5px solid rgba(245,158,11,.35);border-radius:var(--r16);padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(245,158,11,.1)">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:800;font-size:.9rem;color:var(--deep);margin-bottom:4px">🏪 ${o.shopName||'—'}</div>
+        <div style="font-size:.75rem;color:rgba(9,50,87,.5);margin-bottom:2px">👤 ${o.repName||'زائر'} · ${o.date||''}</div>
+        <div style="font-size:.76rem;color:rgba(9,50,87,.55);margin-top:4px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📦 ${o.products||'—'}</div>
+      </div>
+      <div style="text-align:center;min-width:80px">
+        <div style="font-size:1.1rem;font-weight:900;color:var(--mint2)">${(parseFloat(o.total)||0).toLocaleString()}</div>
+        <div style="font-size:.65rem;color:rgba(9,50,87,.4)">د.ع</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;box-shadow:0 4px 12px rgba(16,185,129,.3)"
+          onclick="approveOrder('${o._id||o.id||''}')">✅ تأكيد الطلب</button>
+        <button class="btn btn-ghost btn-sm" onclick="showOrdDetail('${o._id||o.id||''}')">🔍</button>
+      </div>
+    </div>`).join('');
+}
+
 function renderOrders() {
   if (!CU) return;
+  renderPendingApprovalSection();
   const p = PERMS[CU.type] || PERMS.guest;
 
   // ── 1. قاعدة البيانات حسب الصلاحية ──
@@ -3152,6 +3186,7 @@ function renderOrders() {
   // تحديث شارة العدد
   const badge = document.getElementById('ordCountBadge');
   if (badge) badge.textContent = filt.length + ' طلب';
+  buildSidebar();
 
   // إظهار أزرار الأدمن
   const adminActions = document.getElementById('ordAdminActions');
@@ -3161,10 +3196,18 @@ function renderOrders() {
   window._visibleOrderIds = filt.map(o => o._id||o.id||'').filter(Boolean);
 
   // ── 7. رسم الجدول ──
-  const isAdmin = CU?.type === 'admin';
+  const isAdmin = CU?.type === 'admin' || CU?.type === 'sales_manager';
   document.getElementById('ordBody').innerHTML = filt.length
-    ? filt.map(o => `
-        <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer">
+    ? filt.map(o => {
+        const isPendingApproval = (o.status || '') === 'pending_approval';
+        const statusBadge = isPendingApproval
+          ? `<span class="badge" style="background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.3)">⏳ بانتظار الموافقة</span>`
+          : '';
+        const approveBtn = (isAdmin && isPendingApproval)
+          ? `<button class="btn btn-sm" style="background:rgba(16,185,129,.12);color:#059669;border:1.5px solid rgba(16,185,129,.3)" onclick="approveOrder('${o._id||o.id||''}')">✅ موافقة</button>`
+          : '';
+        return `
+        <tr onclick="showOrdDetail('${o._id||o.id||''}')" style="cursor:pointer${isPendingApproval?';background:rgba(245,158,11,.04)':''}">
           <td style="white-space:nowrap;color:rgba(9,50,87,.55);font-size:.76rem">${o.date}</td>
           <td style="font-weight:700;color:var(--sky2)">${o.repName||'—'}</td>
           <td style="font-weight:700;color:var(--deep)">${o.shopName||'—'}</td>
@@ -3173,10 +3216,13 @@ function renderOrders() {
           <td style="color:var(--gold2)">${(parseFloat(o.commission)||0).toLocaleString()}</td>
           <td style="color:var(--teal2)">${(parseFloat(o.net)||0).toLocaleString()}</td>
           <td onclick="event.stopPropagation()" style="white-space:nowrap">
+            ${statusBadge}
+            ${approveBtn}
             <button class="btn btn-ghost btn-sm" onclick="showOrdDetail('${o._id||o.id||''}')">🔍</button>
-            ${isAdmin?`<button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:none" onclick="deleteOrder('${o._id||o.id||''}')">🗑️</button>`:''}
+            ${CU?.type==='admin'?`<button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:none" onclick="deleteOrder('${o._id||o.id||''}')">🗑️</button>`:''}
           </td>
-        </tr>`).join('')
+        </tr>`;
+      }).join('')
     : '<tr><td colspan="8" style="text-align:center;padding:28px;color:rgba(9,50,87,.33)">لا توجد طلبات بهذه الفلاتر</td></tr>';
 }
 
@@ -3237,6 +3283,128 @@ function showOrdDetail(id) {
       </div>
     </div>`;
   openModal('ordDetailModal');
+}
+
+// ═══════════════════════════════════════════════════════
+// ✅ الموافقة على الطلب — bottom sheet بدل confirm()
+// ═══════════════════════════════════════════════════════
+let _approveOrderId = null;
+let _approvePreparers = [];
+let _approveWaMsg = '';
+let _approveTgMsg = '';
+let _approvePrepLink = '';
+
+async function approveOrder(id) {
+  if (CU?.type !== 'admin' && CU?.type !== 'sales_manager') return;
+
+  const o = orders.find(x => (x._id||x.id) === id);
+  if (!o) return;
+
+  // 1. بناء رسائل الإرسال
+  let totalVolume = 0, itemsList = '';
+  const itemsArr = o.cartItemsArray || parseCartItems(o.products);
+  itemsArr.forEach(item => {
+    const p = products.find(x => x.name === item.name);
+    if (p && p.carton_volume) {
+      const vol = p.carton_volume * (item.qty || 1);
+      totalVolume += vol;
+      itemsList += `\n   • ${item.name} (${item.qty||1}) - حجم: ${vol.toFixed(3)} م³`;
+    } else {
+      itemsList += `\n   • ${item.name} (${item.qty||1})`;
+    }
+  });
+
+  const prepareLink = `https://karrarkasem.github.io/1/prepare.html?order=${o.orderId||id}`;
+  const waMsg = `📦 *طلب جديد للتجهيز ✅ معتمد*\n\n🏪 المحل: ${o.shopName||'—'}\n🆔 رقم الطلب: ${o.orderId||id}\n📋 المنتجات:${itemsList}\n📐 إجمالي الحجم: ${totalVolume.toFixed(3)} م³\n💰 الإجمالي: ${(parseFloat(o.total)||0).toLocaleString()} د.ع\n\n✅ تمت الموافقة من: ${CU.name}\n🔗 رابط التجهيز:\n${prepareLink}`;
+  const tgMsg =
+    `📦 *طلب جديد معتمد للتجهيز*\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `🏪 المحل: ${o.shopName||'—'}\n` +
+    `👤 المندوب: ${o.repName||'زائر'}\n` +
+    `📍 العنوان: ${o.shopAddr||'—'}\n` +
+    `🆔 رقم الطلب: ${o.orderId||id}\n` +
+    `📋 المنتجات:${itemsList}\n` +
+    `📐 إجمالي الحجم: ${totalVolume.toFixed(3)} م³\n` +
+    `💰 الإجمالي: ${(parseFloat(o.total)||0).toLocaleString()} د.ع\n` +
+    `━━━━━━━━━━━━━━━━━━\n` +
+    `✅ اعتمد من: ${CU.name}\n` +
+    `🔗 رابط التجهيز:\n${prepareLink}`;
+
+  // 2. جلب المجهزين مسبقاً (قبل أي user gesture)
+  try {
+    const snap = await fb().getDocs(fb().query(fb().collection(db(), 'users'), fb().where('type', '==', 'preparer')));
+    _approvePreparers = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  } catch(e) {
+    _approvePreparers = users.filter(u => u.type === 'preparer');
+  }
+
+  // 3. حفظ البيانات وفتح الـ bottom sheet
+  _approveOrderId  = id;
+  _approveWaMsg    = waMsg;
+  _approveTgMsg    = tgMsg;
+  _approvePrepLink = prepareLink;
+
+  const desc = document.getElementById('approveSheetDesc');
+  if (desc) desc.innerHTML =
+    `<strong>${o.shopName||'—'}</strong> · ${o.repName||'زائر'}<br>` +
+    `${(parseFloat(o.total)||0).toLocaleString()} د.ع · ${itemsArr.length} منتج`;
+
+  const sheet = document.getElementById('approveSheet');
+  if (sheet) { sheet.style.display = 'flex'; }
+}
+
+function closeApproveSheet() {
+  const sheet = document.getElementById('approveSheet');
+  if (sheet) sheet.style.display = 'none';
+  _approveOrderId = null;
+}
+
+async function confirmApproveOrder() {
+  if (!_approveOrderId) return;
+  const id  = _approveOrderId;
+  const o   = orders.find(x => (x._id||x.id) === id);
+  const btn = document.getElementById('approveSheetBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ جاري الإرسال...'; }
+
+  // 4. فتح واتساب — مباشرة من ضغطة المستخدم على زر "موافقة وإرسال"
+  _approvePreparers.forEach(prep => {
+    if (prep.phone) {
+      window.open(`https://wa.me/${prep.phone.replace(/\+/g,'')}?text=${encodeURIComponent(_approveWaMsg)}`, '_blank');
+    }
+  });
+
+  // 5. تحديث الحالة في Firebase
+  await fbUpdate('orders', id, { status: 'Pending' }).catch(() => {});
+  if (o) o.status = 'Pending';
+
+  // 6. تليجرام — المجموعة + كل مجهز عنده معرف
+  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ chat_id: '-5246620507', text: _approveTgMsg, parse_mode: 'Markdown' })
+  }).catch(() => {});
+
+  _approvePreparers.forEach(prep => {
+    fbAdd('notifications', {
+      title: '📦 طلب معتمد للتجهيز',
+      body: `${o?.shopName||'—'} — ${(parseFloat(o?.total)||0).toLocaleString()} د.ع`,
+      type: 'order', read: false,
+      targetUser: prep.username || prep._id,
+      date: new Date().toLocaleDateString('ar-IQ')
+    }).catch(() => {});
+
+    if (prep.telegram) {
+      fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: prep.telegram, text: _approveTgMsg, parse_mode: 'Markdown' })
+      }).catch(() => {});
+    }
+  });
+
+  closeApproveSheet();
+  if (btn) { btn.disabled = false; btn.textContent = '✅ موافقة وإرسال'; }
+  toast('✅ تمت الموافقة وأُرسل للمجهز');
+  renderOrders(); buildDashboard();
 }
 
 async function deleteOrder(id) {
@@ -6399,12 +6567,6 @@ PERMS.driver   = { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_writ
 ROLES.preparer = '📦 مجهز';
 ROLES.driver   = '🚗 سائق';
 
-// ── Notification permission request on first load ──
-(function requestNotifPermission() {
-  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-    setTimeout(() => Notification.requestPermission(), 3000);
-  }
-})();
 
 // ── Helper: send browser notification ──
 function browserNotif(title, body, icon) {
@@ -7355,7 +7517,7 @@ function renderTruckLoader(order) {
 
 // Order status tracker shown in order detail
 function renderOrderStatusTracker(order) {
-  const statusMap = { Pending: 0, pending: 0, Confirmed: 1, confirmed: 1, Prepared: 2, 'In Delivery': 3, NearCustomer: 3, Delivered: 4 };
+  const statusMap = { pending_approval: -1, Pending: 0, pending: 0, Confirmed: 1, confirmed: 1, Prepared: 2, 'In Delivery': 3, NearCustomer: 3, Delivered: 4 };
   const stages = [
     { icon: '✅', label: 'مؤكد' },
     { icon: '📦', label: 'مجهز' },
@@ -7628,8 +7790,8 @@ startRealtimeListeners = function() {
           div.onclick = () => {
             const g = (() => { try { return JSON.parse(localStorage.getItem('bj_guest_order')||'{}'); } catch(e){return {};} })();
             const ord = orders.find(x => x._id === change.doc.id);
-            if (ord) showOrderTrackingModal(ord.orderId || '', change.doc.id);
-            else if (g.fbId) showOrderTrackingModal(g.orderId||'', g.fbId);
+            const trackId = ord?.orderId || g.orderId || '';
+            if (trackId) window.open(`https://karrarkasem.github.io/1/track.html?order=${trackId}`, '_blank');
             div.remove();
           };
           document.body.appendChild(div);
@@ -7703,7 +7865,7 @@ function renderGuestTrackBtn() {
         <div style="font-size:.75rem;opacity:.8;margin-top:2px">${g.shop || ''} — ${g.date || ''}</div>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-sm" style="background:white;color:#0369a1;font-weight:700" onclick="showOrderTrackingModal('${g.orderId}','${g.fbId}')">🔍 تتبع الطلب</button>
+        <a class="btn btn-sm" style="background:white;color:#0369a1;font-weight:700;text-decoration:none" href="https://karrarkasem.github.io/1/track.html?order=${g.orderId}" target="_blank">🔍 تتبع الطلب</a>
         <button class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white" onclick="localStorage.removeItem('bj_guest_order');renderGuestTrackBtn()">✕</button>
       </div>
     </div>`;
@@ -7729,91 +7891,43 @@ document.addEventListener('fbReady', () => {
 // ══════════════════════════════════════════════════════
 let _trackUnsub = null;
 
-function showOrderTrackingModal(orderId, fbId) {
-  const titleEl = document.getElementById('trackModalOrderId');
-  const bodyEl  = document.getElementById('trackModalBody');
-  if (titleEl) titleEl.textContent = '🆔 ' + orderId;
-  if (bodyEl)  bodyEl.innerHTML = '<div style="text-align:center;padding:40px;color:rgba(9,50,87,.4)">⏳ جاري تحميل حالة الطلب...</div>';
-  openModal('orderTrackingModal');
-
-  if (_trackUnsub) { try { _trackUnsub(); } catch(e){} _trackUnsub = null; }
-
-  function renderInModal(live) {
-    if (!bodyEl) return;
-    // Update local orders cache
-    const idx = orders.findIndex(x => (x._id || x.id) === fbId);
-    if (idx !== -1) orders[idx] = { ...orders[idx], ...live };
-    else orders.push(live);
-
-    bodyEl.innerHTML =
-      renderOrderStatusTracker(live) +
-      `<div style="background:rgba(14,165,233,.06);border-radius:16px;padding:14px 16px;margin-top:14px;font-size:.82rem">
-        <div style="font-weight:700;color:var(--deep);margin-bottom:6px">📦 تفاصيل الطلب</div>
-        <div style="color:rgba(9,50,87,.6)">${live.products || '—'}</div>
-        <div style="margin-top:6px;color:rgba(9,50,87,.45)">💰 ${(parseFloat(live.total)||0).toLocaleString()} د.ع</div>
-        <div style="margin-top:4px;color:rgba(9,50,87,.45)">📍 ${live.shopAddress || live.shopAddr || '—'}</div>
-      </div>`;
-
-    if (live.status === 'NearCustomer') {
-      // Pop a flash banner outside the modal too
-      const ex = document.getElementById('nearCustFlash');
-      if (!ex) {
-        const div = document.createElement('div');
-        div.id = 'nearCustFlash';
-        div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#10b981,#059669);color:white;padding:14px 28px;border-radius:20px;box-shadow:0 8px 32px rgba(16,185,129,.4);font-weight:700;font-size:.95rem;text-align:center';
-        div.innerHTML = '🚚 السائق قريب منك!<br><span style="font-size:.75rem;opacity:.85">سيصل طلبك خلال دقائق</span>';
-        document.body.appendChild(div);
-        browserNotif('🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق`);
-        setTimeout(() => div.remove(), 7000);
-      }
-    }
-  }
-
-  // Try real-time listener first
-  try {
-    const { onSnapshot, doc: fbDoc } = window._fb || {};
-    const _db = window._db;
-    if (onSnapshot && fbDoc && _db && fbId) {
-      _trackUnsub = onSnapshot(fbDoc(_db, 'orders', fbId), snap => {
-        if (!snap.exists()) return;
-        renderInModal({ _id: snap.id, ...snap.data() });
-      });
-      return;
-    }
-  } catch(e) { console.warn('Tracking listener:', e); }
-
-  // Fallback: use local cache
-  const o = orders.find(x => (x._id || x.id) === fbId || x.orderId === orderId);
-  if (o) renderInModal(o);
-}
-
-// Stop real-time listener when tracking modal closes
-document.addEventListener('click', e => {
-  if (e.target.closest('#orderTrackingModal') === null) return;
-  if (e.target.matches('[onclick*="closeModal"]') || e.target.closest('.modal-close')) {
-    if (_trackUnsub) { try { _trackUnsub(); } catch(ee){} _trackUnsub = null; }
-  }
-});
 
 </script>
 
-<!-- ══════════ ORDER TRACKING MODAL ══════════ -->
-<div class="modal" id="orderTrackingModal">
-  <div class="modal-box" style="max-width:520px;border-radius:24px;padding:0;overflow:hidden">
-    <div style="background:linear-gradient(135deg,#093257,#0ea5e9);padding:22px 24px 16px;color:white;text-align:center;position:relative">
-      <button onclick="closeModal('orderTrackingModal')" style="position:absolute;left:14px;top:14px;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:30px;height:30px;color:white;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
-      <div style="font-size:2.2rem;margin-bottom:4px">🚚</div>
-      <h2 style="font-size:1.05rem;font-weight:800;margin:0">تتبع طلبك</h2>
-      <p id="trackModalOrderId" style="font-size:.72rem;opacity:.65;margin:4px 0 0"></p>
+<!-- ══════════ APPROVE BOTTOM SHEET ══════════ -->
+<div id="approveSheet" style="display:none;position:fixed;inset:0;z-index:900;align-items:flex-end;justify-content:center">
+  <!-- خلفية شفافة -->
+  <div onclick="closeApproveSheet()" style="position:absolute;inset:0;background:rgba(9,50,87,.45);backdrop-filter:blur(4px)"></div>
+  <!-- البطاقة -->
+  <div style="position:relative;width:100%;max-width:520px;margin:0 auto;background:rgba(255,255,255,.98);border-radius:var(--r24) var(--r24) 0 0;padding:28px 20px 36px;box-shadow:0 -16px 48px rgba(9,50,87,.18);animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)">
+    <div style="width:40px;height:4px;background:rgba(9,50,87,.12);border-radius:99px;margin:0 auto 20px"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2rem;margin-bottom:8px">📦</div>
+      <h3 style="font-size:1rem;font-weight:900;color:var(--deep);margin-bottom:4px">تأكيد الموافقة على الطلب</h3>
+      <p id="approveSheetDesc" style="font-size:.82rem;color:rgba(9,50,87,.5);line-height:1.5"></p>
     </div>
-    <div style="padding:18px;max-height:75vh;overflow-y:auto" id="trackModalBody">
-      <div style="text-align:center;padding:40px;color:rgba(9,50,87,.4)">⏳ جاري التحميل...</div>
+    <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-radius:var(--r16);padding:12px 14px;margin-bottom:20px;font-size:.8rem;color:rgba(9,50,87,.6)">
+      ✅ سيتم إرسال الطلب للمجهز عبر الواتساب والتليجرام فور الموافقة
     </div>
-    <div style="padding:0 18px 18px;text-align:center">
-      <button class="btn btn-ghost btn-sm" onclick="closeModal('orderTrackingModal')">إغلاق</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="closeApproveSheet()"
+        style="padding:14px;border-radius:var(--r16);background:rgba(9,50,87,.07);border:none;font-family:'Tajawal';font-weight:700;font-size:.9rem;color:var(--deep);cursor:pointer">
+        إلغاء
+      </button>
+      <button id="approveSheetBtn" onclick="confirmApproveOrder()"
+        style="padding:14px;border-radius:var(--r16);background:linear-gradient(135deg,#10b981,#059669);border:none;font-family:'Tajawal';font-weight:800;font-size:.9rem;color:white;cursor:pointer;box-shadow:0 6px 20px rgba(16,185,129,.35)">
+        ✅ موافقة وإرسال
+      </button>
     </div>
   </div>
 </div>
+
+<style>
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+</style>
 
 </body>
 </html>

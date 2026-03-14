@@ -373,9 +373,20 @@
         }
         
         .action-btn.map {
-            background: #f5f5f5;
-            color: #093257;
-            border: 1px solid #ddd;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+        }
+
+        .action-btn.near-alert {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .map-emoji-icon {
+            font-size: 1.4rem;
+            line-height: 1;
+            background: none !important;
+            border: none !important;
         }
         
         /* Map */
@@ -1001,7 +1012,7 @@
                     
                     ${actions}
                     
-                    ${type === 'delivery' && locationCoords ? `
+                    ${locationCoords ? `
                         <div id="map-${order.id}" class="map-container" style="display:none;"></div>
                     ` : ''}
                 </div>
@@ -1057,57 +1068,112 @@
             }
         };
 
-        // Mark as near customer
+        // Mark as near customer + send direct notification
         window.markNearCustomer = async function(orderId) {
             try {
+                const nearTime = new Date().toISOString();
                 await db.collection('orders').doc(orderId).update({
                     status: 'NearCustomer',
-                    near_at: new Date().toISOString()
+                    near_at: nearTime,
+                    near_notification: {
+                        message: '🚗 السائق على بعد 500 متر منك، يرجى الاستعداد لاستلام طلبك!',
+                        driver_name: currentUser.name,
+                        timestamp: nearTime
+                    }
                 });
-                
+
                 await loadOrders();
-                toast('📍 تم إشعار الزبون');
+                toast('📍 تم إشعار الزبون بأنك قريب');
             } catch (error) {
                 console.error(error);
                 toast('❌ حدث خطأ', false);
             }
         };
 
-        // Show location on map
+        // Show live location on map
         window.showLocation = function(orderId) {
             const order = allOrders.find(o => o.id === orderId);
             if (!order) return;
-            
+
             const coords = parseLocation(order.location);
             if (!coords) return;
-            
+
             const mapDiv = document.getElementById(`map-${orderId}`);
             if (!mapDiv) return;
-            
+
             if (mapDiv.style.display === 'none') {
                 mapDiv.style.display = 'block';
-                
+
+                // Already initialized
+                if (mapDiv._mapInstance) {
+                    mapDiv._mapInstance.invalidateSize();
+                    return;
+                }
+
                 setTimeout(() => {
                     const map = L.map(mapDiv).setView([coords.lat, coords.lng], 15);
-                    
+                    mapDiv._mapInstance = map;
+
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                         attribution: '©OpenStreetMap'
                     }).addTo(map);
-                    
-                    L.marker([coords.lat, coords.lng]).addTo(map)
-                        .bindPopup(`🏪 ${order.shopName}`)
-                        .openPopup();
-                    
-                    // Add directions button
+
+                    // Customer marker
+                    const customerIcon = L.divIcon({ html: '🏠', className: 'map-emoji-icon', iconSize: [30, 30], iconAnchor: [15, 15] });
+                    L.marker([coords.lat, coords.lng], { icon: customerIcon }).addTo(map)
+                        .bindPopup('📍 موقع الزبون').openPopup();
+
+                    // Driver live location
+                    const driverIcon = L.divIcon({ html: '🚗', className: 'map-emoji-icon', iconSize: [30, 30], iconAnchor: [15, 15] });
+                    let driverMarker = null;
+
+                    if (navigator.geolocation) {
+                        const watchId = navigator.geolocation.watchPosition(pos => {
+                            const dLat = pos.coords.latitude;
+                            const dLng = pos.coords.longitude;
+
+                            if (!driverMarker) {
+                                driverMarker = L.marker([dLat, dLng], { icon: driverIcon }).addTo(map)
+                                    .bindPopup('🚗 موقعك الحالي');
+                                map.fitBounds([[coords.lat, coords.lng], [dLat, dLng]], { padding: [40, 40] });
+                            } else {
+                                driverMarker.setLatLng([dLat, dLng]);
+                            }
+
+                            // Save driver position to Firestore so customer can track
+                            db.collection('orders').doc(orderId).update({
+                                driver_lat: dLat,
+                                driver_lng: dLng,
+                                driver_location_at: new Date().toISOString()
+                            }).catch(() => {});
+
+                        }, null, { enableHighAccuracy: true, maximumAge: 5000 });
+
+                        mapDiv._watchId = watchId;
+                    }
+
+                    // Google Maps directions link
                     const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}`;
-                    mapDiv.innerHTML += `
-                        <a href="${googleMapsLink}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#0ea5e9; text-decoration:none; font-weight:600;">
-                            🗺️ فتح في خرائط جوجل
-                        </a>
-                    `;
+                    const linkEl = document.createElement('a');
+                    linkEl.href = googleMapsLink;
+                    linkEl.target = '_blank';
+                    linkEl.style.cssText = 'display:block; text-align:center; padding:8px; color:#4f46e5; text-decoration:none; font-weight:600; font-size:0.85rem; background:#f0f0ff; border-radius:0 0 8px 8px;';
+                    linkEl.textContent = '🗺️ فتح في خرائط جوجل';
+                    mapDiv.after(linkEl);
+                    mapDiv._mapsLink = linkEl;
+
                 }, 100);
             } else {
                 mapDiv.style.display = 'none';
+                if (mapDiv._watchId) {
+                    navigator.geolocation.clearWatch(mapDiv._watchId);
+                    mapDiv._watchId = null;
+                }
+                if (mapDiv._mapsLink) {
+                    mapDiv._mapsLink.remove();
+                    mapDiv._mapsLink = null;
+                    mapDiv._mapInstance = null;
+                }
             }
         };
 

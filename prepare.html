@@ -8,501 +8,165 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Tajawal', sans-serif;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
         body {
             background: linear-gradient(135deg, #093257, #0ea5e9);
             min-height: 100vh;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
             padding: 16px;
         }
         .prepare-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 30px;
-            padding: 30px 24px;
+            background: rgba(255,255,255,0.97);
+            border-radius: 28px;
+            padding: 28px 20px;
             max-width: 500px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.28);
+            animation: slideUp 0.4s ease;
+            margin: 10px 0;
         }
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity:0; transform:translateY(28px); }
+            to   { opacity:1; transform:translateY(0); }
         }
-        .header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
+        .header { text-align:center; margin-bottom:22px; }
         .logo {
-            width: 70px;
-            height: 70px;
-            background: linear-gradient(135deg, #093257, #0ea5e9);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            margin: 0 auto 12px;
-            color: white;
-            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+            width:68px; height:68px;
+            background:linear-gradient(135deg,#093257,#0ea5e9);
+            border-radius:20px; display:flex; align-items:center; justify-content:center;
+            font-size:2rem; margin:0 auto 10px; color:white;
+            box-shadow:0 10px 20px rgba(14,165,233,0.3);
         }
-        h1 {
-            color: #333;
-            font-size: 1.5rem;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
+        h1 { color:#333; font-size:1.4rem; font-weight:800; margin-bottom:4px; }
         .order-id {
-            color: #666;
-            font-size: 0.9rem;
-            background: #f5f5f5;
-            padding: 6px 12px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 10px;
+            color:#666; font-size:.85rem; background:#f5f5f5;
+            padding:5px 12px; border-radius:20px; display:inline-block;
         }
         .login-section {
-            margin: 20px 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
-            border-radius: 20px;
+            margin:16px 0; padding:18px;
+            background:linear-gradient(135deg,#f5f5f5,#e8e8e8);
+            border-radius:18px;
         }
         .input-field {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            font-size: 1rem;
-            margin-bottom: 15px;
-            font-family: 'Tajawal', sans-serif;
+            width:100%; padding:12px 14px; border:2px solid #ddd;
+            border-radius:12px; font-size:1rem; margin-bottom:13px;
+            font-family:'Tajawal',sans-serif;
         }
-        .input-field:focus {
-            border-color: #0ea5e9;
-            outline: none;
-        }
-        .checkbox-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            color: #555;
-        }
-        .checkbox-label input {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: #0ea5e9;
-        }
+        .input-field:focus { border-color:#0ea5e9; outline:none; }
         .btn {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 15px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.2s;
-            font-family: 'Tajawal', sans-serif;
+            background:linear-gradient(135deg,#0ea5e9,#0284c7);
+            color:white; border:none; padding:13px 20px; border-radius:14px;
+            font-weight:700; font-size:1rem; cursor:pointer; width:100%;
+            transition:all .2s; font-family:'Tajawal',sans-serif; margin-bottom:8px;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
-        }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        .error-message {
-            color: #dc2626;
-            text-align: center;
-            margin: 10px 0;
-            font-weight: 600;
-        }
-        .success-message {
-            color: #10b981;
-            text-align: center;
-            margin: 10px 0;
-            font-weight: 600;
-        }
-        .info-message {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 12px;
-            padding: 10px;
-            color: #b45309;
-            text-align: center;
-            margin: 10px 0;
-        }
-        .user-info {
-            background: #0ea5e910;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .user-avatar {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #093257, #0ea5e9);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-        }
-        .user-details {
-            flex: 1;
-        }
-        .user-name {
-            font-weight: 800;
-            color: #093257;
-            font-size: 1rem;
-        }
-        .user-role {
-            font-size: 0.8rem;
-            color: #666;
-        }
-        .logout-btn {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(14,165,233,.3); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+        .btn-success  { background:linear-gradient(135deg,#10b981,#059669); }
+        .btn-warning  { background:linear-gradient(135deg,#f59e0b,#d97706); }
+        .btn-danger   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+        .btn-outline  { background:white; color:#0284c7; border:2px solid #0ea5e9; }
         .product-item {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 12px;
+            background:white; border:2px solid #e8e8e8; border-radius:14px;
+            padding:14px; margin-bottom:10px;
         }
-        .product-name {
-            font-weight: 800;
-            color: #093257;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
+        .product-name { font-weight:800; color:#093257; font-size:1.05rem; margin-bottom:4px; }
         .product-detail {
-            display: flex;
-            justify-content: space-between;
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
+            display:flex; justify-content:space-between;
+            color:#666; font-size:.85rem; margin-bottom:4px;
         }
         .volume-badge {
-            background: #0ea5e920;
-            color: #0284c7;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 0.8rem;
+            background:#0ea5e920; color:#0284c7;
+            padding:2px 8px; border-radius:12px; font-weight:700; font-size:.78rem;
         }
         .total-volume {
-            background: linear-gradient(135deg, #09325720, #0ea5e920);
-            border-radius: 15px;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: center;
+            background:linear-gradient(135deg,#09325715,#0ea5e915);
+            border-radius:14px; padding:14px; margin:14px 0; text-align:center;
+            border:1px solid rgba(14,165,233,.18);
         }
-        .total-volume-value {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: #093257;
-        }
-        .vehicle-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
+        .total-volume-value { font-size:1.7rem; font-weight:900; color:#093257; }
+        .vehicle-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin:12px 0; }
         .vehicle-option {
-            border: 2px solid #ddd;
-            border-radius: 15px;
-            padding: 15px 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
+            border:2px solid #ddd; border-radius:14px; padding:13px 5px;
+            text-align:center; cursor:pointer; transition:all .2s;
         }
-        .vehicle-option.selected {
-            border-color: #0ea5e9;
-            background: #0ea5e910;
-        }
-        .vehicle-icon {
-            font-size: 2rem;
-            margin-bottom: 5px;
-        }
-        .vehicle-name {
-            font-weight: 700;
-            color: #333;
-        }
-        .vehicle-capacity {
-            font-size: 0.7rem;
-            color: #666;
-        }
-        .capacity-bar {
-            height: 10px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-        .capacity-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #0ea5e9);
-            border-radius: 10px;
-            transition: width 0.3s;
-        }
-        .capacity-text {
-            text-align: center;
-            font-weight: 700;
-            color: #093257;
-            margin: 10px 0;
-        }
-        .loader {
-            text-align: center;
-            padding: 40px;
-        }
+        .vehicle-option.selected { border-color:#0ea5e9; background:#0ea5e910; }
+        .vehicle-icon { font-size:1.8rem; margin-bottom:4px; }
+        .vehicle-name { font-weight:700; color:#333; font-size:.9rem; }
+        .vehicle-capacity { font-size:.68rem; color:#666; }
+        .capacity-bar { height:9px; background:#e0e0e0; border-radius:10px; margin:10px 0; overflow:hidden; }
+        .capacity-fill { height:100%; background:linear-gradient(90deg,#10b981,#0ea5e9); border-radius:10px; transition:width .3s; }
+        .capacity-text { text-align:center; font-weight:700; color:#093257; font-size:.88rem; margin:8px 0; }
+        .loader { text-align:center; padding:36px; }
         .loader span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #0ea5e9;
-            margin: 0 3px;
-            animation: bounce 1.4s infinite ease-in-out both;
+            display:inline-block; width:8px; height:8px; border-radius:50%;
+            background:#0ea5e9; margin:0 3px;
+            animation:bounce 1.4s infinite ease-in-out both;
         }
         @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
+            0%,80%,100%{ transform:scale(0); }
+            40%{ transform:scale(1); }
         }
-        .hidden {
-            display: none;
+        .msg-error   { color:#dc2626; text-align:center; padding:14px; font-weight:700; }
+        .msg-success { color:#059669; text-align:center; padding:14px; font-weight:700; }
+        .msg-warning {
+            background:#fef3c7; border:2px solid #f59e0b;
+            border-radius:12px; padding:11px; color:#b45309;
+            text-align:center; margin:10px 0; font-weight:700;
         }
-        .remember-info {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 5px;
-            text-align: center;
+        .phase-badge {
+            display:inline-flex; align-items:center; gap:6px;
+            background:linear-gradient(135deg,#0ea5e9,#0284c7);
+            color:white; padding:5px 14px; border-radius:20px;
+            font-weight:800; font-size:.82rem; margin-bottom:16px;
         }
-        .notifications-icon {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  width: 45px;
-  height: 45px;
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
-  z-index: 1000;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
-
-.notif-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #ef4444;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.notifications-panel {
-  position: fixed;
-  top: 75px;
-  left: 20px;
-  width: 320px;
-  max-width: calc(100% - 40px);
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  z-index: 999;
-  overflow: hidden;
-}
-
-.notif-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 15px;
-  background: linear-gradient(135deg, #093257, #0ea5e9);
-  color: white;
-}
-
-.notif-header h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.notif-header button {
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-
-.notif-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.notification-item {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.notification-item:hover {
-  background: #f5f5f5;
-}
-
-.notif-icon {
-  width: 35px;
-  height: 35px;
-  background: #0ea5e920;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #0ea5e9;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.notif-content {
-  flex: 1;
-}
-
-.notif-title {
-  font-weight: 700;
-  color: #093257;
-  font-size: 0.9rem;
-}
-
-.notif-body {
-  color: #666;
-  font-size: 0.8rem;
-  margin: 2px 0;
-}
-
-.notif-date {
-  color: #999;
-  font-size: 0.7rem;
-}
-
-.notif-order-btn {
-  background: #10b981;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 8px;
-  font-size: 0.7rem;
-  cursor: pointer;
-  white-space: nowrap;
-}
+        .phase-badge.phase-2 { background:linear-gradient(135deg,#f59e0b,#d97706); }
+        .phase-badge.phase-done { background:linear-gradient(135deg,#10b981,#059669); }
+        .driver-link-box {
+            background:linear-gradient(135deg,#f0fdf4,#d1fae5);
+            border:2px solid #10b981; border-radius:16px;
+            padding:18px; margin-top:14px;
+        }
+        .driver-link-box h3 { color:#065f46; font-size:1rem; margin-bottom:10px; }
+        .link-text {
+            background:white; border:1px solid #a7f3d0; border-radius:10px;
+            padding:10px 12px; font-size:.78rem; color:#064e3b;
+            word-break:break-all; margin-bottom:10px; direction:ltr; text-align:left;
+        }
+        .copy-btn {
+            background:linear-gradient(135deg,#10b981,#059669); color:white;
+            border:none; padding:10px 18px; border-radius:10px;
+            font-weight:700; font-size:.9rem; cursor:pointer;
+            font-family:'Tajawal',sans-serif; width:100%; margin-bottom:6px;
+        }
+        .section-title { font-weight:800; color:#093257; margin-bottom:10px; font-size:1rem; }
+        hr { border:none; border-top:1px solid #e8e8e8; margin:16px 0; }
     </style>
 </head>
 <body>
-    <div class="prepare-card">
+    <div class="prepare-card" id="prepareCard">
         <div class="header">
             <div class="logo">📦</div>
             <h1>تجهيز الطلب</h1>
             <div class="order-id" id="orderId">...</div>
         </div>
 
-        <!-- ✅ قسم تسجيل الدخول -->
         <div id="loginSection" class="login-section">
-            <h2 style="margin-bottom:15px; color:#093257;">🔐 تسجيل دخول المجهز</h2>
-            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
+            <h2 style="margin-bottom:14px;color:#093257;">🔐 تسجيل دخول المجهز</h2>
+            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
             <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-            
-            <!-- ✅ إضافة خيار "تذكرني" -->
-            <label class="checkbox-label">
-                <input type="checkbox" id="rememberMe" checked>
-                <span>🔓 تذكرني (ما يحتاج تسجيل دخول في المرات القادمة)</span>
-            </label>
-            
-            <button class="btn" onclick="login()" id="loginBtn">دخول</button>
-            <div id="loginError" class="error-message"></div>
-            <div id="loginInfo" class="info-message hidden">
-                ⚠️ استخدم بيانات حساب من نوع "مجهز" مضاف من لوحة الأدمن
-            </div>
+            <button class="btn" onclick="login()">دخول</button>
+            <div id="loginError" style="color:#dc2626;margin-top:8px;text-align:center;"></div>
         </div>
 
-        <!-- ✅ قسم معلومات المستخدم (يظهر بعد تسجيل الدخول) -->
-        <div id="userSection" class="hidden">
-            <div class="user-info">
-                <div class="user-avatar">👤</div>
-                <div class="user-details">
-                    <div class="user-name" id="userName"></div>
-                    <div class="user-role" id="userRole">📦 مجهز</div>
-                </div>
-                <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
-            </div>
-        </div>
-
-        <!-- أيقونة الإشعارات -->
-<div class="notifications-icon" onclick="toggleNotifPanel()">
-  🔔
-  <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
-</div>
-
-<!-- لوحة الإشعارات -->
-<div class="notifications-panel" id="notifPanel" style="display:none;">
-  <div class="notif-header">
-    <h3>📋 الإشعارات</h3>
-    <button onclick="loadPreparerNotifications()">⟳</button>
-  </div>
-  <div class="notif-list" id="notifList"></div>
-</div>
-
-        <!-- ✅ قسم تفاصيل الطلب (يظهر بعد تسجيل الدخول) -->
-        <div id="orderSection" class="hidden">
-            <!-- المحتوى راح يتحمل هنا -->
-        </div>
+        <div id="orderSection" style="display:none;"></div>
     </div>
 
     <script>
-        // ✅ Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
             authDomain: "burjuman-6cb83.firebaseapp.com",
@@ -511,476 +175,348 @@
             messagingSenderId: "177984721378",
             appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
         };
-
-        // ✅ تشغيل Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const db      = firebase.firestore();
+        const storage = firebase.storage();
 
-        // ✅ قراءة رقم الطلب من الرابط
         const urlParams = new URLSearchParams(window.location.search);
-        const orderId = urlParams.get('order');
-        document.getElementById('orderId').textContent = orderId || 'لا يوجد رقم طلب';
+        const orderId   = urlParams.get('order');
+        document.getElementById('orderId').textContent = orderId || 'غير موجود';
 
-        // ✅ سعة المركبات
-        const VEHICLES = {
-            'scooter': { name: 'ستوتة', icon: '🛵', capacity: 0.4 },
-            'pickup': { name: 'بيك اب', icon: '🚐', capacity: 6 },
-            'truck': { name: 'شاحنة', icon: '🚛', capacity: 30 }
+        // Vehicle defaults (overridden by Firebase settings if available)
+        let VEHICLES = {
+            'scooter': { name:'ستوتة',   icon:'🛵', capacity:0.4,  maxWeight:20,  color:'#f59e0b' },
+            'pickup':  { name:'بيك اب',  icon:'🚐', capacity:6,    maxWeight:500, color:'#0ea5e9' },
+            'truck':   { name:'شاحنة',   icon:'🚛', capacity:30,   maxWeight:3000,color:'#8b5cf6' }
         };
 
-        // ✅ متغيرات
-        let currentUser = null;
-        let orderData = null;
-        let totalVolume = 0;
         let selectedVehicle = null;
+        let orderData       = null;
+        let totalVolume     = 0;
+        let totalWeight     = 0;
+        let currentUsername = '';
+        let currentUserName = '';
+        let preparerPhase   = 0; // 0=not started, 1=preparing, 2=done
 
-        // ✅ مفتاح التخزين في localStorage
-        const STORAGE_KEY = 'preparer_session';
-
-        // ✅ عند تحميل الصفحة، نتحقق من وجود جلسة محفوظة
-        window.onload = function() {
-            loadSavedSession();
-        };
-
-        // ✅ دالة تحميل الجلسة المحفوظة
-        function loadSavedSession() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    const now = Date.now();
-                    if (now - session.timestamp < 24 * 60 * 60 * 1000) { // 24 ساعة
-                        currentUser = {
-                            username: session.username,
-                            name: session.name,
-                            phone: session.phone || '',
-                            type: 'preparer'
-                        };
-                        
-                        document.getElementById('loginSection').classList.add('hidden');
-                        document.getElementById('userSection').classList.remove('hidden');
-                        document.getElementById('userName').textContent = currentUser.name;
-                        
-                        loadOrder();
-                    } else {
-                        localStorage.removeItem(STORAGE_KEY);
+        // ── Load delivery vehicles from Firebase settings ──
+        async function loadDeliveryVehicles() {
+            try {
+                const snap = await db.collection('settings').where('key','==','delivery_vehicles').get();
+                if (!snap.empty) {
+                    const data = snap.docs[0].data();
+                    if (data.value && typeof data.value === 'object') {
+                        VEHICLES = data.value;
                     }
-                } catch (e) {
-                    localStorage.removeItem(STORAGE_KEY);
                 }
-            }
+            } catch(e) { /* use defaults */ }
         }
 
-        // ✅ دالة حفظ الجلسة مع رقم الهاتف
-        function saveSession(user) {
-            const session = {
-                username: user.username,
-                name: user.name,
-                phone: user.phone,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-        }
-
-        // ✅ دالة تسجيل الدخول
+        // ── Login ──
         window.login = async function() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
-            const rememberMe = document.getElementById('rememberMe').checked;
-            const loginBtn = document.getElementById('loginBtn');
-            const errorEl = document.getElementById('loginError');
-            const infoEl = document.getElementById('loginInfo');
-
-            if (!username || !password) {
-                errorEl.textContent = '⚠️ أدخل اسم المستخدم وكلمة المرور';
-                return;
-            }
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = '⏳ جاري التحقق...';
-            errorEl.textContent = '';
-            infoEl.classList.add('hidden');
-
+            const errorEl  = document.getElementById('loginError');
+            if (!username || !password) { errorEl.textContent='⚠️ أدخل بيانات الدخول'; return; }
+            errorEl.textContent='⏳ جاري التحقق...';
             try {
-                const usersRef = db.collection('users');
-                const snapshot = await usersRef.where('username', '==', username).get();
-
-                if (snapshot.empty) {
-                    errorEl.textContent = '❌ اسم المستخدم غير صحيح';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'دخول';
-                    return;
-                }
-
-                const userDoc = snapshot.docs[0];
-                const userData = userDoc.data();
-                
-                if (userData.password !== password) {
-                    errorEl.textContent = '❌ كلمة المرور غير صحيحة';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'دخول';
-                    return;
-                }
-
-                if (userData.type !== 'preparer' && userData.accountType !== 'preparer') {
-                    errorEl.textContent = '❌ هذا الحساب ليس لمجهز';
-                    infoEl.classList.remove('hidden');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'دخول';
-                    return;
-                }
-
-                // ✅ تسجيل الدخول ناجح - نحفظ رقم المجهز مع البيانات
-                currentUser = {
-                    username: userData.username,
-                    name: userData.name || userData.username,
-                    phone: userData.phone || '',
-                    type: 'preparer'
-                };
-
-                if (rememberMe) {
-                    saveSession(currentUser);
-                }
-
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('userSection').classList.remove('hidden');
-                document.getElementById('userName').textContent = currentUser.name;
-                
-                loadOrder();
-
-            } catch (error) {
-                console.error('خطأ في تسجيل الدخول:', error);
-                errorEl.textContent = '❌ حدث خطأ في الاتصال بقاعدة البيانات';
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'دخول';
+                const snap = await db.collection('users').where('username','==',username).get();
+                if (snap.empty) { errorEl.textContent='❌ اسم المستخدم غير صحيح'; return; }
+                const user = snap.docs[0].data();
+                if (user.password !== password) { errorEl.textContent='❌ كلمة المرور خاطئة'; return; }
+                if (user.type !== 'preparer')   { errorEl.textContent='❌ هذا الحساب ليس لمجهز'; return; }
+                currentUsername = username;
+                currentUserName = user.name || username;
+                document.getElementById('loginSection').style.display='none';
+                errorEl.textContent='';
+                await loadDeliveryVehicles();
+                await loadOrder();
+            } catch(e) {
+                console.error(e);
+                errorEl.textContent='❌ حدث خطأ، حاول مجدداً';
             }
         };
 
-        // ✅ دالة تسجيل الخروج
-        window.logout = function() {
-            currentUser = null;
-            orderData = null;
-            selectedVehicle = null;
-            
-            localStorage.removeItem(STORAGE_KEY);
-            
-            document.getElementById('loginSection').classList.remove('hidden');
-            document.getElementById('userSection').classList.add('hidden');
-            document.getElementById('orderSection').classList.add('hidden');
-            
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('loginError').textContent = '';
-        };
-startNotifPolling();
-        // ✅ دالة تحميل الطلب
+        // ── Load Order ──
         async function loadOrder() {
-            const orderSection = document.getElementById('orderSection');
-            
-            orderSection.classList.remove('hidden');
-            orderSection.innerHTML = `
-                <div class="loader">
-                    <span></span><span></span><span></span>
-                    <p style="margin-top:15px;">جاري تحميل الطلب...</p>
-                </div>
-            `;
-
+            const sec = document.getElementById('orderSection');
+            if (!orderId) {
+                sec.innerHTML='<div class="msg-error">❌ رقم الطلب غير موجود</div>';
+                sec.style.display='block'; return;
+            }
+            sec.innerHTML=`<div class="loader"><span></span><span></span><span></span><p style="margin-top:14px;color:#666;">جاري تحميل الطلب...</p></div>`;
+            sec.style.display='block';
             try {
-                let orderDoc = null;
-                const ordersRef = db.collection('orders');
-                
-                const snapshot = await ordersRef.where('orderId', '==', orderId).get();
-                
-                if (!snapshot.empty) {
-                    orderDoc = snapshot.docs[0];
-                } else {
-                    orderDoc = await ordersRef.doc(orderId).get();
-                    if (!orderDoc.exists) {
-                        orderSection.innerHTML = '<div class="error-message">❌ الطلب غير موجود</div>';
-                        return;
-                    }
+                const snap = await db.collection('orders').where('orderId','==',orderId).get();
+                let orderDoc;
+                if (!snap.empty) { orderDoc = snap.docs[0]; }
+                else {
+                    orderDoc = await db.collection('orders').doc(orderId).get();
+                    if (!orderDoc.exists) { sec.innerHTML='<div class="msg-error">❌ الطلب غير موجود</div>'; return; }
                 }
+                orderData = { id:orderDoc.id, ...orderDoc.data() };
 
-                orderData = { id: orderDoc.id, ...orderDoc.data() };
-
-                if (orderData.status === 'Prepared' || orderData.status === 'prepared') {
-                    orderSection.innerHTML = `
-                        <div class="info-message">
-                            ⚠️ هذا الطلب تم تجهيزه مسبقاً بواسطة ${orderData.prepared_by_name || orderData.prepared_by || 'مجهز آخر'}
-                        </div>
-                        <button class="btn" onclick="logout()" style="margin-top:15px;">⬅️ رجوع</button>
-                    `;
-                    return;
+                // determine current phase
+                if (orderData.status === 'Prepared' || orderData.status === 'In Delivery' ||
+                    orderData.status === 'NearCustomer' || orderData.status === 'Delivered') {
+                    preparerPhase = 2;
+                } else if (orderData.status === 'Preparing') {
+                    preparerPhase = 1;
+                } else {
+                    preparerPhase = 0;
                 }
 
                 displayOrderDetails();
-                
 
-                db.collection('orders').doc(orderData.id).onSnapshot((snap) => {
-                    if (snap.exists) {
-                        const updated = snap.data();
-                        if (updated.status === 'Prepared' || updated.status === 'prepared') {
-                            document.getElementById('prepareBtn').disabled = true;
-                            document.getElementById('prepareMessage').innerHTML = `
-                                <div class="info-message">✅ تم تجهيز هذا الطلب</div>
-                            `;
-                        }
+                // real-time listener
+                db.collection('orders').doc(orderData.id).onSnapshot(snap => {
+                    if (!snap.exists) return;
+                    const d = snap.data();
+                    // sync phase badge if someone else changes it
+                    const badge = document.getElementById('phaseBadge');
+                    if (badge && d.status === 'Preparing' && preparerPhase < 1) {
+                        preparerPhase = 1; displayOrderDetails();
                     }
                 });
-
-            } catch (error) {
-                console.error('خطأ في تحميل الطلب:', error);
-                orderSection.innerHTML = '<div class="error-message">❌ حدث خطأ في تحميل الطلب</div>';
+            } catch(e) {
+                console.error(e);
+                sec.innerHTML='<div class="msg-error">❌ حدث خطأ في التحميل</div>';
             }
         }
 
-        // ✅ دالة عرض تفاصيل الطلب
+        // ── Display order details ──
         function displayOrderDetails() {
-            const orderSection = document.getElementById('orderSection');
-            
+            const sec = document.getElementById('orderSection');
+
+            // parse products
             const productsList = orderData.products || '';
             const items = [];
-            totalVolume = 0;
-
+            totalVolume = 0; totalWeight = 0;
             const matches = productsList.match(/([^،,\n()]+)\((\d+)\)/g) || [];
-            
             matches.forEach(m => {
                 const mm = m.match(/(.+)\((\d+)\)/);
                 if (mm) {
                     const name = mm[1].trim();
-                    const qty = parseInt(mm[2]) || 1;
-                    
-                    const volume = 0.024;
-                    const itemVol = volume * qty;
-                    totalVolume += itemVol;
-                    
-                    items.push({
-                        name,
-                        qty,
-                        volume,
-                        totalVol: itemVol
-                    });
+                    const qty  = parseInt(mm[2]) || 1;
+                    // try to get volume from cached products (sent via Firestore field)
+                    const vol = orderData.product_volumes?.[name] || 0.024;
+                    const wgt = orderData.product_weights?.[name]  || 1;
+                    totalVolume += vol * qty;
+                    totalWeight += wgt * qty;
+                    items.push({ name, qty, vol, wgt, totalVol: vol*qty, totalWgt: wgt*qty });
                 }
             });
 
-            let productsHtml = '';
-            items.forEach(item => {
-                productsHtml += `
-                    <div class="product-item">
-                        <div class="product-name">${item.name}</div>
-                        <div class="product-detail">
-                            <span>الكمية: ${item.qty}</span>
-                            <span class="volume-badge">📐 ${item.volume} م³ × ${item.qty}</span>
-                        </div>
-                        <div class="product-detail">
-                            <span>الحجم الإجمالي:</span>
-                            <span style="font-weight:700; color:#093257;">${item.totalVol.toFixed(3)} م³</span>
-                        </div>
+            // products HTML
+            const productsHtml = items.map(item=>`
+                <div class="product-item">
+                    <div class="product-name">${item.name}</div>
+                    <div class="product-detail">
+                        <span>الكمية: <strong>${item.qty}</strong></span>
+                        <span class="volume-badge">📐 ${item.totalVol.toFixed(3)} م³</span>
+                        <span class="volume-badge" style="background:#10b98120;color:#059669;">⚖️ ${item.totalWgt.toFixed(2)} كغ</span>
                     </div>
-                `;
-            });
+                </div>`).join('');
 
-            let vehiclesHtml = '';
-            for (const [key, vehicle] of Object.entries(VEHICLES)) {
-                vehiclesHtml += `
-                    <div class="vehicle-option" onclick="selectVehicle('${key}')" id="vehicle-${key}">
-                        <div class="vehicle-icon">${vehicle.icon}</div>
-                        <div class="vehicle-name">${vehicle.name}</div>
-                        <div class="vehicle-capacity">سعة ${vehicle.capacity} م³</div>
-                    </div>
-                `;
-            }
+            // vehicles HTML
+            const vehiclesHtml = Object.entries(VEHICLES).map(([key,v])=>`
+                <div class="vehicle-option" onclick="selectVehicle('${key}')" id="vehicle-${key}">
+                    <div class="vehicle-icon">${v.icon}</div>
+                    <div class="vehicle-name">${v.name}</div>
+                    <div class="vehicle-capacity">📐 ${v.capacity} م³</div>
+                    <div class="vehicle-capacity">⚖️ ${v.maxWeight||'—'} كغ</div>
+                </div>`).join('');
 
-            orderSection.innerHTML = `
-                <div style="margin-bottom:20px;">
-                    <h3 style="color:#093257; margin-bottom:10px;">🏪 معلومات الطلب</h3>
-                    <div style="background:#f5f5f5; border-radius:12px; padding:12px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <span>المحل:</span>
-                            <span style="font-weight:700;">${orderData.shopName || '—'}</span>
+            // phase badge
+            const phaseBadgeHtml = preparerPhase === 0
+                ? `<div id="phaseBadge" class="phase-badge">🔵 بانتظار البدء</div>`
+                : preparerPhase === 1
+                    ? `<div id="phaseBadge" class="phase-badge phase-2">🟡 جاري التجهيز</div>`
+                    : `<div id="phaseBadge" class="phase-badge phase-done">✅ تم التجهيز</div>`;
+
+            // driver link box (shown when done)
+            const driverLink = `https://karrarkasem.github.io/1/driver.html?order=${orderId}`;
+            const driverLinkHtml = preparerPhase >= 2 ? `
+                <div class="driver-link-box">
+                    <h3>🚗 رابط السائق جاهز</h3>
+                    <div class="link-text" id="driverLinkText">${driverLink}</div>
+                    <button class="copy-btn" onclick="copyDriverLink()">📋 نسخ الرابط</button>
+                    <a href="${driverLink}" target="_blank" style="display:block;text-align:center;color:#065f46;font-weight:700;font-size:.88rem;margin-top:4px;">🔗 فتح لوحة السائق</a>
+                </div>` : '';
+
+            // buttons logic
+            const btn1Disabled = preparerPhase >= 1 ? 'disabled' : '';
+            const btn1Style    = preparerPhase >= 1 ? 'opacity:.45;' : '';
+            const btn2Style    = preparerPhase < 1  ? 'display:none;' : preparerPhase >= 2 ? 'opacity:.45;' : '';
+            const btn2Disabled = preparerPhase >= 2 ? 'disabled' : '';
+
+            sec.innerHTML = `
+                <div style="margin-bottom:18px">
+                    ${phaseBadgeHtml}
+                    <div class="section-title">🏪 معلومات الطلب</div>
+                    <div style="background:#f8f8f8;border-radius:12px;padding:12px;font-size:.9rem">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                            <span>المحل:</span><span style="font-weight:700">${orderData.shopName||'—'}</span>
                         </div>
-                        <div style="display:flex; justify-content:space-between;">
-                            <span>العنوان:</span>
-                            <span style="font-weight:700;">${orderData.shopAddress || '—'}</span>
+                        <div style="display:flex;justify-content:space-between">
+                            <span>العنوان:</span><span style="font-weight:700">${orderData.shopAddress||'—'}</span>
                         </div>
                     </div>
                 </div>
 
-                <h3 style="color:#093257; margin-bottom:10px;">📋 المنتجات</h3>
-                ${productsHtml || '<div style="text-align:center; padding:15px;">لا توجد منتجات محددة</div>'}
+                <div class="section-title">📋 المنتجات</div>
+                ${productsHtml || '<p style="color:#999;text-align:center;padding:10px">لا توجد منتجات مفصّلة</p>'}
 
                 <div class="total-volume">
-                    <div style="font-size:0.9rem; color:#666;">إجمالي حجم الطلب</div>
-                    <div class="total-volume-value" id="totalVolume">${totalVolume.toFixed(3)} م³</div>
+                    <div style="font-size:.82rem;color:#666;margin-bottom:4px">إجمالي الطلب</div>
+                    <div class="total-volume-value">${totalVolume.toFixed(3)} م³</div>
+                    <div style="font-size:.82rem;color:#666;margin-top:4px">⚖️ ${totalWeight.toFixed(2)} كغ</div>
                 </div>
 
-                <h3 style="color:#093257; margin-bottom:10px;">🚚 اختر المركبة</h3>
-                <div class="vehicle-selector">
-                    ${vehiclesHtml}
-                </div>
-
-                <div id="capacityInfo" style="display:none;">
-                    <div class="capacity-bar">
-                        <div class="capacity-fill" id="capacityFill" style="width:0%"></div>
-                    </div>
+                <hr>
+                <div class="section-title">🚚 اختر المركبة</div>
+                <div class="vehicle-selector">${vehiclesHtml}</div>
+                <div id="capacityInfo" style="display:none">
+                    <div class="capacity-bar"><div class="capacity-fill" id="capacityFill" style="width:0%"></div></div>
                     <div class="capacity-text" id="capacityText"></div>
                 </div>
 
-                <button class="btn btn-success" id="prepareBtn" onclick="prepareOrder()" disabled>
-                    ✅ تأكيد التجهيز
+                <hr>
+                <!-- زر 1: بدء تجهيز القائمة -->
+                <button class="btn btn-warning" id="btn1Start" onclick="startPreparing()" ${btn1Disabled} style="${btn1Style}margin-bottom:10px">
+                    🚀 بدء تجهيز القائمة
                 </button>
 
-                <div id="prepareMessage" style="margin-top:15px;"></div>
-                <div class="remember-info">🔓 جلسة الدخول محفوظة لمدة 24 ساعة</div>
+                <!-- زر 2: تم تمام التجهيز في السيارة -->
+                <button class="btn btn-success" id="btn2Finish" onclick="finishPreparing()" ${btn2Disabled} style="${btn2Style}">
+                    ✅ تم تمام التجهيز في السيارة
+                </button>
+
+                <div id="prepareMessage" style="margin-top:12px">${driverLinkHtml}</div>
             `;
+
+            // restore vehicle selection if already set
+            if (orderData.vehicle_type) {
+                const vKey = Object.keys(VEHICLES).find(k=>VEHICLES[k].name===orderData.vehicle_type);
+                if (vKey) selectVehicle(vKey);
+            }
         }
 
-        // ✅ دالة اختيار المركبة
+        // ── Select vehicle ──
         window.selectVehicle = function(vehicleKey) {
             selectedVehicle = vehicleKey;
-            
-            for (const key of Object.keys(VEHICLES)) {
-                const el = document.getElementById(`vehicle-${key}`);
-                if (el) {
-                    el.classList.toggle('selected', key === vehicleKey);
-                }
-            }
-
-            const vehicle = VEHICLES[vehicleKey];
-            const fillPercent = (totalVolume / vehicle.capacity) * 100;
-            const cappedPercent = Math.min(100, fillPercent);
-
-            document.getElementById('capacityInfo').style.display = 'block';
-            document.getElementById('capacityFill').style.width = `${cappedPercent}%`;
-            
-            let statusText = '';
-            if (fillPercent > 100) {
-                statusText = `⚠️ الطلب أكبر من سعة ${vehicle.name} ب ${(totalVolume - vehicle.capacity).toFixed(3)} م³`;
-                document.getElementById('prepareBtn').disabled = true;
+            Object.keys(VEHICLES).forEach(k=>{
+                const el=document.getElementById(`vehicle-${k}`);
+                if(el) el.classList.toggle('selected', k===vehicleKey);
+            });
+            const v=VEHICLES[vehicleKey];
+            const volPct = Math.min(100,(totalVolume/v.capacity)*100);
+            const wgtPct = v.maxWeight ? Math.min(100,(totalWeight/v.maxWeight)*100) : 0;
+            document.getElementById('capacityInfo').style.display='block';
+            document.getElementById('capacityFill').style.width=`${volPct}%`;
+            let status='';
+            if (totalVolume > v.capacity) {
+                status=`⚠️ الطلب أكبر من سعة ${v.name} ب ${(totalVolume-v.capacity).toFixed(3)} م³`;
+                document.getElementById('capacityFill').style.background='linear-gradient(90deg,#ef4444,#dc2626)';
             } else {
-                statusText = `${vehicle.name} ستشغل ${cappedPercent.toFixed(0)}% من سعتها (${totalVolume.toFixed(3)} / ${vehicle.capacity} م³)`;
-                document.getElementById('prepareBtn').disabled = false;
+                status=`${v.name}: حجم ${volPct.toFixed(0)}% من السعة`;
+                if(v.maxWeight) status += ` | وزن ${wgtPct.toFixed(0)}% من الحمولة`;
+                document.getElementById('capacityFill').style.background='linear-gradient(90deg,#10b981,#0ea5e9)';
             }
-            
-            document.getElementById('capacityText').textContent = statusText;
+            document.getElementById('capacityText').textContent=status;
         };
 
-        // ✅ دالة تجهيز الطلب
-        window.prepareOrder = async function() {
-            if (!selectedVehicle) {
-                alert('⚠️ اختر المركبة أولاً');
-                return;
-            }
-
-            if (!confirm('هل أنت متأكد من تجهيز هذا الطلب؟ لا يمكن التراجع بعد التأكيد')) {
-                return;
-            }
-
-            const btn = document.getElementById('prepareBtn');
-            btn.disabled = true;
-            btn.textContent = '⏳ جاري التجهيز...';
-
+        // ── Phase 1: Start Preparing ──
+        window.startPreparing = async function() {
+            const btn = document.getElementById('btn1Start');
+            btn.disabled=true; btn.textContent='⏳ جاري...';
             try {
                 await db.collection('orders').doc(orderData.id).update({
-                    status: 'Prepared',
-                    prepared_by: currentUser.username,
-                    prepared_by_name: currentUser.name,
-                    prepared_at: new Date().toISOString(),
-                    vehicle_type: VEHICLES[selectedVehicle].name
+                    status: 'Preparing',
+                    preparing_by: currentUsername,
+                    preparing_by_name: currentUserName,
+                    preparing_at: new Date().toISOString()
                 });
-
-                document.getElementById('prepareMessage').innerHTML = `
-                    <div class="success-message">
-                        ✅ تم تجهيز الطلب بنجاح
-                    </div>
-                `;
-
-                const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
-                const TG_CHAT  = '-5246620507';
-                fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({
-                        chat_id: TG_CHAT,
-                        text: `🚗 طلب جاهز للتوصيل\n🏪 ${orderData.shopName}\n🆔 ${orderId}\n🚚 المركبة: ${VEHICLES[selectedVehicle].name}`,
-                    })
-                }).catch(() => {});
-
-            } catch (error) {
-                console.error(error);
-                document.getElementById('prepareMessage').innerHTML = `
-                    <div class="error-message">
-                        ❌ حدث خطأ: ${error.message}
-                    </div>
-                `;
-                btn.disabled = false;
-                btn.textContent = '✅ تأكيد التجهيز';
+                orderData.status = 'Preparing';
+                preparerPhase = 1;
+                displayOrderDetails();
+                showToast('✅ تم بدء التجهيز');
+            } catch(e) {
+                console.error(e);
+                btn.disabled=false; btn.textContent='🚀 بدء تجهيز القائمة';
+                showToast('❌ حدث خطأ',false);
             }
         };
 
-        // ✅ دالة جلب إشعارات المجهز
-async function loadPreparerNotifications() {
-  if (!currentUser) return;
-  
-  const notifBadge = document.getElementById('notifBadge');
-  const notifList = document.getElementById('notifList');
-  
-  try {
-    const notificationsRef = db.collection('notifications');
-    const snapshot = await notificationsRef
-      .where('targetUser', '==', currentUser.username)
-      .where('type', '==', 'preparer')
-      .where('read', '==', false)
-      .orderBy('timestamp', 'desc')
-      .limit(10)
-      .get();
-    
-    if (notifBadge) {
-      notifBadge.textContent = snapshot.size;
-      notifBadge.style.display = snapshot.size > 0 ? 'flex' : 'none';
-    }
-    
-    if (notifList) {
-      if (snapshot.empty) {
-        notifList.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">🚫 لا توجد إشعارات</div>';
-      } else {
-        notifList.innerHTML = snapshot.docs.map(doc => {
-          const notif = doc.data();
-          return `
-            <div class="notification-item" data-id="${doc.id}" onclick="markNotifRead('${doc.id}')">
-              <div class="notif-icon">📦</div>
-              <div class="notif-content">
-                <div class="notif-title">${notif.title}</div>
-                <div class="notif-body">${notif.body}</div>
-                <div class="notif-date">${notif.date}</div>
-              </div>
-              <button class="notif-order-btn" onclick="event.stopPropagation(); loadOrderFromNotif('${notif.orderId}')">عرض الطلب</button>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-  } catch (error) {
-    console.error('خطأ في جلب الإشعارات:', error);
-  }
-}
+        // ── Phase 2: Finish Preparing (in car) ──
+        window.finishPreparing = async function() {
+            if (!selectedVehicle) { showToast('⚠️ اختر المركبة أولاً',false); return; }
+            const btn = document.getElementById('btn2Finish');
+            btn.disabled=true; btn.textContent='⏳ جاري التأكيد...';
+            try {
+                const driverLink = `https://karrarkasem.github.io/1/driver.html?order=${orderId}`;
+                await db.collection('orders').doc(orderData.id).update({
+                    status: 'Prepared',
+                    prepared_by: currentUsername,
+                    prepared_by_name: currentUserName,
+                    prepared_at: new Date().toISOString(),
+                    vehicle_type: VEHICLES[selectedVehicle].name,
+                    driver_link: driverLink,
+                    total_volume: parseFloat(totalVolume.toFixed(4)),
+                    total_weight: parseFloat(totalWeight.toFixed(3))
+                });
+                orderData.status = 'Prepared';
+                orderData.vehicle_type = VEHICLES[selectedVehicle].name;
+                preparerPhase = 2;
 
-// ✅ دالة تحديث الإشعارات كل 30 ثانية
-function startNotifPolling() {
-  loadPreparerNotifications();
-  setInterval(loadPreparerNotifications, 30000);
-}
+                // Telegram notification
+                const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+                const TG_CHAT  = '-5246620507';
+                fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        chat_id:TG_CHAT,
+                        text:`🚗 طلب جاهز للتوصيل\n🏪 ${orderData.shopName}\n🆔 ${orderId}\n🚚 ${VEHICLES[selectedVehicle].name}\n📐 ${totalVolume.toFixed(3)} م³\n⚖️ ${totalWeight.toFixed(2)} كغ\n\n🔗 ${driverLink}`
+                    })
+                }).catch(()=>{});
 
-// ✅ دالة تحديد الإشعار كمقروء
-async function markNotifRead(notifId) {
-  await db.collection('notifications').doc(notifId).update({ read: true });
-  loadPreparerNotifications();
-}
+                displayOrderDetails();
+                showToast('✅ تم التجهيز! الرابط جاهز للسائق');
+            } catch(e) {
+                console.error(e);
+                btn.disabled=false; btn.textContent='✅ تم تمام التجهيز في السيارة';
+                showToast('❌ حدث خطأ',false);
+            }
+        };
 
-// ✅ دالة تحميل الطلب من الإشعار
-function loadOrderFromNotif(orderId) {
-  window.location.href = `prepare.html?order=${orderId}`;
-}
+        // ── Copy driver link ──
+        window.copyDriverLink = function() {
+            const link = document.getElementById('driverLinkText')?.textContent;
+            if (!link) return;
+            navigator.clipboard.writeText(link).then(()=>showToast('✅ تم نسخ الرابط')).catch(()=>{
+                // fallback
+                const ta=document.createElement('textarea');
+                ta.value=link; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('✅ تم نسخ الرابط');
+            });
+        };
+
+        // ── Toast ──
+        function showToast(msg, ok=true) {
+            const t=document.createElement('div');
+            t.textContent=msg;
+            t.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${ok?'#10b981':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 15px rgba(0,0,0,.2);font-family:'Tajawal',sans-serif;`;
+            document.body.appendChild(t);
+            setTimeout(()=>t.remove(),2800);
+        }
+
+        // ── No orderId ──
+        if (!orderId) {
+            document.getElementById('loginSection').style.display='none';
+            document.getElementById('orderSection').style.display='block';
+            document.getElementById('orderSection').innerHTML='<div class="msg-error">❌ رابط غير صحيح</div>';
+        }
     </script>
 </body>
 </html>

@@ -3611,17 +3611,29 @@ async function confirmApproveOrder() {
     if (_priceChanged) { o.total = _adjTotal; o.commission = _adjComm; o.net = _adjNet; }
   }
 
-  // 6. تليجرام — المجموعة + كل مجهز عنده معرف
+  // 6. بناء رسالة تليجرام النهائية — تشمل تفاصيل تعديل السعر إن وجد
+  let _finalTgMsg = _approveTgMsg;
+  if (_priceChanged) {
+    const _origAmt = _adjTotal - _addFee + _discAmt; // استعادة السعر الأصلي
+    let _priceBlock = `\n━━━━━━━━━━━━━━━━━━\n💰 *تعديل السعر*\n` +
+      `📌 السعر الأصلي: ${_origAmt.toLocaleString()} د.ع\n`;
+    if (_addFee  > 0) _priceBlock += `➕ مبلغ مضاف: *${_addFee.toLocaleString()} د.ع*\n`;
+    if (_discAmt > 0) _priceBlock += `➖ مبلغ مخصوم: *${_discAmt.toLocaleString()} د.ع*\n`;
+    _priceBlock += `💵 *الإجمالي النهائي: ${_adjTotal.toLocaleString()} د.ع*`;
+    if (_adjNote) _priceBlock += `\n📝 ملاحظة: ${_adjNote}`;
+    _finalTgMsg = _approveTgMsg + _priceBlock;
+  }
+
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
   fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ chat_id: '-5246620507', text: _approveTgMsg, parse_mode: 'Markdown' })
+    body: JSON.stringify({ chat_id: '-5246620507', text: _finalTgMsg, parse_mode: 'Markdown' })
   }).catch(() => {});
 
   _approvePreparers.forEach(prep => {
     fbAdd('notifications', {
       title: '📦 طلب معتمد للتجهيز',
-      body: `${o?.shopName||'—'} — ${(parseFloat(o?.total)||0).toLocaleString()} د.ع`,
+      body: `${o?.shopName||'—'} — ${_adjTotal.toLocaleString()} د.ع`,
       type: 'order', read: false,
       targetUser: prep.username || prep._id,
       date: new Date().toLocaleDateString('ar-IQ')
@@ -3630,7 +3642,7 @@ async function confirmApproveOrder() {
     if (prep.telegram) {
       fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ chat_id: prep.telegram, text: _approveTgMsg, parse_mode: 'Markdown' })
+        body: JSON.stringify({ chat_id: prep.telegram, text: _finalTgMsg, parse_mode: 'Markdown' })
       }).catch(() => {});
     }
   });

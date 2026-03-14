@@ -111,15 +111,44 @@
             flex-shrink: 0;
         }
         .step.completed .step-icon {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            background: var(--step-color, #0ea5e9);
             border-color: transparent;
             color: white;
         }
         .step.active .step-icon {
-            background: #0ea5e9;
-            border-color: #0ea5e9;
+            background: var(--step-color, #0ea5e9);
+            border-color: var(--step-color, #0ea5e9);
             color: white;
             animation: pulse 2s infinite;
+        }
+        .step.completed:not(:last-child)::before {
+            background: var(--step-color, #0ea5e9);
+        }
+        .vehicle-analysis {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .vehicle-analysis h4 { color:#0284c7; font-size:.95rem; margin-bottom:10px; font-weight:800; }
+        .vehicle-fit-row {
+            display:flex; align-items:center; gap:8px;
+            background:white; border-radius:10px; padding:8px 10px; margin-bottom:8px;
+        }
+        .vehicle-fit-bar { flex:1; height:8px; background:#e0e0e0; border-radius:10px; overflow:hidden; }
+        .vehicle-fit-fill { height:100%; border-radius:10px; transition:width .3s; }
+        .waiting-msg {
+            background:linear-gradient(135deg,#fffbeb,#fef3c7);
+            border:2px solid #fde68a; border-radius:14px;
+            padding:14px; text-align:center; color:#92400e;
+            font-weight:700; margin:10px 0; font-size:.9rem;
+        }
+        .urgent-btn {
+            background:linear-gradient(135deg,#ef4444,#dc2626);
+            color:white; border:none; padding:12px 20px;
+            border-radius:14px; font-weight:700; font-size:.95rem;
+            cursor:pointer; width:100%; font-family:'Tajawal',sans-serif; margin:8px 0;
         }
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
@@ -461,6 +490,24 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // ── Delivery vehicle settings (loaded from Firestore) ──
+        let DELIVERY_VEHICLES = null;
+        async function loadVehicleSettings() {
+            try {
+                const snap = await db.collection('settings').where('key','==','delivery_vehicles').get();
+                if (!snap.empty) {
+                    const d = snap.docs[0].data();
+                    if (d.value && typeof d.value === 'object') { DELIVERY_VEHICLES = d.value; return; }
+                }
+            } catch(e) {}
+            // fallback defaults
+            DELIVERY_VEHICLES = {
+                scooter: { name:'ستوتة',  icon:'🛵', capacity:0.4,  maxWeight:20   },
+                pickup:  { name:'بيك اب', icon:'🚐', capacity:6,    maxWeight:500  },
+                truck:   { name:'شاحنة',  icon:'🚛', capacity:30,   maxWeight:3000 }
+            };
+        }
+
         // ✅ قراءة رقم الطلب من الرابط
         const urlParams = new URLSearchParams(window.location.search);
         const orderId = urlParams.get('order');
@@ -471,6 +518,8 @@
         if (!orderId) {
             document.getElementById('content').innerHTML = '<div class="error">❌ رابط غير صحيح</div>';
         } else {
+            // load vehicle settings in background, then search for order
+            loadVehicleSettings();
             // ✅ البحث عن الطلب
             db.collection('orders').where('orderId', '==', orderId).get()
                 .then((snapshot) => {
@@ -550,28 +599,33 @@
 
         // ✅ دالة عرض حالة الطلب
         function showOrderStatus(order) {
+            // Each step has its own color — gray until confirmed by the relevant department
             const steps = [
-                { status: 'confirmed', icon: '✅', title: 'تم تأكيد الطلب' },
-                { status: 'prepared', icon: '📦', title: 'تم التجهيز' },
-                { status: 'delivery', icon: '🚗', title: 'في الطريق' },
-                { status: 'delivered', icon: '🏠', title: 'تم التسليم' }
+                { icon: '✅', title: 'تأكيد الطلب',  color: '#0ea5e9' },
+                { icon: '📦', title: 'جاري التجهيز', color: '#f59e0b' },
+                { icon: '🚀', title: 'تم التجهيز',   color: '#10b981' },
+                { icon: '🚗', title: 'في الطريق',    color: '#8b5cf6' },
+                { icon: '🏠', title: 'تم التسليم',   color: '#059669' }
             ];
 
             let currentStep = 0;
-            if (order.status === 'Delivered') currentStep = 4;
-            else if (order.status === 'In Delivery' || order.status === 'NearCustomer') currentStep = 3;
-            else if (order.status === 'Prepared') currentStep = 2;
+            if (order.status === 'Delivered') currentStep = 5;
+            else if (order.status === 'In Delivery' || order.status === 'NearCustomer') currentStep = 4;
+            else if (order.status === 'Prepared') currentStep = 3;
+            else if (order.status === 'Preparing') currentStep = 2;
             else if (order.status === 'Confirmed') currentStep = 1;
 
             let stepsHtml = '';
             steps.forEach((step, i) => {
                 const isCompleted = i < currentStep;
-                const isActive = i === currentStep - 1;
+                const isActive    = i === currentStep - 1;
+                const titleColor  = (isCompleted || isActive) ? '#1f2937' : '#9ca3af';
                 stepsHtml += `
-                    <div class="step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}">
+                    <div class="step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}"
+                         style="--step-color:${step.color}">
                         <div class="step-icon">${step.icon}</div>
                         <div class="step-content">
-                            <div class="step-title">${step.title}</div>
+                            <div class="step-title" style="color:${titleColor}">${step.title}</div>
                         </div>
                     </div>
                 `;
@@ -626,9 +680,64 @@
                 }
             }
 
+            // ── Vehicle capacity analysis ──
+            let vehicleAnalysisHtml = '';
+            const vol = order.total_volume || 0;
+            const wgt = order.total_weight || 0;
+            if (DELIVERY_VEHICLES && vol > 0) {
+                const vehicles = Object.entries(DELIVERY_VEHICLES);
+                const smallestCap = Math.min(...vehicles.map(([,v]) => v.capacity));
+                const isSmall = vol < smallestCap * 0.2;
+
+                const vehicleRowsHtml = vehicles.map(([, v]) => {
+                    const pct = Math.min(100, (vol / v.capacity) * 100);
+                    const fits = vol <= v.capacity;
+                    const barColor = !fits ? '#ef4444' : pct > 80 ? '#f59e0b' : '#10b981';
+                    return `
+                        <div class="vehicle-fit-row">
+                            <span style="font-size:1.3rem">${v.icon}</span>
+                            <span style="font-weight:700;font-size:.85rem;min-width:55px">${v.name}</span>
+                            <div class="vehicle-fit-bar">
+                                <div class="vehicle-fit-fill" style="width:${pct.toFixed(0)}%;background:${barColor}"></div>
+                            </div>
+                            <span style="font-size:.78rem;font-weight:700;color:${barColor};min-width:38px">${pct.toFixed(0)}%</span>
+                            <span style="font-size:.85rem">${fits ? '✅' : '❌'}</span>
+                        </div>`;
+                }).join('');
+
+                const waitingMsgHtml = isSmall ? `
+                    <div class="waiting-msg">
+                        ⏳ حجم طلبك صغير — في انتظار تجميع قوائم أخرى للتوصيل معاً
+                    </div>` : '';
+
+                const urgentBtnHtml = order.status !== 'Delivered'
+                    ? (order.urgent_requested
+                        ? `<div style="background:#fef3c7;border:2px solid #fde68a;border-radius:12px;padding:10px;text-align:center;color:#92400e;font-weight:700;font-size:.88rem;margin:8px 0">⚡ تم طلب التوصيل العاجل — جاري المعالجة</div>`
+                        : `<button class="urgent-btn" onclick="requestUrgent('${order.id}')">⚡ أحتاج طلبي الآن — توصيل عاجل (رسوم إضافية)</button>`)
+                    : '';
+
+                vehicleAnalysisHtml = `
+                    <div class="vehicle-analysis">
+                        <h4>🚚 تحليل حجم الطلب</h4>
+                        <div style="font-size:.82rem;color:#0284c7;margin-bottom:10px">
+                            📐 حجم الطلب: <strong>${vol.toFixed(3)} م³</strong>
+                            ${wgt > 0 ? ` | ⚖️ الوزن: <strong>${wgt.toFixed(1)} كغ</strong>` : ''}
+                        </div>
+                        ${vehicleRowsHtml}
+                    </div>
+                    ${waitingMsgHtml}
+                    ${urgentBtnHtml}`;
+            } else if (order.vehicle_type) {
+                vehicleAnalysisHtml = `
+                    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:10px 14px;margin:12px 0;font-size:.9rem;font-weight:700;color:#065f46">
+                        🚚 مركبة التوصيل: ${order.vehicle_type}
+                    </div>`;
+            }
+
             document.getElementById('content').innerHTML = `
                 <div class="progress-container">${stepsHtml}</div>
                 ${nearMsg}
+                ${vehicleAnalysisHtml}
                 <div class="info-card">
                     <div class="info-row">
                         <span>🏪 المحل</span>
@@ -723,6 +832,29 @@
             `;
             // Gray out the card too
             document.getElementById('trackCard').classList.add('page-disabled');
+        }
+
+        // ── Urgent order request ──
+        window.requestUrgent = async function(docId) {
+            if (!confirm('سيُضاف رسم إضافي للتوصيل العاجل. هل تريد المتابعة؟')) return;
+            try {
+                await db.collection('orders').doc(docId).update({
+                    urgent_requested: true,
+                    urgent_requested_at: new Date().toISOString()
+                });
+                showToast('✅ تم إرسال طلب التوصيل العاجل');
+            } catch(e) {
+                alert('❌ حدث خطأ، حاول مجدداً');
+            }
+        };
+
+        // ── Toast ──
+        function showToast(msg, ok=true) {
+            const t = document.createElement('div');
+            t.textContent = msg;
+            t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${ok?'#10b981':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 15px rgba(0,0,0,.2);font-family:'Tajawal',sans-serif;`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
         }
 
         // ── Gray out page after rating ──

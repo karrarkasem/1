@@ -1319,6 +1319,21 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
           <tbody id="manageProdsBody"></tbody>
         </table>
       </div>
+
+      <!-- إعدادات وحدات التوصيل — للأدمن والمشرف فقط -->
+      <div id="deliverySettingsCard" style="display:none;margin-top:28px">
+        <div class="glass" style="border-radius:var(--r20);padding:22px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div>
+              <h2 style="font-size:1.1rem;font-weight:800;color:var(--deep)">🚚 وحدات وأوزان التوصيل</h2>
+              <p style="font-size:.78rem;color:#888;margin-top:2px">تحديد سعة ووزن كل مركبة توصيل</p>
+            </div>
+            <button class="btn btn-sky" style="width:auto;padding:8px 18px" onclick="saveDeliveryVehicles()">💾 حفظ الإعدادات</button>
+          </div>
+          <div id="dvList"></div>
+          <button class="btn btn-ghost" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addDeliveryVehicleRow()">+ إضافة مركبة</button>
+        </div>
+      </div>
     </div>
 
     <!-- OFFERS -->
@@ -8018,6 +8033,117 @@ document.addEventListener('fbReady', () => {
 // ══════════════════════════════════════════════════════
 let _trackUnsub = null;
 
+// ══════════════════════════════════════════════════════
+// DELIVERY VEHICLES SETTINGS (admin / supervisor only)
+// ══════════════════════════════════════════════════════
+let _dvSettings = null; // cached from Firebase
+
+async function loadDeliveryVehiclesSettings() {
+  try {
+    const snap = await fb().getDocs(
+      fb().query(fb().collection(db(), 'settings'), fb().where('key','==','delivery_vehicles'))
+    );
+    if (!snap.empty) {
+      _dvSettings = snap.docs[0].data().value || defaultDeliveryVehicles();
+    } else {
+      _dvSettings = defaultDeliveryVehicles();
+    }
+  } catch(e) { _dvSettings = defaultDeliveryVehicles(); }
+}
+
+function defaultDeliveryVehicles() {
+  return {
+    scooter: { name:'ستوتة',  icon:'🛵', capacity:0.4,  maxWeight:20   },
+    pickup:  { name:'بيك اب', icon:'🚐', capacity:6,    maxWeight:500  },
+    truck:   { name:'شاحنة',  icon:'🚛', capacity:30,   maxWeight:3000 }
+  };
+}
+
+function showDeliverySettingsCard() {
+  const card = document.getElementById('deliverySettingsCard');
+  if (!card) return;
+  const isAdmin = CU && (CU.type==='admin'||CU.type==='sales_manager'||CU.type==='supervisor');
+  if (!isAdmin) { card.style.display='none'; return; }
+  card.style.display='block';
+  renderDvList();
+}
+
+function renderDvList() {
+  const el = document.getElementById('dvList');
+  if (!el || !_dvSettings) return;
+  el.innerHTML = Object.entries(_dvSettings).map(([key, v]) => `
+    <div class="glass" style="border-radius:var(--r12);padding:14px;margin-bottom:10px;display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr auto;gap:10px;align-items:center" id="dvRow_${key}">
+      <input type="text" class="fi" style="width:46px;text-align:center;font-size:1.4rem;padding:6px" value="${v.icon||''}" id="dvIcon_${key}" placeholder="أيقونة">
+      <input type="text" class="fi" value="${v.name||''}" id="dvName_${key}" placeholder="اسم المركبة">
+      <div>
+        <label style="font-size:.7rem;color:#888;display:block">سعة (م³)</label>
+        <input type="number" class="fi" value="${v.capacity||0}" id="dvCap_${key}" step="0.1" min="0">
+      </div>
+      <div>
+        <label style="font-size:.7rem;color:#888;display:block">حمولة (كغ)</label>
+        <input type="number" class="fi" value="${v.maxWeight||0}" id="dvWgt_${key}" min="0">
+      </div>
+      <div>
+        <label style="font-size:.7rem;color:#888;display:block">سعر/كغ (د.ع)</label>
+        <input type="number" class="fi" value="${v.pricePerKg||0}" id="dvPpk_${key}" min="0">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="removeDvRow('${key}')" title="حذف">🗑️</button>
+    </div>`).join('');
+}
+
+window.addDeliveryVehicleRow = function() {
+  if (!_dvSettings) _dvSettings = defaultDeliveryVehicles();
+  const key = 'v_' + Date.now();
+  _dvSettings[key] = { name:'', icon:'🚗', capacity:1, maxWeight:100, pricePerKg:0 };
+  renderDvList();
+};
+
+window.removeDvRow = function(key) {
+  if (!_dvSettings) return;
+  delete _dvSettings[key];
+  renderDvList();
+};
+
+window.saveDeliveryVehicles = async function() {
+  if (!_dvSettings) return;
+  const updated = {};
+  Object.keys(_dvSettings).forEach(key => {
+    const name    = document.getElementById(`dvName_${key}`)?.value.trim();
+    const icon    = document.getElementById(`dvIcon_${key}`)?.value.trim();
+    const cap     = parseFloat(document.getElementById(`dvCap_${key}`)?.value) || 0;
+    const wgt     = parseFloat(document.getElementById(`dvWgt_${key}`)?.value) || 0;
+    const ppk     = parseFloat(document.getElementById(`dvPpk_${key}`)?.value) || 0;
+    if (name) updated[key] = { name, icon, capacity:cap, maxWeight:wgt, pricePerKg:ppk };
+  });
+  try {
+    const snap = await fb().getDocs(
+      fb().query(fb().collection(db(), 'settings'), fb().where('key','==','delivery_vehicles'))
+    );
+    if (snap.empty) {
+      await fb().addDoc(fb().collection(db(), 'settings'), { key:'delivery_vehicles', value:updated });
+    } else {
+      await fb().updateDoc(fb().doc(db(), 'settings', snap.docs[0].id), { value:updated });
+    }
+    _dvSettings = updated;
+    toast('✅ تم حفظ إعدادات التوصيل');
+  } catch(e) {
+    console.error(e);
+    toast('❌ حدث خطأ في الحفظ', false);
+  }
+};
+
+// Hook into page show for pageManage (patch on top of existing showPage override)
+const _origShowPageDV = showPage;
+showPage = function(page) {
+  _origShowPageDV(page);
+  if (page === 'pageManage') {
+    if (!_dvSettings) {
+      loadDeliveryVehiclesSettings().then(showDeliverySettingsCard);
+    } else {
+      showDeliverySettingsCard();
+    }
+  }
+};
 
 </script>
 

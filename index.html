@@ -1790,6 +1790,19 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
       <input id="cp_confirm" type="password" class="fi" placeholder="أعد كتابة كلمة المرور الجديدة"></div>
     <div id="cp_err" style="color:var(--rose);font-size:.78rem;text-align:center;margin:4px 0 10px;min-height:18px"></div>
     <button class="btn btn-sky btn-full" onclick="doChangePassword()">🔒 حفظ كلمة المرور</button>
+
+    <hr style="border:none;border-top:1px solid rgba(14,165,233,.12);margin:16px 0">
+
+    <!-- معرف تيليجرام -->
+    <div style="font-size:.86rem;font-weight:800;color:var(--deep);margin-bottom:10px">✈️ معرف تيليجرام للإشعارات</div>
+    <div class="fg">
+      <label class="fl">Chat ID أو معرف القناة</label>
+      <input id="tg_id" type="text" class="fi" placeholder="مثال: 123456789">
+    </div>
+    <div style="font-size:.72rem;color:rgba(9,50,87,.42);margin:-4px 0 12px;line-height:1.6">
+      للحصول على معرفك: ابحث عن <strong>@userinfobot</strong> في تيليجرام وأرسل له /start
+    </div>
+    <button class="btn btn-sky btn-full" onclick="doSaveTelegramId()">💾 حفظ معرف تيليجرام</button>
   </div>
 </div>
 
@@ -2325,8 +2338,13 @@ setTimeout(() => {
     const saved = localStorage.getItem('bjUser');
     if (saved) {
       const parsed = JSON.parse(saved);
-      const fresh  = users.find(u => u.username === parsed.username);
-      if (fresh) CU = { ...fresh };
+      const SESSION_12H = 12 * 60 * 60 * 1000;
+      if (parsed.loginTime && (Date.now() - parsed.loginTime) > SESSION_12H) {
+        localStorage.removeItem('bjUser'); // expired
+      } else {
+        const fresh = users.find(u => u.username === parsed.username);
+        if (fresh) CU = { ...fresh };
+      }
     }
   } catch(e) {}
 
@@ -2682,6 +2700,9 @@ function openAccountSettings() {
   document.getElementById('cp_err').textContent = '';
   document.getElementById('acUploadWrap').style.display = 'none';
   document.getElementById('avatarFileInput').value = '';
+  // تحميل معرف تيليجرام
+  const tgEl = document.getElementById('tg_id');
+  if (tgEl) tgEl.value = CU?.telegram || '';
   openModal('accountModal');
   closeSidebar();
 }
@@ -2747,7 +2768,7 @@ async function doChangePassword() {
   CU.password = nw;
   const idx = users.findIndex(u => u._id === CU._id);
   if (idx !== -1) users[idx].password = nw;
-  try { const s = JSON.parse(localStorage.getItem('bjUser')||'{}'); if(s.username) localStorage.setItem('bjUser', JSON.stringify({username: CU.username})); } catch(e){}
+  try { const s = JSON.parse(localStorage.getItem('bjUser')||'{}'); if(s.username) localStorage.setItem('bjUser', JSON.stringify({username: CU.username, loginTime: s.loginTime || Date.now()})); } catch(e){}
   ['cp_current','cp_new','cp_confirm'].forEach(id => document.getElementById(id).value = '');
   closeModal('accountModal');
   toast('✅ تم تغيير كلمة المرور بنجاح');
@@ -2767,7 +2788,7 @@ async function doLogin() {
   const found=users.find(u=>u.username.toLowerCase()===un.toLowerCase()&&u.password===pw);
   if(!found){document.getElementById('loginErr').textContent='❌ بيانات دخول خاطئة';return;}
   CU={...found};
-  if(document.getElementById('remMe').checked) localStorage.setItem('bjUser',JSON.stringify({username:CU.username}));
+  localStorage.setItem('bjUser', JSON.stringify({username: CU.username, loginTime: Date.now()}));
   if(found._id) fbUpdate('users',found._id,{lastLogin:new Date().toLocaleDateString('ar-IQ')}).catch(()=>{});
   hideLogin(); buildUI();
   const _loginTarget=(CU.type==='preparer')?'pagePrep':(CU.type==='driver')?'pageDriver':'pageDashboard';
@@ -3072,18 +3093,26 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
   const trackUrl = `https://karrarkasem.github.io/1/track.html?order=${orderId}`;
   const trackBtn = document.getElementById('cartTrackBtn');
   if (trackBtn) trackBtn.href = trackUrl;
-  // إشعار تيليغرام
+  // إشعار تيليغرام — المجموعة + كل مستخدم معني عنده معرف
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
   const TG_CHAT  = '-5246620507';
+  const _newOrderTgText = `🛍️ *طلب جديد يحتاج موافقة*\n\n📅 ${nowStr}\n👤 ${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 ${total.toLocaleString()} د.ع\n💸 عمولة: ${commission.toLocaleString()} د.ع`;
   fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({
-      chat_id: TG_CHAT,
-      text: `🛍️ *طلب جديد*\n\n📅 ${nowStr}\n👤 ${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 ${total.toLocaleString()} د.ع\n💸 عمولة: ${commission.toLocaleString()} د.ع`,
-      parse_mode: 'Markdown'
-    })
+    body: JSON.stringify({ chat_id: TG_CHAT, text: _newOrderTgText, parse_mode: 'Markdown' })
   }).catch(()=>{});
+  // إشعار فردي لكل ادمن / مشرف / مدير مبيعات / مجهز / سائق عنده معرف تيليجرام
+  const _notifyTypes = ['admin','sales_manager','supervisor','preparer','driver'];
+  users.filter(u => _notifyTypes.includes(u.type) && u.telegram).forEach(u => {
+    const _isApprover = ['admin','sales_manager','supervisor'].includes(u.type);
+    const _personalMsg = _newOrderTgText + (_isApprover ? '\n\n✅ *افتح لوحة التحكم للموافقة على الطلب*' : '');
+    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: u.telegram, text: _personalMsg, parse_mode: 'Markdown' })
+    }).catch(()=>{});
+  });
 
   toast(CU&&commission>0?`✅ الطلب أُرسل! عمولتك: ${commission.toLocaleString()} د.ع`:'✅ تم إرسال الطلب');
 
@@ -3442,8 +3471,9 @@ function showOrdDetail(id) {
 // ═══════════════════════════════════════════════════════
 // ✅ الموافقة على الطلب — bottom sheet بدل confirm()
 // ═══════════════════════════════════════════════════════
-let _approveOrderId = null;
+let _approveOrderId  = null;
 let _approvePreparers = [];
+let _approveOrigTotal = 0;
 let _approveWaMsg = '';
 let _approveTgMsg = '';
 let _approvePrepLink = '';
@@ -3503,6 +3533,13 @@ async function approveOrder(id) {
     `<strong>${o.shopName||'—'}</strong> · ${o.repName||'زائر'}<br>` +
     `${(parseFloat(o.total)||0).toLocaleString()} د.ع · ${itemsArr.length} منتج`;
 
+  // Reset price adjustment fields
+  _approveOrigTotal = parseFloat(o?.total) || 0;
+  ['priceAddFee','priceDiscount','priceAdjNote'].forEach(fid => {
+    const el = document.getElementById(fid); if (el) el.value = '';
+  });
+  updateApproveTotal();
+
   const sheet = document.getElementById('approveSheet');
   if (sheet) { sheet.style.display = 'flex'; }
 }
@@ -3511,6 +3548,30 @@ function closeApproveSheet() {
   const sheet = document.getElementById('approveSheet');
   if (sheet) sheet.style.display = 'none';
   _approveOrderId = null;
+}
+
+function updateApproveTotal() {
+  const fee  = parseFloat(document.getElementById('priceAddFee')?.value)  || 0;
+  const disc = parseFloat(document.getElementById('priceDiscount')?.value) || 0;
+  const newTotal = Math.max(0, _approveOrigTotal + fee - disc);
+  const elOrig = document.getElementById('approveOrigTotal');
+  const elNew  = document.getElementById('approveNewTotal');
+  if (elOrig) elOrig.textContent = _approveOrigTotal.toLocaleString() + ' د.ع';
+  if (elNew)  elNew.textContent  = newTotal.toLocaleString() + ' د.ع';
+  // highlight if changed
+  if (elNew) elNew.style.color = (fee || disc) ? (newTotal < _approveOrigTotal ? '#dc2626' : '#059669') : '#059669';
+}
+
+async function doSaveTelegramId() {
+  const tgId = document.getElementById('tg_id')?.value.trim() || '';
+  if (!CU?._id) return;
+  try {
+    await fbUpdate('users', CU._id, { telegram: tgId });
+    CU.telegram = tgId;
+    const idx = users.findIndex(u => u._id === CU._id);
+    if (idx !== -1) users[idx].telegram = tgId;
+    toast('✅ تم حفظ معرف تيليجرام');
+  } catch(e) { toast('❌ حدث خطأ', false); }
 }
 
 async function confirmApproveOrder() {
@@ -3527,9 +3588,28 @@ async function confirmApproveOrder() {
     }
   });
 
-  // 5. تحديث الحالة في Firebase
-  await fbUpdate('orders', id, { status: 'Pending' }).catch(() => {});
-  if (o) o.status = 'Pending';
+  // 5. تحديث الحالة + تعديل السعر في Firebase
+  const _addFee   = parseFloat(document.getElementById('priceAddFee')?.value)  || 0;
+  const _discAmt  = parseFloat(document.getElementById('priceDiscount')?.value) || 0;
+  const _adjNote  = document.getElementById('priceAdjNote')?.value.trim() || '';
+  const _adjTotal = Math.max(0, (parseFloat(o?.total) || 0) + _addFee - _discAmt);
+  const _adjComm  = Math.round(_adjTotal * (parseFloat(o?.commPct) || 0) / 100);
+  const _adjNet   = _adjTotal - _adjComm;
+  const _priceChanged = _addFee !== 0 || _discAmt !== 0;
+  const _updatePayload = {
+    status: 'Pending',
+    ...(_priceChanged ? {
+      total: _adjTotal, commission: _adjComm, net: _adjNet,
+      price_adj_fee: _addFee, price_adj_discount: _discAmt,
+      price_adj_note: _adjNote, price_adj_by: CU?.username,
+      price_adj_at: new Date().toISOString()
+    } : {})
+  };
+  await fbUpdate('orders', id, _updatePayload).catch(() => {});
+  if (o) {
+    o.status = 'Pending';
+    if (_priceChanged) { o.total = _adjTotal; o.commission = _adjComm; o.net = _adjNet; }
+  }
 
   // 6. تليجرام — المجموعة + كل مجهز عنده معرف
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
@@ -8208,6 +8288,35 @@ showPage = function(page) {
       <h3 style="font-size:1rem;font-weight:900;color:var(--deep);margin-bottom:4px">تأكيد الموافقة على الطلب</h3>
       <p id="approveSheetDesc" style="font-size:.82rem;color:rgba(9,50,87,.5);line-height:1.5"></p>
     </div>
+    <!-- تعديل السعر قبل الموافقة -->
+    <div style="background:rgba(14,165,233,.05);border:1px solid rgba(14,165,233,.18);border-radius:var(--r16);padding:14px;margin-bottom:12px">
+      <div style="font-weight:800;color:var(--deep);font-size:.86rem;margin-bottom:10px">💰 تعديل السعر (اختياري)</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.82rem">
+        <span style="color:rgba(9,50,87,.55)">السعر الأصلي</span>
+        <span id="approveOrigTotal" style="font-weight:800;color:var(--deep)">—</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <label style="font-size:.74rem;color:rgba(9,50,87,.5);display:block;margin-bottom:4px">➕ رسوم إضافية</label>
+          <input type="number" id="priceAddFee" placeholder="0" min="0"
+            style="width:100%;padding:9px 10px;border:1.5px solid rgba(14,165,233,.25);border-radius:10px;font-family:'Tajawal';font-size:.9rem;outline:none"
+            oninput="updateApproveTotal()">
+        </div>
+        <div>
+          <label style="font-size:.74rem;color:rgba(9,50,87,.5);display:block;margin-bottom:4px">➖ خصم</label>
+          <input type="number" id="priceDiscount" placeholder="0" min="0"
+            style="width:100%;padding:9px 10px;border:1.5px solid rgba(14,165,233,.25);border-radius:10px;font-family:'Tajawal';font-size:.9rem;outline:none"
+            oninput="updateApproveTotal()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:white;border-radius:10px;border:1.5px solid rgba(16,185,129,.3);margin-bottom:9px">
+        <span style="font-size:.82rem;font-weight:700;color:#059669">الإجمالي المعدّل</span>
+        <span id="approveNewTotal" style="font-weight:900;color:#059669;font-size:1rem">—</span>
+      </div>
+      <input type="text" id="priceAdjNote" placeholder="ملاحظة التعديل (اختياري)..."
+        style="width:100%;padding:9px 10px;border:1.5px solid rgba(14,165,233,.15);border-radius:10px;font-family:'Tajawal';font-size:.84rem;outline:none">
+    </div>
+
     <div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-radius:var(--r16);padding:12px 14px;margin-bottom:20px;font-size:.8rem;color:rgba(9,50,87,.6)">
       ✅ سيتم إرسال الطلب للمجهز عبر الواتساب والتليجرام فور الموافقة
     </div>

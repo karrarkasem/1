@@ -122,21 +122,6 @@ body{
   background:linear-gradient(160deg,#e8f5fe 0%,#d6eefb 25%,#cce8f8 50%,#d8f0fd 75%,#e4f6ff 100%);
   color:var(--deep);min-height:100vh;overflow-x:hidden;position:relative;
 }
-.crystal-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.crystal-bg::before{content:'';position:absolute;width:900px;height:700px;background:radial-gradient(ellipse,rgba(14,165,233,0.09) 0%,rgba(6,182,212,0.05) 40%,transparent 70%);top:-200px;right:-200px;animation:orbFloat1 22s ease-in-out infinite alternate;}
-.crystal-bg::after{content:'';position:absolute;width:700px;height:800px;background:radial-gradient(ellipse,rgba(16,185,129,0.07) 0%,rgba(6,182,212,0.04) 40%,transparent 70%);bottom:-150px;left:-150px;animation:orbFloat2 28s ease-in-out infinite alternate;}
-@keyframes orbFloat1{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-80px,60px) scale(1.12)}}
-@keyframes orbFloat2{0%{transform:translate(0,0) scale(1)}100%{transform:translate(60px,-70px) scale(1.15)}}
-.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:repeating-linear-gradient(0deg,transparent,transparent 55px,rgba(14,165,233,0.04) 55px,rgba(14,165,233,0.04) 56px),repeating-linear-gradient(90deg,transparent,transparent 55px,rgba(14,165,233,0.04) 55px,rgba(14,165,233,0.04) 56px);}
-.orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.orb{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,0.7),rgba(14,165,233,0.12));border:1px solid rgba(255,255,255,0.6);backdrop-filter:blur(2px);animation:orbRise linear infinite;}
-.orb:nth-child(1){width:90px;height:90px;left:8%;animation-duration:26s;animation-delay:-4s}
-.orb:nth-child(2){width:55px;height:55px;left:25%;animation-duration:20s;animation-delay:-10s}
-.orb:nth-child(3){width:130px;height:130px;left:62%;animation-duration:32s;animation-delay:-16s}
-.orb:nth-child(4){width:45px;height:45px;left:78%;animation-duration:18s;animation-delay:-7s}
-.orb:nth-child(5){width:75px;height:75px;left:90%;animation-duration:24s;animation-delay:-13s}
-.orb:nth-child(6){width:60px;height:60px;left:42%;animation-duration:22s;animation-delay:-3s}
-@keyframes orbRise{0%{transform:translateY(110vh) rotate(0deg);opacity:0}10%{opacity:.45}90%{opacity:.45}100%{transform:translateY(-20vh) rotate(360deg);opacity:0}}
 .z1{position:relative;z-index:1}
 .glass{background:var(--frost);backdrop-filter:blur(22px) saturate(190%);-webkit-backdrop-filter:blur(22px) saturate(190%);border:1px solid var(--border);box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,0.95);}
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -457,7 +442,7 @@ tbody tr{transition:all .15s}
 .c-name{font-size:.8rem;font-weight:600;color:var(--deep);flex:1}
 .c-ctrls{display:flex;align-items:center;gap:5px}
 .c-price{font-size:.75rem;font-weight:700;color:var(--mint2);min-width:58px;text-align:left}
-.map-wrap{border-radius:var(--r16);overflow:hidden;border:2px solid rgba(255,255,255,.9);box-shadow:var(--shadow);height:230px;position:relative;margin:11px 0;}
+.map-wrap{border-radius:var(--r16);overflow:hidden;border:2px solid rgba(255,255,255,.9);box-shadow:var(--shadow);height:200px;position:relative;margin:11px 0;}
 #map{height:100%}
 .map-pin{position:absolute;top:50%;left:50%;width:17px;height:17px;background:var(--sky);border:3px solid white;border-radius:50%;transform:translate(-50%,-50%);z-index:800;pointer-events:none;animation:mapPing 1.8s infinite;box-shadow:0 0 0 0 rgba(14,165,233,.6);}
 @keyframes mapPing{0%{box-shadow:0 0 0 0 rgba(14,165,233,.6)}70%{box-shadow:0 0 0 12px rgba(14,165,233,0)}100%{box-shadow:0 0 0 0 rgba(14,165,233,0)}}
@@ -1008,12 +993,6 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
 </head>
 <body>
-<div class="crystal-bg"></div>
-<div class="grid-bg"></div>
-<div class="orbs">
-  <span class="orb"></span><span class="orb"></span><span class="orb"></span>
-  <span class="orb"></span><span class="orb"></span><span class="orb"></span>
-</div>
 
 <div class="loading-screen" id="loadScreen">
   <div class="loading-logo">🏪</div>
@@ -1640,7 +1619,7 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
 <!-- CART MODAL -->
 <div class="modal z1" id="cartModal">
-  <div class="m-box" style="max-width:520px;padding:0;overflow:hidden;border-radius:var(--r24)">
+  <div class="m-box" style="max-width:520px;padding:0;overflow-y:auto;border-radius:var(--r24)">
 
     <!-- ── حالة 1: نموذج الطلب ── -->
     <div id="cartFormView" style="padding:24px 18px 18px">
@@ -2923,8 +2902,12 @@ function toggleMap(){
       leafMap=L.map('map').setView(HQ,15);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'©OSM'}).addTo(leafMap);
       L.marker(HQ).addTo(leafMap).bindPopup('🏪 برجمان').openPopup();
+      c.scrollIntoView({behavior:'smooth',block:'nearest'});
     },200);
-  } else if(c.style.display==='block') leafMap?.invalidateSize();
+  } else if(c.style.display==='block'){
+    leafMap?.invalidateSize();
+    c.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
 }
 function confirmLoc(){
   if(!leafMap) return;

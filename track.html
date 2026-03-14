@@ -262,6 +262,44 @@
             color: #999;
             font-size: 0.8rem;
         }
+        /* Rating Section */
+        .rating-section {
+            background: linear-gradient(135deg, #fefce8, #fef9c3);
+            border: 2px solid #fde68a;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+        .rating-section h3 {
+            text-align: center;
+            color: #92400e;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+        .rating-label { font-weight: 700; color: #555; margin-bottom: 6px; font-size: .9rem; }
+        .stars-row { display:flex; gap:6px; margin-bottom:14px; }
+        .star-btn {
+            font-size: 1.8rem; background:none; border:none; cursor:pointer;
+            transition:transform .15s; padding:2px;
+        }
+        .star-btn:hover { transform:scale(1.2); }
+        .rating-note {
+            width:100%; padding:10px 12px; border:2px solid #fde68a;
+            border-radius:12px; font-family:'Tajawal',sans-serif;
+            font-size:.9rem; resize:none; background:white;
+            margin-bottom:12px;
+        }
+        .submit-rating-btn {
+            background:linear-gradient(135deg,#f59e0b,#d97706);
+            color:white; border:none; padding:12px; border-radius:14px;
+            font-weight:700; font-size:1rem; cursor:pointer; width:100%;
+            font-family:'Tajawal',sans-serif;
+        }
+        .rating-done {
+            text-align:center; color:#059669; font-weight:800;
+            background:#f0fdf4; border:2px solid #86efac;
+            border-radius:16px; padding:16px; margin-top:16px;
+        }
     </style>
 </head>
 <body>
@@ -392,6 +430,33 @@
                 `;
             }
 
+            // Rating section (only after delivery)
+            let ratingHtml = '';
+            if (order.status === 'Delivered') {
+                if (order.customer_rated) {
+                    ratingHtml = `
+                        <div class="rating-done">
+                            ⭐ شكراً على تقييمك!<br>
+                            <span style="font-size:.85rem;font-weight:600;color:#065f46">تقييم التوصيل: ${'⭐'.repeat(order.delivery_rating||0)} | تقييم الطلب: ${'⭐'.repeat(order.order_rating||0)}</span>
+                        </div>`;
+                } else {
+                    ratingHtml = `
+                        <div class="rating-section" id="ratingSection">
+                            <h3>⭐ قيّم تجربتك</h3>
+                            <div class="rating-label">🚗 تقييم التوصيل</div>
+                            <div class="stars-row" id="delivStars">
+                                ${[1,2,3,4,5].map(i=>`<button class="star-btn" onclick="setRating('deliv',${i})" id="ds${i}">☆</button>`).join('')}
+                            </div>
+                            <div class="rating-label">📦 تقييم البضاعة / الطلب</div>
+                            <div class="stars-row" id="orderStars">
+                                ${[1,2,3,4,5].map(i=>`<button class="star-btn" onclick="setRating('order',${i})" id="os${i}">☆</button>`).join('')}
+                            </div>
+                            <textarea class="rating-note" id="ratingNote" rows="2" placeholder="ملاحظة (اختياري)..."></textarea>
+                            <button class="submit-rating-btn" onclick="submitRating('${order.id}')">✅ إرسال التقييم</button>
+                        </div>`;
+                }
+            }
+
             document.getElementById('content').innerHTML = `
                 <div class="progress-container">${stepsHtml}</div>
                 ${nearMsg}
@@ -410,8 +475,55 @@
                     </div>
                 </div>
                 ${driverHtml}
+                ${ratingHtml}
             `;
         }
+
+        let delivRating = 0, orderRating = 0;
+
+        window.setRating = function(type, val) {
+            if (type === 'deliv') {
+                delivRating = val;
+                for (let i=1;i<=5;i++) {
+                    const s=document.getElementById(`ds${i}`);
+                    if(s) s.textContent = i<=val ? '⭐' : '☆';
+                }
+            } else {
+                orderRating = val;
+                for (let i=1;i<=5;i++) {
+                    const s=document.getElementById(`os${i}`);
+                    if(s) s.textContent = i<=val ? '⭐' : '☆';
+                }
+            }
+        };
+
+        window.submitRating = async function(docId) {
+            if (!delivRating || !orderRating) {
+                alert('⚠️ يرجى اختيار التقييم للتوصيل والبضاعة');
+                return;
+            }
+            const note = document.getElementById('ratingNote')?.value.trim() || '';
+            const btn  = document.querySelector('.submit-rating-btn');
+            if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الإرسال...'; }
+            try {
+                await db.collection('orders').doc(docId).update({
+                    delivery_rating: delivRating,
+                    order_rating:    orderRating,
+                    rating_note:     note,
+                    customer_rated:  true,
+                    rated_at:        new Date().toISOString()
+                });
+                document.getElementById('ratingSection').outerHTML = `
+                    <div class="rating-done">
+                        ⭐ شكراً على تقييمك!<br>
+                        <span style="font-size:.85rem;font-weight:600;color:#065f46">تقييم التوصيل: ${'⭐'.repeat(delivRating)} | تقييم الطلب: ${'⭐'.repeat(orderRating)}</span>
+                    </div>`;
+            } catch(e) {
+                console.error(e);
+                if(btn){btn.disabled=false;btn.textContent='✅ إرسال التقييم';}
+                alert('❌ حدث خطأ، حاول مجدداً');
+            }
+        };
     </script>
 </body>
 </html>

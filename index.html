@@ -31,40 +31,47 @@ const firebaseConfig = {
   messagingSenderId: "177984721378",
   appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
 };
-// ✅ متغيرات المجهز
+// متغيرات المجهز
 let preparerWhatsApp = '';
 let preparerTelegram = '';
 
-// ✅ دالة تحميل إعدادات المجهز من Firebase
+// تحميل إعدادات المجهز من Firebase
 async function loadPreparerSettings() {
   try {
-    if (!fbReady) return;
-    
-    const settingsRef = fb().collection(db(), 'settings');
-    const snapshot = await fb().getDocs(settingsRef);
-    
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.key === 'preparer_whatsapp') {
-        preparerWhatsApp = data.value;
-      }
-      if (data.key === 'preparer_telegram') {
-        preparerTelegram = data.value;
-      }
+    const snap = await fb().getDocs(fb().collection(db(), 'settings'));
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if (data.key === 'preparer_whatsapp') preparerWhatsApp = data.value;
+      if (data.key === 'preparer_telegram') preparerTelegram = data.value;
     });
-    
-    console.log('✅ إعدادات المجهز:', { preparerWhatsApp, preparerTelegram });
-  } catch (error) {
-    console.error('خطأ في تحميل إعدادات المجهز:', error);
+  } catch (e) {
+    console.error('loadPreparerSettings:', e);
   }
 }
 
-// ✅ نضيفها لدالة init
-const originalInit = init;
-init = async function() {
-  await loadPreparerSettings(); // ← نضيف هذا السطر
-  await originalInit();
-};
+// إنشاء إشعار للمجهزين عند ورود طلب جديد
+async function createPreparerNotification(orderData, totalVolume) {
+  try {
+    const q = fb().query(fb().collection(db(), 'users'), fb().where('type', '==', 'preparer'));
+    const snap = await fb().getDocs(q);
+    const promises = snap.docs.map(d => {
+      const preparer = d.data();
+      return fbAdd('notifications', {
+        title: '📦 طلب جديد للتجهيز',
+        body: `${orderData.shopName} - ${(orderData.total||0).toLocaleString()} د.ع - حجم: ${(totalVolume||0).toFixed(3)} م³`,
+        type: 'preparer',
+        read: false,
+        targetUser: preparer.username || preparer.uid || '',
+        orderId: orderData.orderId || '',
+        date: new Date().toLocaleDateString('ar-IQ'),
+        timestamp: new Date().toISOString()
+      });
+    });
+    await Promise.all(promises);
+  } catch (e) {
+    console.error('createPreparerNotification:', e);
+  }
+}
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
@@ -1753,6 +1760,43 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
   </div>
 </div>
 
+<!-- ACCOUNT SETTINGS MODAL -->
+<div class="modal z1" id="accountModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('accountModal')">✕</button>
+    <div class="m-title">⚙️ إعدادات الحساب</div>
+
+    <!-- صورة الملف الشخصي -->
+    <div style="text-align:center;margin-bottom:18px">
+      <div id="acAvatar" onclick="document.getElementById('avatarFileInput').click()"
+        style="width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,var(--sky),var(--teal));
+               display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:white;
+               border:3px solid rgba(14,165,233,.3);overflow:hidden;cursor:pointer;transition:opacity .2s">
+        <span id="acAvatarInner">👤</span>
+      </div>
+      <div style="font-size:.7rem;color:rgba(9,50,87,.42);margin-top:6px">اضغط على الصورة لتغييرها</div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarSelect(this)">
+      <div id="acUploadWrap" style="display:none;margin-top:10px">
+        <button class="btn btn-sky btn-sm" id="acUploadBtn" onclick="doUploadAvatar()">⬆️ رفع الصورة</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('acUploadWrap').style.display='none'">إلغاء</button>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(14,165,233,.12);margin-bottom:16px">
+
+    <!-- تغيير كلمة المرور -->
+    <div style="font-size:.86rem;font-weight:800;color:var(--deep);margin-bottom:12px">🔒 تغيير كلمة المرور</div>
+    <div class="fg"><label class="fl">كلمة المرور الحالية</label>
+      <input id="cp_current" type="password" class="fi" placeholder="أدخل كلمة مرورك الحالية"></div>
+    <div class="fg"><label class="fl">كلمة المرور الجديدة</label>
+      <input id="cp_new" type="password" class="fi" placeholder="٦ أحرف على الأقل"></div>
+    <div class="fg"><label class="fl">تأكيد كلمة المرور الجديدة</label>
+      <input id="cp_confirm" type="password" class="fi" placeholder="أعد كتابة كلمة المرور الجديدة"></div>
+    <div id="cp_err" style="color:var(--rose);font-size:.78rem;text-align:center;margin:4px 0 10px;min-height:18px"></div>
+    <button class="btn btn-sky btn-full" onclick="doChangePassword()">🔒 حفظ كلمة المرور</button>
+  </div>
+</div>
+
 <!-- ADD USER MODAL -->
 <div class="modal z1" id="userModal">
   <div class="m-box">
@@ -2277,8 +2321,10 @@ setTimeout(() => {
   setFbStatus(true, 'متصل');
   document.getElementById('loadSub').textContent = 'جاري تحميل البيانات...';
 
-  await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications()]);
-await loadThreshold();
+  try {
+    await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadPreparerSettings()]);
+    await loadThreshold();
+  } catch(e) { console.warn('data load error:', e); }
   try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {
@@ -2294,9 +2340,9 @@ await loadThreshold();
     setTimeout(() => ls.style.display='none', 400);
   }, 900);
 
-  buildUI();
-  startRealtimeListeners();
-  setupImportDragDrop();
+  try { buildUI(); } catch(e) { console.error('buildUI error:', e); }
+  try { startRealtimeListeners(); } catch(e) { console.error('listeners error:', e); }
+  try { setupImportDragDrop(); } catch(e) {}
 
 }
 
@@ -2476,7 +2522,12 @@ function buildUI() {
 
 function buildSidebar() {
   const p = PERMS[CU?.type||'guest'];
-  document.getElementById('sbAv').textContent   = CU ? (ROLES[CU.type]?.charAt(0)||'👤') : '🌐';
+  const sbAv = document.getElementById('sbAv');
+  if (CU?.photoURL) {
+    sbAv.innerHTML = `<img src="${CU.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+  } else {
+    sbAv.textContent = CU ? (ROLES[CU.type]?.charAt(0)||'👤') : '🌐';
+  }
   document.getElementById('sbName').textContent  = CU?.name||'زائر';
   document.getElementById('sbRole').textContent  = CU ? ROLES[CU.type] : 'تصفح حر';
   document.getElementById('sbOnline').style.display = CU ? 'flex':'none';
@@ -2514,7 +2565,8 @@ function buildSidebar() {
   });
   document.getElementById('sbNav').innerHTML=html;
   document.getElementById('sbLoginLogout').innerHTML=CU
-    ?`<div class="nav-item red" onclick="doLogout()"><span class="nav-icon">↩</span>تسجيل الخروج</div>`
+    ?`<div class="nav-item" onclick="openAccountSettings()"><span class="nav-icon">⚙️</span>إعدادات الحساب</div>
+      <div class="nav-item red" onclick="doLogout()"><span class="nav-icon">↩</span>تسجيل الخروج</div>`
     :`<div class="nav-item" onclick="showLogin()"><span class="nav-icon">👤</span>دخول / تسجيل</div>`;
 
   const inv = CU&&(p.inv_write);
@@ -2613,6 +2665,94 @@ function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('show');
   document.body.classList.remove('sidebar-open');
+}
+
+// ═══════════════════════════════════════════════════════
+// ACCOUNT SETTINGS — تغيير كلمة المرور + الصورة الشخصية
+// ═══════════════════════════════════════════════════════
+function openAccountSettings() {
+  if (!CU) return;
+  // عرض الصورة الحالية
+  const inner = document.getElementById('acAvatarInner');
+  if (CU.photoURL) {
+    inner.outerHTML = `<img id="acAvatarInner" src="${CU.photoURL}" style="width:100%;height:100%;object-fit:cover">`;
+  } else {
+    inner.outerHTML = `<span id="acAvatarInner" style="font-size:2rem">${ROLES[CU.type]?.charAt(0)||'👤'}</span>`;
+  }
+  // مسح حقول كلمة المرور
+  ['cp_current','cp_new','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cp_err').textContent = '';
+  document.getElementById('acUploadWrap').style.display = 'none';
+  document.getElementById('avatarFileInput').value = '';
+  openModal('accountModal');
+  closeSidebar();
+}
+
+function handleAvatarSelect(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 2 * 1024 * 1024) { toast('❌ الصورة أكبر من 2MB', false); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const av = document.getElementById('acAvatar');
+    av.innerHTML = `<img id="acAvatarInner" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    document.getElementById('acUploadWrap').style.display = 'flex';
+    document.getElementById('acUploadWrap').style.gap = '8px';
+    document.getElementById('acUploadWrap').style.justifyContent = 'center';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doUploadAvatar() {
+  if (!CU?._id) return;
+  const file = document.getElementById('avatarFileInput').files[0];
+  if (!file) return;
+  const btn = document.getElementById('acUploadBtn');
+  btn.textContent = '⏳ جاري الرفع...';
+  btn.disabled = true;
+  try {
+    const path = `avatars/${CU._id}`;
+    const storageReference = fb().storageRef(window._storage, path);
+    await fb().uploadBytes(storageReference, file);
+    const url = await fb().getDownloadURL(storageReference);
+    await fbUpdate('users', CU._id, { photoURL: url });
+    CU.photoURL = url;
+    // تحديث الصورة في users array
+    const idx = users.findIndex(u => u._id === CU._id);
+    if (idx !== -1) users[idx].photoURL = url;
+    buildSidebar();
+    document.getElementById('acUploadWrap').style.display = 'none';
+    toast('✅ تم رفع الصورة بنجاح');
+  } catch (e) {
+    console.error('doUploadAvatar:', e);
+    toast('❌ فشل رفع الصورة', false);
+  } finally {
+    btn.textContent = '⬆️ رفع الصورة';
+    btn.disabled = false;
+  }
+}
+
+async function doChangePassword() {
+  const cur = document.getElementById('cp_current').value.trim();
+  const nw  = document.getElementById('cp_new').value.trim();
+  const con = document.getElementById('cp_confirm').value.trim();
+  const err = document.getElementById('cp_err');
+  err.textContent = '';
+
+  if (!cur || !nw || !con) { err.textContent = 'يرجى ملء جميع الحقول'; return; }
+  if (cur !== CU.password)  { err.textContent = '❌ كلمة المرور الحالية غير صحيحة'; return; }
+  if (nw.length < 6)        { err.textContent = '❌ كلمة المرور الجديدة قصيرة جداً (٦ أحرف على الأقل)'; return; }
+  if (nw !== con)           { err.textContent = '❌ كلمة المرور الجديدة وتأكيدها غير متطابقتين'; return; }
+  if (nw === cur)           { err.textContent = '❌ كلمة المرور الجديدة مطابقة للحالية'; return; }
+
+  await fbUpdate('users', CU._id, { password: nw });
+  CU.password = nw;
+  const idx = users.findIndex(u => u._id === CU._id);
+  if (idx !== -1) users[idx].password = nw;
+  try { const s = JSON.parse(localStorage.getItem('bjUser')||'{}'); if(s.username) localStorage.setItem('bjUser', JSON.stringify({username: CU.username})); } catch(e){}
+  ['cp_current','cp_new','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+  closeModal('accountModal');
+  toast('✅ تم تغيير كلمة المرور بنجاح');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2851,6 +2991,10 @@ const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId
   window.open(`https://wa.me/${WA}?text=${encodeURIComponent(_waMsg)}`, '_blank');
 
   const fbId = await fbAdd('orders', orderData);
+
+
+  // بعد كود المجهز المعدل، أضف هذا السطر
+await createPreparerNotification(orderData, totalVolume);
 // =============================================
 // ✅ الطلب بانتظار موافقة الادمن — لا يُرسل للمجهز حتى التأكيد
 // =============================================
@@ -5535,12 +5679,12 @@ async function confirmResetPoints(username) {
 // ═══════════════════════════════════════════════════════
 init().catch(err=>{
   console.error('Init error:',err);
-  setFbStatus(false,'خطأ في الاتصال');
+  if (!fbReady) setFbStatus(false,'خطأ في الاتصال');
   setTimeout(()=>{
     const ls=document.getElementById('loadScreen');
-    ls.style.opacity='0';setTimeout(()=>ls.style.display='none',400);
+    if(ls) { ls.style.opacity='0'; setTimeout(()=>ls.style.display='none',400); }
   },1000);
-  buildUI();
+  try { buildUI(); } catch(e) {}
 });
  
 // ══════════════════════════════════════════════════════
@@ -5555,12 +5699,12 @@ init().catch(err=>{
 const _origBuildUI = buildUI;
 buildUI = function() {
   _origBuildUI();
-  injectMarketingNav();
-  renderMarketingKpi();
-  renderContacts();
-  renderCampaignHistory();
-  buildMktTemplates();
-  updateMktAudience();
+  try { injectMarketingNav(); } catch(e) { console.warn('injectMarketingNav:', e); }
+  try { renderMarketingKpi(); } catch(e) { console.warn('renderMarketingKpi:', e); }
+  try { renderContacts(); } catch(e) { console.warn('renderContacts:', e); }
+  try { renderCampaignHistory(); } catch(e) { console.warn('renderCampaignHistory:', e); }
+  try { buildMktTemplates(); } catch(e) { console.warn('buildMktTemplates:', e); }
+  try { updateMktAudience(); } catch(e) { console.warn('updateMktAudience:', e); }
 };
 
 function injectMarketingNav() {

@@ -224,7 +224,7 @@
                 const user = snap.docs[0].data();
                 if ((user.password || '').trim() !== password) { errorEl.textContent='❌ كلمة المرور خاطئة'; return; }
                 const allowedTypes = ['preparer', 'admin', 'supervisor', 'sales_manager'];
-                if (!allowedTypes.includes(user.type)) { errorEl.textContent='❌ ليس لديك صلاحية الوصول لهذه الصفحة'; return; }
+                if (!allowedTypes.includes(user.accountType)) { errorEl.textContent='❌ ليس لديك صلاحية الوصول لهذه الصفحة'; return; }
                 currentUsername = username;
                 currentUserName = user.name || username;
                 document.getElementById('loginSection').style.display='none';

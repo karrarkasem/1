@@ -3000,6 +3000,8 @@ const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId
     if (_si) _si.textContent   = '🆔 ' + orderId;
     if (_tb) _tb.href          = _trackUrl;
   }
+  // ── إخفاء السلة فوراً بعد الإرسال ──
+  cart={}; updateCartUI();
 
   const fbId = await fbAdd('orders', orderData);
 
@@ -3059,7 +3061,6 @@ if (notifId) {
 sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc});
 
   orders.push(parseOrder({...orderData,_id:fbId||'',createdAt:nowStr}));
-  cart={}; updateCartUI();
   ['shopName','shopAddr','orderNote','visitorPhone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('locOk').style.display='none'; selLoc='';
 

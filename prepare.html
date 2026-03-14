@@ -249,6 +249,10 @@
                 if (!allowedTypes.includes(user.accountType)) { errorEl.textContent='❌ ليس لديك صلاحية الوصول لهذه الصفحة'; return; }
                 currentUsername = username;
                 currentUserName = user.name || username;
+                // Save 12-hour session
+                localStorage.setItem('preparer_session', JSON.stringify({
+                    username, name: user.name || username, loginTime: Date.now()
+                }));
                 document.getElementById('loginSection').style.display='none';
                 errorEl.textContent='';
                 await Promise.all([loadDeliveryVehicles(), loadProductDimensions()]);
@@ -581,6 +585,23 @@
             document.body.appendChild(t);
             setTimeout(()=>t.remove(),2800);
         }
+
+        // ── Auto-restore 12-hour session ──
+        (function() {
+            const SESSION_12H = 12 * 60 * 60 * 1000;
+            try {
+                const raw = localStorage.getItem('preparer_session');
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (!s.username || !s.loginTime || (Date.now() - s.loginTime) > SESSION_12H) {
+                    localStorage.removeItem('preparer_session'); return;
+                }
+                currentUsername = s.username;
+                currentUserName = s.name || s.username;
+                document.getElementById('loginSection').style.display = 'none';
+                Promise.all([loadDeliveryVehicles(), loadProductDimensions()]).then(() => loadOrder());
+            } catch(e) { localStorage.removeItem('preparer_session'); }
+        })();
 
         // ── No orderId ──
         if (!orderId) {

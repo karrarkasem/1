@@ -782,7 +782,7 @@
                     return;
                 }
 
-                if (userData.type !== 'driver') {
+                if (userData.accountType !== 'driver') {
                     errorEl.textContent = '❌ هذا الحساب ليس لسائق';
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'دخول';

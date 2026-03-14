@@ -513,11 +513,15 @@
                     customer_rated:  true,
                     rated_at:        new Date().toISOString()
                 });
-                document.getElementById('ratingSection').outerHTML = `
-                    <div class="rating-done">
-                        ⭐ شكراً على تقييمك!<br>
-                        <span style="font-size:.85rem;font-weight:600;color:#065f46">تقييم التوصيل: ${'⭐'.repeat(delivRating)} | تقييم الطلب: ${'⭐'.repeat(orderRating)}</span>
-                    </div>`;
+                // onSnapshot will re-render automatically; update DOM only if element still exists
+                const rs = document.getElementById('ratingSection');
+                if (rs) {
+                    rs.outerHTML = `
+                        <div class="rating-done">
+                            ⭐ شكراً على تقييمك!<br>
+                            <span style="font-size:.85rem;font-weight:600;color:#065f46">تقييم التوصيل: ${'⭐'.repeat(delivRating)} | تقييم الطلب: ${'⭐'.repeat(orderRating)}</span>
+                        </div>`;
+                }
             } catch(e) {
                 console.error(e);
                 if(btn){btn.disabled=false;btn.textContent='✅ إرسال التقييم';}

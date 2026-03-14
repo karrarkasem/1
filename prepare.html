@@ -197,6 +197,8 @@
         let currentUsername  = '';
         let currentUserName  = '';
         let preparerPhase    = 0; // 0=not started, 1=preparing, 2=done
+        let timerInterval    = null;   // setInterval ref for prep stopwatch
+        let prepStartTime    = null;   // Date object when preparation started
         let productDataMap   = {}; // keyed by product name → { carton_volume, carton_weight, carton_l, carton_w, carton_h }
 
         // ── Load delivery vehicles from Firebase settings ──
@@ -356,9 +358,12 @@
                     ${item.dims ? `<div style="font-size:.72rem;color:#888;margin-top:3px;">📦 ${item.dims}</div>` : ''}
                 </div>`).join('');
 
-            // vehicles HTML
+            // vehicles HTML — lock after preparation starts
+            const vehicleLocked = preparerPhase >= 1;
             const vehiclesHtml = Object.entries(VEHICLES).map(([key,v])=>`
-                <div class="vehicle-option" onclick="selectVehicle('${key}')" id="vehicle-${key}">
+                <div class="vehicle-option" id="vehicle-${key}"
+                    ${vehicleLocked ? '' : `onclick="selectVehicle('${key}')"`}
+                    style="${vehicleLocked ? 'pointer-events:none;opacity:0.6;cursor:default;' : ''}">
                     <div class="vehicle-icon">${v.icon}</div>
                     <div class="vehicle-name">${v.name}</div>
                     <div class="vehicle-capacity">📐 ${v.capacity} م³</div>
@@ -382,11 +387,16 @@
                     <a href="${driverLink}" target="_blank" style="display:block;text-align:center;color:#065f46;font-weight:700;font-size:.88rem;margin-top:4px;">🔗 فتح لوحة السائق</a>
                 </div>` : '';
 
-            // buttons logic
-            const btn1Disabled = preparerPhase >= 1 ? 'disabled' : '';
-            const btn1Style    = preparerPhase >= 1 ? 'opacity:.45;' : '';
-            const btn2Style    = preparerPhase < 1  ? 'display:none;' : preparerPhase >= 2 ? 'opacity:.45;' : '';
-            const btn2Disabled = preparerPhase >= 2 ? 'disabled' : '';
+            // single toggle button + live stopwatch
+            const timerBlockHtml = preparerPhase === 1 ? `
+                <div id="timerDisplay" style="text-align:center;font-size:1.6rem;font-weight:900;color:#093257;margin:10px 0;background:#f0f9ff;border-radius:12px;padding:12px 0;border:2px solid #bae6fd;">
+                    ⏱️ <span id="timerValue">00:00</span>
+                </div>` : '';
+            const mainBtnHtml = preparerPhase === 0
+                ? `<button class="btn btn-warning" id="mainPrepBtn" onclick="startPreparing()" style="margin-bottom:10px">🚀 بدء تجهيز القائمة</button>`
+                : preparerPhase === 1
+                    ? `<button class="btn btn-success" id="mainPrepBtn" onclick="finishPreparing()" style="margin-bottom:10px">✅ تم التجهيز</button>`
+                    : `<button class="btn btn-success" id="mainPrepBtn" disabled style="opacity:.45;margin-bottom:10px">✅ تم التجهيز</button>`;
 
             sec.innerHTML = `
                 <div style="margin-bottom:18px">
@@ -422,15 +432,8 @@
                 </div>
 
                 <hr>
-                <!-- زر 1: بدء تجهيز القائمة -->
-                <button class="btn btn-warning" id="btn1Start" onclick="startPreparing()" ${btn1Disabled} style="${btn1Style}margin-bottom:10px">
-                    🚀 بدء تجهيز القائمة
-                </button>
-
-                <!-- زر 2: تم تمام التجهيز في السيارة -->
-                <button class="btn btn-success" id="btn2Finish" onclick="finishPreparing()" ${btn2Disabled} style="${btn2Style}">
-                    ✅ تم تمام التجهيز في السيارة
-                </button>
+                ${timerBlockHtml}
+                ${mainBtnHtml}
 
                 <div id="prepareMessage" style="margin-top:12px">${driverLinkHtml}</div>
             `;
@@ -439,6 +442,14 @@
             if (orderData.vehicle_type) {
                 const vKey = Object.keys(VEHICLES).find(k=>VEHICLES[k].name===orderData.vehicle_type);
                 if (vKey) selectVehicle(vKey);
+            }
+
+            // start or continue stopwatch when in phase 1
+            if (preparerPhase === 1) {
+                if (!prepStartTime) {
+                    prepStartTime = orderData.preparing_at ? new Date(orderData.preparing_at) : new Date();
+                }
+                startTimer();
             }
         }
 
@@ -468,18 +479,21 @@
 
         // ── Phase 1: Start Preparing ──
         window.startPreparing = async function() {
-            const btn = document.getElementById('btn1Start');
+            const btn = document.getElementById('mainPrepBtn');
             btn.disabled=true; btn.textContent='⏳ جاري...';
             try {
+                const now = new Date();
                 await db.collection('orders').doc(orderData.id).update({
                     status: 'Preparing',
                     preparing_by: currentUsername,
                     preparing_by_name: currentUserName,
-                    preparing_at: new Date().toISOString()
+                    preparing_at: now.toISOString()
                 });
                 orderData.status = 'Preparing';
+                orderData.preparing_at = now.toISOString();
+                prepStartTime = now;
                 preparerPhase = 1;
-                displayOrderDetails();
+                displayOrderDetails(); // will start timer via post-render hook
                 showToast('✅ تم بدء التجهيز');
             } catch(e) {
                 console.error(e);
@@ -488,13 +502,15 @@
             }
         };
 
-        // ── Phase 2: Finish Preparing (in car) ──
+        // ── Phase 2: Finish Preparing ──
         window.finishPreparing = async function() {
             if (!selectedVehicle) { showToast('⚠️ اختر المركبة أولاً',false); return; }
-            const btn = document.getElementById('btn2Finish');
+            const btn = document.getElementById('mainPrepBtn');
             btn.disabled=true; btn.textContent='⏳ جاري التأكيد...';
             try {
                 const driverLink = `https://karrarkasem.github.io/1/driver.html?order=${orderId}`;
+                const prepDurationSec = prepStartTime ? Math.floor((Date.now() - prepStartTime.getTime()) / 1000) : null;
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
                 await db.collection('orders').doc(orderData.id).update({
                     status: 'Prepared',
                     prepared_by: currentUsername,
@@ -503,7 +519,8 @@
                     vehicle_type: VEHICLES[selectedVehicle].name,
                     driver_link: driverLink,
                     total_volume: parseFloat(totalVolume.toFixed(4)),
-                    total_weight: parseFloat(totalWeight.toFixed(3))
+                    total_weight: parseFloat(totalWeight.toFixed(3)),
+                    ...(prepDurationSec !== null ? { prep_duration_sec: prepDurationSec } : {})
                 });
                 orderData.status = 'Prepared';
                 orderData.vehicle_type = VEHICLES[selectedVehicle].name;
@@ -524,7 +541,7 @@
                 showToast('✅ تم التجهيز! الرابط جاهز للسائق');
             } catch(e) {
                 console.error(e);
-                btn.disabled=false; btn.textContent='✅ تم تمام التجهيز في السيارة';
+                btn.disabled=false; btn.textContent='✅ تم التجهيز';
                 showToast('❌ حدث خطأ',false);
             }
         };
@@ -542,6 +559,19 @@
                 showToast('✅ تم نسخ الرابط');
             });
         };
+
+        // ── Prep stopwatch ──
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const el = document.getElementById('timerValue');
+                if (!el) { clearInterval(timerInterval); timerInterval = null; return; }
+                const elapsed = Math.floor((Date.now() - prepStartTime.getTime()) / 1000);
+                const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const s = (elapsed % 60).toString().padStart(2, '0');
+                el.textContent = `${m}:${s}`;
+            }, 1000);
+        }
 
         // ── Toast ──
         function showToast(msg, ok=true) {

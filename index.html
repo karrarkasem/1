@@ -1320,19 +1320,21 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
         </table>
       </div>
 
-      <!-- إعدادات وحدات التوصيل — للأدمن والمشرف فقط -->
-      <div id="deliverySettingsCard" style="display:none;margin-top:28px">
-        <div class="glass" style="border-radius:var(--r20);padding:22px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-            <div>
-              <h2 style="font-size:1.1rem;font-weight:800;color:var(--deep)">🚚 وحدات وأوزان التوصيل</h2>
-              <p style="font-size:.78rem;color:#888;margin-top:2px">تحديد سعة ووزن كل مركبة توصيل</p>
-            </div>
-            <button class="btn btn-sky" style="width:auto;padding:8px 18px" onclick="saveDeliveryVehicles()">💾 حفظ الإعدادات</button>
+    </div>
+
+    <!-- DELIVERY SETTINGS -->
+    <div class="page" id="pageDeliverySettings">
+      <div class="ph"><h1>🚚 إعدادات التوصيل</h1><p>إدارة مركبات التوصيل وأوزانها وأبعادها</p></div>
+      <div class="glass" style="border-radius:var(--r20);padding:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:800;color:var(--deep)">🚐 وحدات النقل والتوصيل</h2>
+            <p style="font-size:.78rem;color:#888;margin-top:2px">تحديد نوع المركبة وأبعاد صندوق الشحن والحمولة القصوى</p>
           </div>
-          <div id="dvList"></div>
-          <button class="btn btn-ghost" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addDeliveryVehicleRow()">+ إضافة مركبة</button>
+          <button class="btn btn-sky" style="width:auto;padding:8px 18px" onclick="saveDeliveryVehicles()">💾 حفظ الإعدادات</button>
         </div>
+        <div id="dvList"></div>
+        <button class="btn btn-ghost" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addDeliveryVehicleRow()">+ إضافة مركبة</button>
       </div>
     </div>
 
@@ -2168,11 +2170,11 @@ const IMGBB_API_KEY = 'a2173ed14e8a5d9288b6dbb4a56c8c78'; // ← أضف مفتا
 const POINTS_THRESHOLD = 100000;
 
 const PERMS = {
-  admin:         { order:1, manage:1, dash:1, users:1, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1 },
-  sales_manager: { order:1, manage:1, dash:1, users:0, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1 },
-  rep:           { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1 },
-  market_owner:  { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1 },
-  guest:         { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:0 }
+  admin:         { order:1, manage:1, dash:1, users:1, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1, delivery_cfg:1 },
+  sales_manager: { order:1, manage:1, dash:1, users:0, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1, delivery_cfg:1 },
+  rep:           { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1, delivery_cfg:0 },
+  market_owner:  { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1, delivery_cfg:0 },
+  guest:         { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:0, delivery_cfg:0 }
 };
 const ROLES = { admin:'🛡️ أدمن', sales_manager:'📊 مشرف', rep:'🤝 مندوب', market_owner:'🏪 صاحب ماركت', guest:'🌐 زائر' };
 
@@ -2543,6 +2545,7 @@ function buildSidebar() {
     {id:'pageReports',     icon:'📈',  lbl:'التقارير',           perm:'reports'},
     {id:'pagePointsMgmt', icon:'⭐', lbl:'إدارة النقاط', perm:'users'},
     {id:'pageMarketing', icon:'📣', lbl:'التسويق', perm:'manage'},
+    {id:'pageDeliverySettings', icon:'🚚', lbl:'إعدادات التوصيل', perm:'delivery_cfg'},
   ];
   let html='',lastSec='';
   nav.forEach(n=>{
@@ -2613,7 +2616,8 @@ function showPage(id) {
     'pageRepTracking':  'tracking',
     'pageNotifications':'notif',
     'pageReports':      'reports',
-    'pageMarketing':    'manage',
+    'pageMarketing':        'manage',
+    'pageDeliverySettings': 'delivery_cfg',
   };
   // العروض مفتوحة للجميع (pageOffers و pageStore بدون guard)
   if(pageGuards[id] && !p[pageGuards[id]]) {
@@ -8067,14 +8071,6 @@ function defaultDeliveryVehicles() {
   };
 }
 
-function showDeliverySettingsCard() {
-  const card = document.getElementById('deliverySettingsCard');
-  if (!card) return;
-  const isAdmin = CU && (CU.type==='admin'||CU.type==='sales_manager'||CU.type==='supervisor');
-  if (!isAdmin) { card.style.display='none'; return; }
-  card.style.display='block';
-  renderDvList();
-}
 
 function renderDvList() {
   const el = document.getElementById('dvList');
@@ -8185,15 +8181,15 @@ window.saveDeliveryVehicles = async function() {
   }
 };
 
-// Hook into page show for pageManage (patch on top of existing showPage override)
+// Hook into page show for pageDeliverySettings
 const _origShowPageDV = showPage;
 showPage = function(page) {
   _origShowPageDV(page);
-  if (page === 'pageManage') {
+  if (page === 'pageDeliverySettings') {
     if (!_dvSettings) {
-      loadDeliveryVehiclesSettings().then(showDeliverySettingsCard);
+      loadDeliveryVehiclesSettings().then(renderDvList);
     } else {
-      showDeliverySettingsCard();
+      renderDvList();
     }
   }
 };

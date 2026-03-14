@@ -300,6 +300,72 @@
             background:#f0fdf4; border:2px solid #86efac;
             border-radius:16px; padding:16px; margin-top:16px;
         }
+
+        /* Near Notification Popup */
+        .near-popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeInOverlay 0.3s ease;
+        }
+        .near-popup-overlay.show { display: flex; }
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .near-popup-box {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 24px;
+            text-align: center;
+            max-width: 340px;
+            width: 100%;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+            animation: popupBounce 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+        @keyframes popupBounce {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .near-popup-icon {
+            font-size: 4rem;
+            margin-bottom: 12px;
+            animation: bounce2 1s infinite;
+        }
+        @keyframes bounce2 {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .near-popup-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #d97706;
+            margin-bottom: 8px;
+        }
+        .near-popup-msg {
+            color: #444;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .near-popup-close {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -319,6 +385,16 @@
 
         <div class="footer">
             © 2025 برجمان
+        </div>
+    </div>
+
+    <!-- Near Notification Popup -->
+    <div class="near-popup-overlay" id="nearPopup">
+        <div class="near-popup-box">
+            <div class="near-popup-icon">🚗</div>
+            <div class="near-popup-title">السائق قريب منك!</div>
+            <div class="near-popup-msg" id="nearPopupMsg">السائق على بعد 500 متر منك، يرجى الاستعداد لاستلام طلبك!</div>
+            <button class="near-popup-close" onclick="document.getElementById('nearPopup').classList.remove('show')">حسناً، شكراً!</button>
         </div>
     </div>
 
@@ -366,10 +442,32 @@
                     const order = { id: doc.id, ...doc.data() };
                     showOrderStatus(order);
 
+                    // Track last seen near_notification to avoid re-showing
+                    let lastNearTimestamp = order.near_notification?.timestamp || null;
+
                     // ✅ تحديث مباشر
                     db.collection('orders').doc(order.id).onSnapshot((snap) => {
                         if (snap.exists) {
-                            showOrderStatus({ id: snap.id, ...snap.data() });
+                            const updated = { id: snap.id, ...snap.data() };
+                            showOrderStatus(updated);
+
+                            // Show popup when driver marks "nearby"
+                            const nearNotif = updated.near_notification;
+                            if (nearNotif && nearNotif.timestamp && nearNotif.timestamp !== lastNearTimestamp) {
+                                lastNearTimestamp = nearNotif.timestamp;
+                                const msg = nearNotif.message || 'السائق على بعد 500 متر منك، يرجى الاستعداد لاستلام طلبك!';
+                                document.getElementById('nearPopupMsg').textContent = msg;
+                                document.getElementById('nearPopup').classList.add('show');
+
+                                // Try browser push notification
+                                if ('Notification' in window && Notification.permission === 'granted') {
+                                    new Notification('برجمان - السائق قريب! 🚗', { body: msg, icon: '/favicon.ico' });
+                                } else if ('Notification' in window && Notification.permission !== 'denied') {
+                                    Notification.requestPermission().then(p => {
+                                        if (p === 'granted') new Notification('برجمان - السائق قريب! 🚗', { body: msg });
+                                    });
+                                }
+                            }
                         }
                     });
                 })
@@ -424,8 +522,8 @@
             let nearMsg = '';
             if (order.status === 'NearCustomer') {
                 nearMsg = `
-                    <div style="background: #10b981; color:white; padding:15px; border-radius:15px; text-align:center; margin:15px 0;">
-                        🚚 السائق قرب منك! خلال دقائق
+                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color:white; padding:15px 20px; border-radius:15px; text-align:center; margin:15px 0; animation: pulse 2s infinite; font-weight:700;">
+                        🚗 السائق على بعد 500 متر منك! يرجى الاستعداد
                     </div>
                 `;
             }

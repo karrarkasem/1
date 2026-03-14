@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة السائق - برجمان</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- Leaflet for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #093257, #0ea5e9);
+            min-height: 100vh;
+            padding: 16px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #093257, #0ea5e9);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+        }
+        
+        .title h1 {
+            color: #093257;
+            font-size: 1.3rem;
+            margin-bottom: 3px;
+        }
+        
+        .title p {
+            color: #666;
+            font-size: 0.8rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f5f5f5;
+            padding: 8px 15px;
+            border-radius: 50px;
+        }
+        
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .user-name {
+            font-weight: 700;
+            color: #093257;
+        }
+        
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .kpi-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #093257;
+            line-height: 1;
+        }
+        
+        .kpi-label {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        
+        /* Login Section */
+        .login-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            margin: 50px auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .login-section h2 {
+            color: #093257;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .input-field:focus {
+            border-color: #0ea5e9;
+            outline: none;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            color: #555;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .error-message {
+            color: #dc2626;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Orders Grid */
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .order-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .order-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0ea5e920;
+        }
+        
+        .order-shop {
+            font-weight: 800;
+            color: #093257;
+            font-size: 1.1rem;
+        }
+        
+        .order-id {
+            color: #666;
+            font-size: 0.7rem;
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        
+        .status-ready {
+            background: #10b98120;
+            color: #059669;
+        }
+        
+        .status-delivery {
+            background: #0ea5e920;
+            color: #0284c7;
+        }
+        
+        .order-details {
+            margin: 15px 0;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-label {
+            color: #666;
+        }
+        
+        .detail-value {
+            font-weight: 700;
+            color: #093257;
+        }
+        
+        .products-list {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.85rem;
+        }
+        
+        .product-item:last-child {
+            border-bottom: none;
+        }
+        
+        .product-name {
+            font-weight: 600;
+        }
+        
+        .product-qty {
+            background: #0ea5e9;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        
+        .action-btn.load {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+        
+        .action-btn.near {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        .action-btn.deliver {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: white;
+        }
+        
+        .action-btn.map {
+            background: #f5f5f5;
+            color: #093257;
+            border: 1px solid #ddd;
+        }
+        
+        /* Map */
+        .map-container {
+            margin: 15px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #0ea5e9;
+        }
+        
+        #orderMap {
+            height: 250px;
+            width: 100%;
+        }
+        
+        .google-maps-link {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        /* Delivery Proof Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #093257;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .proof-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .proof-tab {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .proof-tab.active {
+            background: #0ea5e9;
+            border-color: #0ea5e9;
+            color: white;
+        }
+        
+        .proof-pane {
+            margin-bottom: 20px;
+        }
+        
+        .photo-zone {
+            border: 2px dashed #0ea5e9;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            background: #0ea5e910;
+        }
+        
+        .photo-zone:hover {
+            background: #0ea5e920;
+        }
+        
+        .photo-preview {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .sig-canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            height: 150px;
+            background: white;
+            touch-action: none;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loader span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Delivered orders section */
+        .section-title {
+            color: white;
+            margin: 20px 0 10px;
+            font-size: 1.1rem;
+        }
+        
+        .delivered-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #10b981;
+        }
+        
+        .rating-stars {
+            color: #f59e0b;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="login-section">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="logo" style="margin: 0 auto 15px;">🚗</div>
+                <h2>تسجيل دخول السائق</h2>
+            </div>
+            
+            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
+            <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+            
+            <label class="checkbox-label">
+                <input type="checkbox" id="rememberMe" checked>
+                <span>🔓 تذكرني</span>
+            </label>
+            
+            <button class="btn" onclick="login()" id="loginBtn">دخول</button>
+            <div id="loginError" class="error-message"></div>
+        </div>
+
+        <!-- Main Dashboard (Hidden initially) -->
+        <div id="dashboardSection" class="hidden">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo-area">
+                    <div class="logo">🚗</div>
+                    <div class="title">
+                        <h1>لوحة السائق</h1>
+                        <p id="currentTime"></p>
+                    </div>
+                </div>
+                
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">🚗</div>
+                    <div class="user-name" id="userName"></div>
+                    <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid" id="kpiCards">
+                <div class="kpi-card">
+                    <div class="kpi-icon">📦</div>
+                    <div class="kpi-value" id="readyCount">0</div>
+                    <div class="kpi-label">طلبات جاهزة</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">🚗</div>
+                    <div class="kpi-value" id="deliveryCount">0</div>
+                    <div class="kpi-label">قيد التوصيل</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">✅</div>
+                    <div class="kpi-value" id="deliveredCount">0</div>
+                    <div class="kpi-label">تم التسليم</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">⭐</div>
+                    <div class="kpi-value" id="avgRating">0</div>
+                    <div class="kpi-label">متوسط التقييم</div>
+                </div>
+            </div>
+
+            <!-- Ready Orders -->
+            <h3 class="section-title">📦 طلبات جاهزة للتوصيل</h3>
+            <div id="readyOrders" class="orders-grid"></div>
+
+            <!-- In Delivery Orders -->
+            <h3 class="section-title">🚗 طلبات قيد التوصيل</h3>
+            <div id="deliveryOrders" class="orders-grid"></div>
+
+            <!-- Delivered Orders -->
+            <h3 class="section-title">✅ الطلبات المسلمة</h3>
+            <div id="deliveredOrders" class="orders-grid"></div>
+        </div>
+    </div>
+
+    <!-- Delivery Proof Modal -->
+    <div class="modal" id="proofModal">
+        <div class="modal-content">
+            <div class="modal-title">📸 إثبات التسليم</div>
+            
+            <div class="proof-tabs">
+                <button class="proof-tab active" onclick="switchProofTab('photo')" id="tabPhoto">📷 صورة</button>
+                <button class="proof-tab" onclick="switchProofTab('signature')" id="tabSig">✍️ توقيع</button>
+            </div>
+
+            <!-- Photo Pane -->
+            <div id="photoPane" class="proof-pane">
+                <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
+                    <div style="font-size: 2rem; margin-bottom: 10px;">📷</div>
+                    <div>اضغط لالتقاط صورة</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">أو اختر من المعرض</div>
+                    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(event)">
+                </div>
+                <img id="photoPreview" class="photo-preview" src="">
+            </div>
+
+            <!-- Signature Pane -->
+            <div id="signaturePane" class="proof-pane hidden">
+                <canvas id="signatureCanvas" class="sig-canvas" width="400" height="150"></canvas>
+                <button class="btn btn-danger" style="margin-top: 10px;" onclick="clearSignature()">🔄 مسح</button>
+            </div>
+
+            <input type="hidden" id="currentOrderId">
+            
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="closeModal()">إلغاء</button>
+                <button class="btn btn-success" onclick="confirmDelivery()">✅ تأكيد التسليم</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+            authDomain: "burjuman-6cb83.firebaseapp.com",
+            projectId: "burjuman-6cb83",
+            storageBucket: "burjuman-6cb83.firebasestorage.app",
+            messagingSenderId: "177984721378",
+            appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // State
+        let currentUser = null;
+        let allOrders = [];
+        let mapInstance = null;
+        let signatureCtx = null;
+        let signatureDrawing = false;
+        let currentProofPhoto = null;
+        let currentProofTab = 'photo';
+
+        const STORAGE_KEY = 'driver_session';
+
+        // Check saved session
+        window.onload = function() {
+            loadSavedSession();
+            updateTime();
+            setInterval(updateTime, 1000);
+        };
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleString('ar-IQ');
+        }
+
+        // Session management
+        function loadSavedSession() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    const session = JSON.parse(saved);
+                    if (Date.now() - session.timestamp < 24 * 60 * 60 * 1000) {
+                        currentUser = {
+                            username: session.username,
+                            name: session.name,
+                            type: 'driver'
+                        };
+                        
+                        document.getElementById('loginSection').classList.add('hidden');
+                        document.getElementById('dashboardSection').classList.remove('hidden');
+                        document.getElementById('userName').textContent = currentUser.name;
+                        
+                        loadOrders();
+                        startRealtimeListener();
+                    } else {
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
+                } catch (e) {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            }
+        }
+
+        function saveSession(user) {
+            const session = {
+                username: user.username,
+                name: user.name,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+        }
+
+        // Login
+        window.login = async function() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            const loginBtn = document.getElementById('loginBtn');
+            const errorEl = document.getElementById('loginError');
+
+            if (!username || !password) {
+                errorEl.textContent = '⚠️ أدخل اسم المستخدم وكلمة المرور';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ جاري التحقق...';
+            errorEl.textContent = '';
+
+            try {
+                const usersRef = db.collection('users');
+                const snapshot = await usersRef.where('username', '==', username).get();
+
+                if (snapshot.empty) {
+                    errorEl.textContent = '❌ اسم المستخدم غير صحيح';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
+                    return;
+                }
+
+                const userDoc = snapshot.docs[0];
+                const userData = userDoc.data();
+
+                if (userData.password !== password) {
+                    errorEl.textContent = '❌ كلمة المرور غير صحيحة';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
+                    return;
+                }
+
+                if (userData.type !== 'driver') {
+                    errorEl.textContent = '❌ هذا الحساب ليس لسائق';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'دخول';
+                    return;
+                }
+
+                currentUser = {
+                    username: userData.username,
+                    name: userData.name || userData.username,
+                    type: 'driver'
+                };
+
+                if (rememberMe) {
+                    saveSession(currentUser);
+                }
+
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                document.getElementById('userName').textContent = currentUser.name;
+
+                await loadOrders();
+                startRealtimeListener();
+
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = '❌ حدث خطأ في الاتصال';
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'دخول';
+            }
+        };
+
+        // Logout
+        window.logout = function() {
+            currentUser = null;
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        };
+
+        // Load orders
+        async function loadOrders() {
+            try {
+                const ordersRef = db.collection('orders');
+                const snapshot = await ordersRef.get();
+                
+                allOrders = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                renderOrders();
+
+                // Update KPI
+                const ready = allOrders.filter(o => o.status === 'Prepared').length;
+                const delivery = allOrders.filter(o => o.status === 'In Delivery' && o.driver_id === currentUser.username).length;
+                const delivered = allOrders.filter(o => o.status === 'Delivered' && o.driver_id === currentUser.username).length;
+                
+                // Calculate average rating
+                const myDelivered = allOrders.filter(o => o.status === 'Delivered' && o.driver_id === currentUser.username);
+                const totalRating = myDelivered.reduce((sum, o) => sum + (o.driver_rating || 0), 0);
+                const avgRating = myDelivered.length > 0 ? (totalRating / myDelivered.length).toFixed(1) : 0;
+
+                document.getElementById('readyCount').textContent = ready;
+                document.getElementById('deliveryCount').textContent = delivery;
+                document.getElementById('deliveredCount').textContent = delivered;
+                document.getElementById('avgRating').textContent = avgRating;
+
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        // Real-time listener
+        function startRealtimeListener() {
+            db.collection('orders').onSnapshot(() => {
+                loadOrders();
+            });
+        }
+
+        // Render orders
+        function renderOrders() {
+            const readyOrders = allOrders.filter(o => o.status === 'Prepared');
+            const deliveryOrders = allOrders.filter(o => 
+                (o.status === 'In Delivery' || o.status === 'NearCustomer') && 
+                o.driver_id === currentUser.username
+            );
+            const deliveredOrders = allOrders.filter(o => 
+                o.status === 'Delivered' && 
+                o.driver_id === currentUser.username
+            );
+
+            renderReadyOrders(readyOrders);
+            renderDeliveryOrders(deliveryOrders);
+            renderDeliveredOrders(deliveredOrders);
+        }
+
+        function renderReadyOrders(orders) {
+            const container = document.getElementById('readyOrders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="order-card" style="text-align:center;">لا توجد طلبات جاهزة</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => createOrderCard(order, 'ready')).join('');
+        }
+
+        function renderDeliveryOrders(orders) {
+            const container = document.getElementById('deliveryOrders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="order-card" style="text-align:center;">لا توجد طلبات قيد التوصيل</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => createOrderCard(order, 'delivery')).join('');
+        }
+
+        function renderDeliveredOrders(orders) {
+            const container = document.getElementById('deliveredOrders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<div class="order-card" style="text-align:center;">لا توجد طلبات مسلمة</div>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => createOrderCard(order, 'delivered')).join('');
+        }
+
+        function createOrderCard(order, type) {
+            const products = parseProducts(order.products);
+            const locationCoords = parseLocation(order.location);
+            
+            let statusBadge = '';
+            let actions = '';
+            
+            if (type === 'ready') {
+                statusBadge = '<span class="status-badge status-ready">✅ جاهز</span>';
+                actions = `
+                    <div class="order-actions">
+                        <button class="action-btn load" onclick="startDelivery('${order.id}')">🚛 تحميل الطلب</button>
+                        ${locationCoords ? 
+                            `<button class="action-btn map" onclick="showLocation('${order.id}')">🗺️ عرض الخريطة</button>` : 
+                            order.location ? 
+                            `<a href="${order.location}" target="_blank" class="action-btn map">🗺️ فتح الرابط</a>` : ''
+                        }
+                    </div>
+                `;
+            } else if (type === 'delivery') {
+                statusBadge = '<span class="status-badge status-delivery">🚗 في الطريق</span>';
+                actions = `
+                    <div class="order-actions">
+                        <button class="action-btn near" onclick="markNearCustomer('${order.id}')">📍 أنا قريب</button>
+                        <button class="action-btn deliver" onclick="openDeliveryProof('${order.id}')">✅ تأكيد التسليم</button>
+                        ${locationCoords ? 
+                            `<button class="action-btn map" onclick="showLocation('${order.id}')">🗺️ الخريطة</button>` : 
+                            order.location ? 
+                            `<a href="${order.location}" target="_blank" class="action-btn map">🗺️ الرابط</a>` : ''
+                        }
+                    </div>
+                `;
+                
+                if (order.status === 'NearCustomer') {
+                    statusBadge = '<span class="status-badge" style="background:#f59e0b20; color:#d97706;">📍 قرب الزبون</span>';
+                }
+            } else {
+                statusBadge = '<span class="status-badge" style="background:#10b98120; color:#059669;">✅ تم التسليم</span>';
+                actions = `
+                    <div class="order-actions">
+                        ${order.proof_url ? 
+                            `<a href="${order.proof_url}" target="_blank" class="action-btn map">📸 إثبات التسليم</a>` : ''
+                        }
+                        ${order.driver_rating ? 
+                            `<div class="rating-stars">⭐ ${order.driver_rating}/5</div>` : ''
+                        }
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="order-card ${type === 'delivered' ? 'delivered-card' : ''}">
+                    <div class="order-header">
+                        <div>
+                            <div class="order-shop">🏪 ${order.shopName || '—'}</div>
+                            <div class="order-id">${order.orderId || order.id}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    
+                    <div class="order-details">
+                        <div class="detail-row">
+                            <span class="detail-label">📍 العنوان:</span>
+                            <span class="detail-value">${order.shopAddress || '—'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">💰 المبلغ:</span>
+                            <span class="detail-value">${(order.total || 0).toLocaleString()} د.ع</span>
+                        </div>
+                        ${order.vehicle_type ? `
+                        <div class="detail-row">
+                            <span class="detail-label">🚚 المركبة:</span>
+                            <span class="detail-value">${order.vehicle_type}</span>
+                        </div>` : ''}
+                    </div>
+                    
+                    <div class="products-list">
+                        ${products.map(p => `
+                            <div class="product-item">
+                                <span class="product-name">${p.name}</span>
+                                <span class="product-qty">${p.qty}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    ${actions}
+                    
+                    ${type === 'delivery' && locationCoords ? `
+                        <div id="map-${order.id}" class="map-container" style="display:none;"></div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Parse products from string
+        function parseProducts(productsStr) {
+            if (!productsStr) return [];
+            
+            const matches = productsStr.match(/([^،,\n()]+)\((\d+)\)/g) || [];
+            return matches.map(m => {
+                const match = m.match(/(.+)\((\d+)\)/);
+                if (match) {
+                    return {
+                        name: match[1].trim(),
+                        qty: parseInt(match[2]) || 1
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+        }
+
+        // Parse location from URL
+        function parseLocation(locationStr) {
+            if (!locationStr) return null;
+            
+            const match = locationStr.match(/[?&]q=([-\d.]+),([-\d.]+)/);
+            if (match) {
+                return {
+                    lat: parseFloat(match[1]),
+                    lng: parseFloat(match[2])
+                };
+            }
+            return null;
+        }
+
+        // Start delivery
+        window.startDelivery = async function(orderId) {
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: 'In Delivery',
+                    driver_id: currentUser.username,
+                    driver_name: currentUser.name,
+                    loaded_at: new Date().toISOString()
+                });
+                
+                await loadOrders();
+                toast('✅ تم تحميل الطلب');
+            } catch (error) {
+                console.error(error);
+                toast('❌ حدث خطأ', false);
+            }
+        };
+
+        // Mark as near customer
+        window.markNearCustomer = async function(orderId) {
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: 'NearCustomer',
+                    near_at: new Date().toISOString()
+                });
+                
+                await loadOrders();
+                toast('📍 تم إشعار الزبون');
+            } catch (error) {
+                console.error(error);
+                toast('❌ حدث خطأ', false);
+            }
+        };
+
+        // Show location on map
+        window.showLocation = function(orderId) {
+            const order = allOrders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const coords = parseLocation(order.location);
+            if (!coords) return;
+            
+            const mapDiv = document.getElementById(`map-${orderId}`);
+            if (!mapDiv) return;
+            
+            if (mapDiv.style.display === 'none') {
+                mapDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    const map = L.map(mapDiv).setView([coords.lat, coords.lng], 15);
+                    
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '©OpenStreetMap'
+                    }).addTo(map);
+                    
+                    L.marker([coords.lat, coords.lng]).addTo(map)
+                        .bindPopup(`🏪 ${order.shopName}`)
+                        .openPopup();
+                    
+                    // Add directions button
+                    const googleMapsLink = `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}`;
+                    mapDiv.innerHTML += `
+                        <a href="${googleMapsLink}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#0ea5e9; text-decoration:none; font-weight:600;">
+                            🗺️ فتح في خرائط جوجل
+                        </a>
+                    `;
+                }, 100);
+            } else {
+                mapDiv.style.display = 'none';
+            }
+        };
+
+        // Delivery proof functions
+        window.openDeliveryProof = function(orderId) {
+            document.getElementById('currentOrderId').value = orderId;
+            currentProofPhoto = null;
+            
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoInput').value = '';
+            
+            // Reset signature
+            initSignatureCanvas();
+            
+            switchProofTab('photo');
+            document.getElementById('proofModal').classList.add('show');
+        };
+
+        window.switchProofTab = function(tab) {
+            currentProofTab = tab;
+            
+            document.getElementById('tabPhoto').classList.toggle('active', tab === 'photo');
+            document.getElementById('tabSig').classList.toggle('active', tab === 'signature');
+            
+            document.getElementById('photoPane').classList.toggle('hidden', tab !== 'photo');
+            document.getElementById('signaturePane').classList.toggle('hidden', tab !== 'signature');
+            
+            if (tab === 'signature') {
+                setTimeout(initSignatureCanvas, 100);
+            }
+        };
+
+        window.handlePhotoSelect = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentProofPhoto = e.target.result;
+                const preview = document.getElementById('photoPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function initSignatureCanvas() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (!canvas) return;
+            
+            signatureCtx = canvas.getContext('2d');
+            signatureCtx.strokeStyle = '#093257';
+            signatureCtx.lineWidth = 2.5;
+            signatureCtx.lineCap = 'round';
+            
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                if (e.touches) {
+                    return {
+                        x: (e.touches[0].clientX - rect.left) * scaleX,
+                        y: (e.touches[0].clientY - rect.top) * scaleY
+                    };
+                }
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+            
+            function start(e) {
+                e.preventDefault();
+                signatureDrawing = true;
+                signatureCtx.beginPath();
+                const pos = getPos(e);
+                signatureCtx.moveTo(pos.x, pos.y);
+            }
+            
+            function draw(e) {
+                e.preventDefault();
+                if (!signatureDrawing) return;
+                const pos = getPos(e);
+                signatureCtx.lineTo(pos.x, pos.y);
+                signatureCtx.stroke();
+            }
+            
+            function stop() {
+                signatureDrawing = false;
+            }
+            
+            canvas.removeEventListener('mousedown', start);
+            canvas.removeEventListener('mousemove', draw);
+            canvas.removeEventListener('mouseup', stop);
+            canvas.removeEventListener('touchstart', start);
+            canvas.removeEventListener('touchmove', draw);
+            canvas.removeEventListener('touchend', stop);
+            
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stop);
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stop);
+        }
+
+        window.clearSignature = function() {
+            const canvas = document.getElementById('signatureCanvas');
+            if (signatureCtx) {
+                signatureCtx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        };
+
+        window.confirmDelivery = async function() {
+            const orderId = document.getElementById('currentOrderId').value;
+            
+            let proofDataUrl = null;
+            
+            if (currentProofTab === 'photo') {
+                if (!currentProofPhoto) {
+                    toast('⚠️ يرجى التقاط صورة أولاً', false);
+                    return;
+                }
+                proofDataUrl = currentProofPhoto;
+            } else {
+                const canvas = document.getElementById('signatureCanvas');
+                const blank = document.createElement('canvas');
+                blank.width = canvas.width;
+                blank.height = canvas.height;
+                
+                if (canvas.toDataURL() === blank.toDataURL()) {
+                    toast('⚠️ يرجى رسم توقيعك أولاً', false);
+                    return;
+                }
+                proofDataUrl = canvas.toDataURL('image/png');
+            }
+            
+            try {
+                // Upload to ImgBB (optional - you can store base64 directly)
+                let proofUrl = proofDataUrl;
+                
+                // Uncomment to upload to ImgBB
+                /*
+                const base64 = proofDataUrl.split(',')[1];
+                const formData = new FormData();
+                formData.append('image', base64);
+                formData.append('key', 'YOUR_IMGBB_KEY');
+                
+                const response = await fetch('https://api.imgbb.com/1/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    proofUrl = data.data.url;
+                }
+                */
+                
+                await db.collection('orders').doc(orderId).update({
+                    status: 'Delivered',
+                    delivered_at: new Date().toISOString(),
+                    proof_url: proofUrl,
+                    driver_id: currentUser.username,
+                    driver_name: currentUser.name
+                });
+                
+                closeModal();
+                await loadOrders();
+                toast('✅ تم تأكيد التسليم');
+                
+            } catch (error) {
+                console.error(error);
+                toast('❌ حدث خطأ', false);
+            }
+        };
+
+        window.closeModal = function() {
+            document.getElementById('proofModal').classList.remove('show');
+        };
+
+        // Toast notification
+        function toast(message, success = true) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${success ? '#10b981' : '#ef4444'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 50px;
+                font-weight: 600;
+                z-index: 2000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

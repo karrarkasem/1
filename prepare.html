@@ -190,13 +190,14 @@
             'truck':   { name:'شاحنة',   icon:'🚛', capacity:30,   maxWeight:3000,color:'#8b5cf6' }
         };
 
-        let selectedVehicle = null;
-        let orderData       = null;
-        let totalVolume     = 0;
-        let totalWeight     = 0;
-        let currentUsername = '';
-        let currentUserName = '';
-        let preparerPhase   = 0; // 0=not started, 1=preparing, 2=done
+        let selectedVehicle  = null;
+        let orderData        = null;
+        let totalVolume      = 0;
+        let totalWeight      = 0;
+        let currentUsername  = '';
+        let currentUserName  = '';
+        let preparerPhase    = 0; // 0=not started, 1=preparing, 2=done
+        let productDataMap   = {}; // keyed by product name → { carton_volume, carton_weight, carton_l, carton_w, carton_h }
 
         // ── Load delivery vehicles from Firebase settings ──
         async function loadDeliveryVehicles() {
@@ -209,6 +210,25 @@
                     }
                 }
             } catch(e) { /* use defaults */ }
+        }
+
+        // ── Load real product dimensions from Firestore products collection ──
+        async function loadProductDimensions() {
+            try {
+                const snap = await db.collection('products').get();
+                snap.docs.forEach(doc => {
+                    const p = doc.data();
+                    if (p.name) {
+                        productDataMap[p.name] = {
+                            carton_volume: parseFloat(p.carton_volume) || 0,
+                            carton_weight: parseFloat(p.carton_weight) || 0,
+                            carton_l: parseFloat(p.carton_l) || 0,
+                            carton_w: parseFloat(p.carton_w) || 0,
+                            carton_h: parseFloat(p.carton_h) || 0,
+                        };
+                    }
+                });
+            } catch(e) { console.warn('Could not load product dimensions', e); }
         }
 
         // ── Login ──
@@ -229,7 +249,7 @@
                 currentUserName = user.name || username;
                 document.getElementById('loginSection').style.display='none';
                 errorEl.textContent='';
-                await loadDeliveryVehicles();
+                await Promise.all([loadDeliveryVehicles(), loadProductDimensions()]);
                 await loadOrder();
             } catch(e) {
                 console.error(e);
@@ -292,30 +312,48 @@
             const productsList = orderData.products || '';
             const items = [];
             totalVolume = 0; totalWeight = 0;
+            let missingDimensions = [];
             const matches = productsList.match(/([^،,\n()]+)\((\d+)\)/g) || [];
             matches.forEach(m => {
                 const mm = m.match(/(.+)\((\d+)\)/);
                 if (mm) {
                     const name = mm[1].trim();
                     const qty  = parseInt(mm[2]) || 1;
-                    // try to get volume from cached products (sent via Firestore field)
-                    const vol = orderData.product_volumes?.[name] || 0.024;
-                    const wgt = orderData.product_weights?.[name]  || 1;
+                    // Use real dimensions from Firestore products collection
+                    const prodData = productDataMap[name];
+                    const vol = prodData?.carton_volume || 0;
+                    const wgt = prodData?.carton_weight || 0;
+                    const hasDimensions = vol > 0 || wgt > 0;
+                    if (!hasDimensions) missingDimensions.push(name);
                     totalVolume += vol * qty;
                     totalWeight += wgt * qty;
-                    items.push({ name, qty, vol, wgt, totalVol: vol*qty, totalWgt: wgt*qty });
+                    const dims = (prodData?.carton_l && prodData?.carton_w && prodData?.carton_h)
+                        ? `${prodData.carton_l}×${prodData.carton_w}×${prodData.carton_h} سم`
+                        : null;
+                    items.push({ name, qty, vol, wgt, totalVol: vol*qty, totalWgt: wgt*qty, dims, hasDimensions });
                 }
             });
 
+            // warning for products without dimensions
+            const missingWarning = missingDimensions.length > 0 ? `
+                <div class="msg-warning" style="text-align:right;">
+                    ⚠️ المنتجات التالية ليس لها أبعاد مُدخلة في قاعدة البيانات، يرجى إضافتها من لوحة الأدمن:<br>
+                    <strong>${missingDimensions.join(' — ')}</strong>
+                </div>` : '';
+
             // products HTML
             const productsHtml = items.map(item=>`
-                <div class="product-item">
-                    <div class="product-name">${item.name}</div>
+                <div class="product-item" style="${!item.hasDimensions ? 'border-color:#f59e0b;background:#fffbeb;' : ''}">
+                    <div class="product-name">${item.name}${!item.hasDimensions ? ' <span style="color:#d97706;font-size:.78rem;">⚠️ بدون أبعاد</span>' : ''}</div>
                     <div class="product-detail">
                         <span>الكمية: <strong>${item.qty}</strong></span>
-                        <span class="volume-badge">📐 ${item.totalVol.toFixed(3)} م³</span>
-                        <span class="volume-badge" style="background:#10b98120;color:#059669;">⚖️ ${item.totalWgt.toFixed(2)} كغ</span>
+                        ${item.hasDimensions
+                            ? `<span class="volume-badge">📐 ${item.totalVol.toFixed(4)} م³</span>
+                               <span class="volume-badge" style="background:#10b98120;color:#059669;">⚖️ ${item.totalWgt.toFixed(2)} كغ</span>`
+                            : `<span style="color:#d97706;font-size:.78rem;">الأبعاد غير محددة</span>`
+                        }
                     </div>
+                    ${item.dims ? `<div style="font-size:.72rem;color:#888;margin-top:3px;">📦 ${item.dims}</div>` : ''}
                 </div>`).join('');
 
             // vehicles HTML
@@ -365,12 +403,14 @@
                 </div>
 
                 <div class="section-title">📋 المنتجات</div>
+                ${missingWarning}
                 ${productsHtml || '<p style="color:#999;text-align:center;padding:10px">لا توجد منتجات مفصّلة</p>'}
 
                 <div class="total-volume">
                     <div style="font-size:.82rem;color:#666;margin-bottom:4px">إجمالي الطلب</div>
-                    <div class="total-volume-value">${totalVolume.toFixed(3)} م³</div>
-                    <div style="font-size:.82rem;color:#666;margin-top:4px">⚖️ ${totalWeight.toFixed(2)} كغ</div>
+                    <div class="total-volume-value">${totalVolume > 0 ? totalVolume.toFixed(4) + ' م³' : '—'}</div>
+                    <div style="font-size:.82rem;color:#666;margin-top:4px">⚖️ ${totalWeight > 0 ? totalWeight.toFixed(2) + ' كغ' : '—'}</div>
+                    ${missingDimensions.length > 0 ? `<div style="font-size:.75rem;color:#d97706;margin-top:6px;">⚠️ حجم/وزن غير دقيق — ${missingDimensions.length} منتج بدون أبعاد</div>` : ''}
                 </div>
 
                 <hr>

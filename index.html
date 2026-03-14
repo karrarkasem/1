@@ -1674,10 +1674,10 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
       <a id="cartTrackBtn" href="#" target="_blank"
         style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r16);background:linear-gradient(135deg,var(--sky),var(--sky2));color:white;font-weight:800;font-size:.95rem;text-decoration:none;box-shadow:0 8px 24px rgba(14,165,233,.35);margin-bottom:12px">
-        🚚 متابعة الطلب
+        📍 تتبع الطلب
       </a>
       <button onclick="closeModal('cartModal')" style="width:100%;padding:12px;border-radius:var(--r16);background:rgba(9,50,87,.06);border:1.5px solid rgba(9,50,87,.1);color:var(--deep);font-family:'Tajawal';font-weight:700;font-size:.9rem;cursor:pointer">
-        إغلاق
+        ✕ إغلاق
       </button>
     </div>
 
@@ -2988,6 +2988,19 @@ const trackingLink = `https://karrarkasem.github.io/1/track.html?order=${orderId
 : `🛍️ *طلب جديد — زائر 🆕*\n\n📅 ${nowStr}\n👤 زائر جديد${_phoneLine}\n🏪 ${shop}\n📍 ${addr}${_locLine}${_noteLine}\n📦 ${prodList.join('، ')}\n💰 الإجمالي: ${total.toLocaleString()} د.ع\n🆔 ${orderId}\n\n🔗 *رابط تتبع الطلب:*\n${trackingLink}`
   window.open(`https://wa.me/${WA}?text=${encodeURIComponent(_waMsg)}`, '_blank');
 
+  // ── تحويل المودال فوراً لشاشة التتبع بعد فتح الواتساب ──
+  {
+    const _trackUrl = `https://karrarkasem.github.io/1/track.html?order=${orderId}`;
+    const _fv = document.getElementById('cartFormView');
+    const _sv = document.getElementById('cartSuccessView');
+    const _si = document.getElementById('cartSuccessOrderId');
+    const _tb = document.getElementById('cartTrackBtn');
+    if (_fv) _fv.style.display = 'none';
+    if (_sv) _sv.style.display = 'block';
+    if (_si) _si.textContent   = '🆔 ' + orderId;
+    if (_tb) _tb.href          = _trackUrl;
+  }
+
   const fbId = await fbAdd('orders', orderData);
 
 
@@ -3050,15 +3063,9 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
   ['shopName','shopAddr','orderNote','visitorPhone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('locOk').style.display='none'; selLoc='';
 
-  // ── شاشة النجاح داخل المودال ──
+  // ── تحديث رابط التتبع بعد معرفة fbId ──
   const trackUrl = `https://karrarkasem.github.io/1/track.html?order=${orderId}`;
-  const formV = document.getElementById('cartFormView');
-  const succV = document.getElementById('cartSuccessView');
-  const succId = document.getElementById('cartSuccessOrderId');
   const trackBtn = document.getElementById('cartTrackBtn');
-  if (formV) formV.style.display = 'none';
-  if (succV) succV.style.display = 'block';
-  if (succId) succId.textContent = '🆔 ' + orderId;
   if (trackBtn) trackBtn.href = trackUrl;
   // إشعار تيليغرام
   const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';

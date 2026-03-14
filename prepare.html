@@ -309,6 +309,136 @@
             margin-top: 5px;
             text-align: center;
         }
+        .notifications-icon {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 45px;
+  height: 45px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifications-panel {
+  position: fixed;
+  top: 75px;
+  left: 20px;
+  width: 320px;
+  max-width: calc(100% - 40px);
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 999;
+  overflow: hidden;
+}
+
+.notif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #093257, #0ea5e9);
+  color: white;
+}
+
+.notif-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.notif-header button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.notif-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.notification-item:hover {
+  background: #f5f5f5;
+}
+
+.notif-icon {
+  width: 35px;
+  height: 35px;
+  background: #0ea5e920;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0ea5e9;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.notif-content {
+  flex: 1;
+}
+
+.notif-title {
+  font-weight: 700;
+  color: #093257;
+  font-size: 0.9rem;
+}
+
+.notif-body {
+  color: #666;
+  font-size: 0.8rem;
+  margin: 2px 0;
+}
+
+.notif-date {
+  color: #999;
+  font-size: 0.7rem;
+}
+
+.notif-order-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
     </style>
 </head>
 <body>
@@ -349,6 +479,21 @@
                 <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
             </div>
         </div>
+
+        <!-- أيقونة الإشعارات -->
+<div class="notifications-icon" onclick="toggleNotifPanel()">
+  🔔
+  <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+</div>
+
+<!-- لوحة الإشعارات -->
+<div class="notifications-panel" id="notifPanel" style="display:none;">
+  <div class="notif-header">
+    <h3>📋 الإشعارات</h3>
+    <button onclick="loadPreparerNotifications()">⟳</button>
+  </div>
+  <div class="notif-list" id="notifList"></div>
+</div>
 
         <!-- ✅ قسم تفاصيل الطلب (يظهر بعد تسجيل الدخول) -->
         <div id="orderSection" class="hidden">
@@ -527,7 +672,7 @@
             document.getElementById('password').value = '';
             document.getElementById('loginError').textContent = '';
         };
-
+startNotifPolling();
         // ✅ دالة تحميل الطلب
         async function loadOrder() {
             const orderSection = document.getElementById('orderSection');
@@ -569,6 +714,7 @@
                 }
 
                 displayOrderDetails();
+                
 
                 db.collection('orders').doc(orderData.id).onSnapshot((snap) => {
                     if (snap.exists) {
@@ -771,6 +917,70 @@
                 btn.textContent = '✅ تأكيد التجهيز';
             }
         };
+
+        // ✅ دالة جلب إشعارات المجهز
+async function loadPreparerNotifications() {
+  if (!currentUser) return;
+  
+  const notifBadge = document.getElementById('notifBadge');
+  const notifList = document.getElementById('notifList');
+  
+  try {
+    const notificationsRef = db.collection('notifications');
+    const snapshot = await notificationsRef
+      .where('targetUser', '==', currentUser.username)
+      .where('type', '==', 'preparer')
+      .where('read', '==', false)
+      .orderBy('timestamp', 'desc')
+      .limit(10)
+      .get();
+    
+    if (notifBadge) {
+      notifBadge.textContent = snapshot.size;
+      notifBadge.style.display = snapshot.size > 0 ? 'flex' : 'none';
+    }
+    
+    if (notifList) {
+      if (snapshot.empty) {
+        notifList.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">🚫 لا توجد إشعارات</div>';
+      } else {
+        notifList.innerHTML = snapshot.docs.map(doc => {
+          const notif = doc.data();
+          return `
+            <div class="notification-item" data-id="${doc.id}" onclick="markNotifRead('${doc.id}')">
+              <div class="notif-icon">📦</div>
+              <div class="notif-content">
+                <div class="notif-title">${notif.title}</div>
+                <div class="notif-body">${notif.body}</div>
+                <div class="notif-date">${notif.date}</div>
+              </div>
+              <button class="notif-order-btn" onclick="event.stopPropagation(); loadOrderFromNotif('${notif.orderId}')">عرض الطلب</button>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  } catch (error) {
+    console.error('خطأ في جلب الإشعارات:', error);
+  }
+}
+
+// ✅ دالة تحديث الإشعارات كل 30 ثانية
+function startNotifPolling() {
+  loadPreparerNotifications();
+  setInterval(loadPreparerNotifications, 30000);
+}
+
+// ✅ دالة تحديد الإشعار كمقروء
+async function markNotifRead(notifId) {
+  await db.collection('notifications').doc(notifId).update({ read: true });
+  loadPreparerNotifications();
+}
+
+// ✅ دالة تحميل الطلب من الإشعار
+function loadOrderFromNotif(orderId) {
+  window.location.href = `prepare.html?order=${orderId}`;
+}
     </script>
 </body>
 </html>

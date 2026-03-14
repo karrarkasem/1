@@ -222,8 +222,9 @@
                 const snap = await db.collection('users').where('username','==',username).get();
                 if (snap.empty) { errorEl.textContent='❌ اسم المستخدم غير صحيح'; return; }
                 const user = snap.docs[0].data();
-                if (user.password !== password) { errorEl.textContent='❌ كلمة المرور خاطئة'; return; }
-                if (user.type !== 'preparer')   { errorEl.textContent='❌ هذا الحساب ليس لمجهز'; return; }
+                if ((user.password || '').trim() !== password) { errorEl.textContent='❌ كلمة المرور خاطئة'; return; }
+                const allowedTypes = ['preparer', 'admin', 'supervisor', 'sales_manager'];
+                if (!allowedTypes.includes(user.type)) { errorEl.textContent='❌ ليس لديك صلاحية الوصول لهذه الصفحة'; return; }
                 currentUsername = username;
                 currentUserName = user.name || username;
                 document.getElementById('loginSection').style.display='none';

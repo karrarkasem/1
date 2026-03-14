@@ -613,7 +613,7 @@
             else if (order.status === 'In Delivery' || order.status === 'NearCustomer') currentStep = 4;
             else if (order.status === 'Prepared') currentStep = 3;
             else if (order.status === 'Preparing') currentStep = 2;
-            else if (order.status === 'Confirmed') currentStep = 1;
+            else if (order.status === 'Confirmed' || order.status === 'Pending') currentStep = 1;
 
             let stepsHtml = '';
             steps.forEach((step, i) => {
@@ -838,12 +838,49 @@
         window.requestUrgent = async function(docId) {
             if (!confirm('سيُضاف رسم إضافي للتوصيل العاجل. هل تريد المتابعة؟')) return;
             try {
+                const now = new Date().toISOString();
+                // 1. تحديث الطلب في Firestore
                 await db.collection('orders').doc(docId).update({
                     urgent_requested: true,
-                    urgent_requested_at: new Date().toISOString()
+                    urgent_requested_at: now
                 });
+
+                // 2. جلب بيانات الطلب لبناء رسالة الإشعار
+                const orderSnap = await db.collection('orders').doc(docId).get();
+                const ord = orderSnap.exists ? orderSnap.data() : {};
+                const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+                const urgentMsg =
+                    `⚡ *طلب توصيل عاجل!*\n\n` +
+                    `🏪 المحل: ${ord.shopName || '—'}\n` +
+                    `📍 العنوان: ${ord.shopAddress || '—'}\n` +
+                    `🆔 رقم الطلب: ${ord.orderId || docId}\n` +
+                    `💰 الإجمالي: ${(ord.total || 0).toLocaleString()} د.ع\n\n` +
+                    `⚠️ الزبون يطلب التوصيل الآن مقابل رسوم إضافية`;
+
+                // 3. إشعار المجموعة
+                fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ chat_id: '-5246620507', text: urgentMsg, parse_mode: 'Markdown' })
+                }).catch(()=>{});
+
+                // 4. إشعار فردي لكل ادمن / مشرف / مدير مبيعات عنده معرف تيليجرام
+                const usersSnap = await db.collection('users').get();
+                const approverTypes = ['admin','sales_manager','supervisor'];
+                usersSnap.docs.forEach(d => {
+                    const u = d.data();
+                    if (approverTypes.includes(u.accountType || u.type) && u.telegram) {
+                        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                            method: 'POST',
+                            headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ chat_id: u.telegram, text: urgentMsg, parse_mode: 'Markdown' })
+                        }).catch(()=>{});
+                    }
+                });
+
                 showToast('✅ تم إرسال طلب التوصيل العاجل');
             } catch(e) {
+                console.error(e);
                 alert('❌ حدث خطأ، حاول مجدداً');
             }
         };

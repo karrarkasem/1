@@ -301,6 +301,54 @@
             border-radius:16px; padding:16px; margin-top:16px;
         }
 
+        /* Page disabled after rating */
+        .page-disabled {
+            position: relative;
+            pointer-events: none;
+            user-select: none;
+        }
+        .page-disabled::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(200, 200, 200, 0.55);
+            border-radius: inherit;
+            z-index: 10;
+        }
+        .disabled-notice {
+            background: #f3f4f6;
+            border: 2px solid #d1d5db;
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            color: #6b7280;
+            font-weight: 700;
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+
+        /* Expired page */
+        .expired-card {
+            text-align: center;
+            padding: 30px 10px;
+        }
+        .expired-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+        .expired-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+        .expired-msg {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
         /* Near Notification Popup */
         .near-popup-overlay {
             display: none;
@@ -440,7 +488,19 @@
                     }
 
                     const order = { id: doc.id, ...doc.data() };
+
+                    // Check 24-hour expiry for delivered orders
+                    if (isExpired(order)) {
+                        showExpiredPage();
+                        return;
+                    }
+
                     showOrderStatus(order);
+
+                    // If already rated on load, gray out immediately
+                    if (order.customer_rated) {
+                        setTimeout(disablePage, 100);
+                    }
 
                     // Track last seen near_notification to avoid re-showing
                     let lastNearTimestamp = order.near_notification?.timestamp || null;
@@ -449,7 +509,18 @@
                     db.collection('orders').doc(order.id).onSnapshot((snap) => {
                         if (snap.exists) {
                             const updated = { id: snap.id, ...snap.data() };
+
+                            if (isExpired(updated)) {
+                                showExpiredPage();
+                                return;
+                            }
+
                             showOrderStatus(updated);
+
+                            // Gray out if rated
+                            if (updated.customer_rated && !document.getElementById('content').classList.contains('page-disabled')) {
+                                setTimeout(disablePage, 100);
+                            }
 
                             // Show popup when driver marks "nearby"
                             const nearNotif = updated.near_notification;
@@ -620,12 +691,50 @@
                             <span style="font-size:.85rem;font-weight:600;color:#065f46">تقييم التوصيل: ${'⭐'.repeat(delivRating)} | تقييم الطلب: ${'⭐'.repeat(orderRating)}</span>
                         </div>`;
                 }
+                // Gray out the page after successful rating
+                disablePage();
             } catch(e) {
                 console.error(e);
                 if(btn){btn.disabled=false;btn.textContent='✅ إرسال التقييم';}
                 alert('❌ حدث خطأ، حاول مجدداً');
             }
         };
+
+        // ── Helper: check if order link has expired (24h after delivery) ──
+        function isExpired(order) {
+            if (order.status !== 'Delivered') return false;
+            if (!order.delivered_at) return false;
+            const deliveredTime = new Date(order.delivered_at).getTime();
+            return (Date.now() - deliveredTime) > 24 * 60 * 60 * 1000;
+        }
+
+        // ── Show expired page to customer ──
+        function showExpiredPage() {
+            document.getElementById('content').innerHTML = `
+                <div class="expired-card">
+                    <div class="expired-icon">🔒</div>
+                    <div class="expired-title">انتهت صلاحية الرابط</div>
+                    <div class="expired-msg">
+                        مضت أكثر من 24 ساعة على تسليم طلبك.<br>
+                        هذا الرابط لم يعد متاحاً.<br><br>
+                        شكراً لاختيارك <strong>برجمان</strong> 💙
+                    </div>
+                </div>
+            `;
+            // Gray out the card too
+            document.getElementById('trackCard').classList.add('page-disabled');
+        }
+
+        // ── Gray out page after rating ──
+        function disablePage() {
+            const content = document.getElementById('content');
+            content.classList.add('page-disabled');
+            // Add notice below
+            const notice = document.createElement('div');
+            notice.className = 'disabled-notice';
+            notice.innerHTML = '🔒 تم إغلاق هذا الطلب · شكراً لك على تقييمك';
+            content.after(notice);
+        }
     </script>
 </body>
 </html>

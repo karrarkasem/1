@@ -2339,8 +2339,8 @@ setTimeout(() => {
     if (saved) {
       const parsed = JSON.parse(saved);
       const SESSION_12H = 12 * 60 * 60 * 1000;
-      if (parsed.loginTime && (Date.now() - parsed.loginTime) > SESSION_12H) {
-        localStorage.removeItem('bjUser'); // expired
+      if (!parsed.loginTime || (Date.now() - parsed.loginTime) > SESSION_12H) {
+        localStorage.removeItem('bjUser'); // expired or old format
       } else {
         const fresh = users.find(u => u.username === parsed.username);
         if (fresh) CU = { ...fresh };
@@ -5303,7 +5303,7 @@ async function doGoogleLogin() {
     if (found) {
       // مستخدم موجود — حمّل بياناته
       CU = { ...found, photoURL: gUser.photoURL || found.photoURL || '' };
-      localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, googleUser: CU }));
+      localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, loginTime: Date.now(), googleUser: CU }));
       hideLogin();
       buildUI();
       showPage(CU.type === 'market_owner' ? 'pageStore' : 'pageDashboard');
@@ -5404,7 +5404,7 @@ async function saveProfileSetup() {
     CU = { ...userData, _id: newId, transactions: [] };
     users.push({ ...CU });
 
-    localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, googleUser: CU }));
+    localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, loginTime: Date.now(), googleUser: CU }));
     closeModal('profileSetupModal');
     buildUI();
     showPage('pageStore');
@@ -6052,7 +6052,7 @@ async function regFinish() {
     CU = { ...userData, _id: newId };
     users.push({ ...CU });
 
-    localStorage.setItem('bjUser', JSON.stringify({ username: CU.username }));
+    localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, loginTime: Date.now() }));
 
     // Notify admin
     await fbAdd('notifications', {
@@ -6861,17 +6861,25 @@ function calcCartonVolume() {
 // ══════════════════════════════════════════════════════
 const _origSaveProd = saveProd;
 saveProd = async function() {
-  // We'll patch inside the original by reading new fields after saving
-  await _origSaveProd();
-  // Update the last saved product with new fields
-  const fbid = document.getElementById('pe_fbid').value;
+  // Read dimension values BEFORE calling original (modal closes after _origSaveProd)
   const carton_l = parseFloat(document.getElementById('pe_carton_l')?.value) || 0;
   const carton_w = parseFloat(document.getElementById('pe_carton_w')?.value) || 0;
   const carton_h = parseFloat(document.getElementById('pe_carton_h')?.value) || 0;
   const carton_volume = (carton_l && carton_w && carton_h) ? parseFloat(((carton_l * carton_w * carton_h) / 1000000).toFixed(6)) : 0;
   const carton_weight = parseFloat(document.getElementById('pe_carton_weight')?.value) || 0;
+  let fbid = document.getElementById('pe_fbid').value;
+  const isNew = !document.getElementById('pe_idx').value; // new product has no idx
+  const prevCount = products.length;
+  await _origSaveProd();
+  // For new products, get the newly created product's ID from the array
+  if (isNew && products.length > prevCount) {
+    fbid = products[products.length - 1]?._id || '';
+  }
   if (fbid && (carton_l || carton_w || carton_h || carton_weight)) {
     await fbUpdate('products', fbid, { carton_l, carton_w, carton_h, carton_volume, carton_weight }).catch(() => {});
+    // Update local cache too
+    const local = products.find(p => p._id === fbid);
+    if (local) { local.carton_l = carton_l; local.carton_w = carton_w; local.carton_h = carton_h; local.carton_volume = carton_volume; local.carton_weight = carton_weight; }
   }
   cacheProducts();
 };

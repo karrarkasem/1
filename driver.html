@@ -724,7 +724,7 @@
             if (saved) {
                 try {
                     const session = JSON.parse(saved);
-                    if (Date.now() - session.timestamp < 24 * 60 * 60 * 1000) {
+                    if (Date.now() - session.timestamp < 12 * 60 * 60 * 1000) {
                         currentUser = {
                             username: session.username,
                             name: session.name,

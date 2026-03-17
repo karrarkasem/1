@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>برجمان — لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase SDKs -->
+<script type="module" src="js/firebase.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+
+
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+
+</head>
+<body>
+
+<div class="loading-screen" id="loadScreen">
+
+  <div class="ls-spinner"></div>
+  <div class="ls-brand">
+    <div class="loading-txt">برجمان</div>
+    <div class="ls-brand-en">BARJOMAN</div>
+  </div>
+  <div class="loading-sub" id="loadSub">جاري الاتصال بقاعدة البيانات...</div>
+  <div class="ls-progress"><div class="ls-progress-bar"></div></div>
+</div>
+
+<div class="app-wrap z1" id="appWrap">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-gem">🏪</div>
+      <div class="sb-logo-text"><h2>برجمان</h2><span>BARJOMAN</span></div>
+    </div>
+    <div class="sb-user" id="sbUser">
+      <div class="sb-avatar" id="sbAv">🌐</div>
+      <div>
+        <div class="sb-uname" id="sbName">زائر</div>
+        <div class="sb-urole" id="sbRole">تصفح حر</div>
+        <div class="sb-online" id="sbOnline" style="display:none">متصل</div>
+      </div>
+    </div>
+    <div id="sbWalletBar" style="display:none;padding:0 8px 2px">
+      <div class="user-wallet-bar" onclick="showPage('pageWallet')">
+        <div class="uw-label">💰 رصيد المحفظة</div>
+        <div class="uw-amount" id="sbWalletAmt">0 د.ع</div>
+        <div class="uw-sub">اضغط لعرض التفاصيل</div>
+      </div>
+    </div>
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-bottom"><div id="sbLoginLogout"></div></div>
+  </nav>
+
+  <main class="main" id="mainArea" style="flex:1;display:flex;flex-direction:column;min-height:100vh;width:100%">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="القائمة">☰</button>
+      <div class="topbar-title" id="topbarTitle">🏠 المتجر</div>
+      <div class="topbar-right">
+        <div class="fb-status" id="fbStatusBadge">
+          <div class="fb-dot" id="fbDot"></div>
+          <span id="fbStatusTxt">...</span>
+        </div>
+        <div class="search-wrap" id="topSearch" style="display:none">
+          <span style="color:rgba(9,50,87,.33)">🔍</span>
+          <input type="text" id="searchIn" placeholder="ابحث..." oninput="_debouncedSearch(this.value)">
+        </div>
+        <button class="top-btn" id="cartTopBtn" style="display:none" onclick="openCartModal()">
+          🛒 <span id="cartCountTop">0</span>
+        </button>
+        <button class="top-btn sky" id="topLoginBtn" onclick="showLogin()"><span>دخول</span></button>
+      </div>
+    </div>
+
+    <!-- STORE PAGE -->
+    <div class="page active" id="pageStore">
+      <div id="guestBannerWrap"></div>
+      <div id="offersBannerWrap"></div>
+      <div class="cats-row" id="catsRow"></div>
+      <div class="prod-grid" id="prodGrid">
+        <div class="skel"></div><div class="skel"></div>
+        <div class="skel"></div><div class="skel"></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page" id="pageDashboard">
+      <div class="ph"><h1 id="dashH1">👋 لوحة المعلومات</h1><p id="dashSub">مرحباً</p></div>
+      <div class="kpi-grid" id="dashKpi"></div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">📦 آخر الطلبات</div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('pageOrders')">عرض الكل</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th></th></tr></thead>
+            <tbody id="recentBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+<!-- POINTS MGMT MODAL -->
+<div class="modal z1" id="ptsMgmtModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('ptsMgmtModal')">✕</button>
+    <div class="m-title">⭐ تعديل النقاط</div>
+    <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.18);border-radius:var(--r16);padding:13px;text-align:center;margin-bottom:14px">
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-bottom:2px" id="ptsMgmtUserName">—</div>
+      <div style="font-size:1.5rem;font-weight:900;color:var(--violet)" id="ptsMgmtCurrentPts">0 نقطة</div>
+    </div>
+    <div class="fg"><label class="fl">نوع العملية</label>
+      <select id="ptsMgmtOp" class="fsel">
+        <option value="add">➕ إضافة نقاط</option>
+        <option value="sub">➖ خصم نقاط</option>
+        <option value="set">🎯 تحديد قيمة معينة</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">عدد النقاط *</label>
+      <input id="ptsMgmtAmount" type="number" class="fi" placeholder="مثال: 5" min="1">
+    </div>
+    <div class="fg"><label class="fl">السبب</label>
+      <input id="ptsMgmtDesc" type="text" class="fi" placeholder="مثال: مكافأة خاصة...">
+    </div>
+    <input type="hidden" id="ptsMgmtTarget">
+    <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 8px 25px rgba(139,92,246,.35);margin-top:5px" onclick="savePtsMgmt()">✅ تنفيذ</button>
+  </div>
+</div>
+
+    
+<!-- ORDERS -->
+<div class="page" id="pageOrders">
+  <div class="ph"><h1>📦 الطلبات</h1><p>متابعة وإدارة الطلبات</p></div>
+
+  <!-- ✅ قسم الطلبات بانتظار الموافقة — للادمن والمشرف فقط -->
+  <div id="pendingApprovalSection" style="display:none;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;animation:pulse 1.5s infinite"></div>
+      <span style="font-weight:800;font-size:.9rem;color:#b45309">طلبات بانتظار موافقتك</span>
+      <span id="pendingApprovalCount" class="badge" style="background:rgba(245,158,11,.2);color:#b45309;border:1px solid rgba(245,158,11,.4)"></span>
+    </div>
+    <div id="pendingApprovalList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <div id="ordSummary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:10px;margin-bottom:16px"></div>
+  
+  <!-- ✅ فلاتر متقدمة -->
+  <div class="card" style="margin-bottom:14px;padding:14px 16px">
+    <div style="font-size:.82rem;font-weight:800;color:var(--deep);margin-bottom:11px">🔍 فلتر الطلبات</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px">
+      
+      <div class="fg" style="margin:0">
+        <label class="fl">📅 الفترة</label>
+        <select id="ordFilter" class="fsel" onchange="renderOrders()">
+          <option value="all">الكل</option>
+          <option value="today">اليوم</option>
+          <option value="week">الأسبوع</option>
+          <option value="month">الشهر</option>
+          <option value="custom">مخصص</option>
+        </select>
+      </div>
+
+      <div class="fg" style="margin:0" id="ordRepFilterWrap">
+        <label class="fl">🤝 المندوب</label>
+        <select id="ordRepFilter" class="fsel" onchange="renderOrders()">
+          <option value="all">الكل</option>
+        </select>
+      </div>
+
+      <div class="fg" style="margin:0">
+        <label class="fl">🏪 المحل</label>
+        <input type="text" id="ordShopFilter" class="fi" placeholder="بحث باسم المحل..." oninput="_debouncedOrdFilter()">
+      </div>
+
+    </div>
+
+    <!-- تواريخ مخصصة -->
+    <div id="ordCustomDates" style="display:none;margin-top:10px">
+      <div class="frow">
+        <div class="fg" style="margin:0"><label class="fl">من تاريخ</label><input type="date" id="ordFrom" class="fi" onchange="renderOrders()"></div>
+        <div class="fg" style="margin:0"><label class="fl">إلى تاريخ</label><input type="date" id="ordTo" class="fi" onchange="renderOrders()"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <button class="btn btn-ghost btn-sm" onclick="resetOrdFilters()">🔄 إعادة تعيين</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 قائمة الطلبات <span id="ordCountBadge" class="badge b-sky" style="margin-right:8px"></span></div>
+      <div id="ordAdminActions" style="display:none">
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.09);color:#e11d48;border:1px solid rgba(244,63,94,.2)" onclick="deleteAllVisibleOrders()">🗑️ حذف المعروض</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>التاريخ</th><th>المندوب</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th>العمولة</th><th>الصافي</th><th></th></tr></thead>
+        <tbody id="ordBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    <!-- WALLET -->
+    <div class="page" id="pageWallet">
+      <div class="ph"><h1>💰 المحفظة</h1><p>الرصيد والمعاملات المالية</p></div>
+      <div class="wallet-hero">
+        <div class="wh-lbl">الرصيد المتاح</div>
+        <div class="wh-amount"><span class="wh-cur">د.ع</span><span id="walBal">0</span></div>
+        <div id="walSub" style="font-size:.74rem;color:rgba(255,255,255,.38);margin-top:5px;position:relative;z-index:1"></div>
+        <div class="wh-acts" id="walActs"></div>
+      </div>
+      <div class="kpi-grid" id="walKpi" style="margin-bottom:16px"></div>
+      <div class="tabs" id="walTabs">
+        <button class="tab on" onclick="switchWalTab('txs',this)">🔄 المعاملات</button>
+        <button class="tab" onclick="switchWalTab('disc',this)" id="tabDiscBtn" style="display:none">🏷️ الخصومات</button>
+        <button class="tab" onclick="switchWalTab('pts',this)" id="tabPtsBtn">⭐ النقاط</button>
+      </div>
+      <div id="walTabTxs" class="tab-pane on">
+        <div class="card" style="margin-bottom:0"><div id="txList"></div></div>
+      </div>
+      <div id="walTabDisc" class="tab-pane">
+        <div class="card" style="margin-bottom:0">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px" id="addDiscWrap">
+            <button class="btn btn-sky btn-sm" onclick="openDiscModal()">+ إضافة خصم</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>التاريخ</th><th>المحل</th><th>نوع الخصم</th><th>القيمة</th><th>السبب</th></tr></thead>
+              <tbody id="discBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="walTabPts" class="tab-pane">
+        <!-- ✅ NEW: Points info card -->
+        <div class="pts-info-card">
+          <div class="pts-info-icon">⭐</div>
+          <div class="pts-info-text">
+            لكل <strong>100,000 د.ع</strong> من قيمة الطلبات تحصل على <strong>نقطة واحدة</strong>.
+            تتراكم النقاط تلقائياً عند إتمام كل طلب.
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="pts-card">
+            <div class="pts-val" id="ptsTotal">0</div>
+            <div class="pts-lbl">النقاط المتراكمة</div>
+          </div>
+          <div class="pts-card" style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.03));border-color:rgba(245,158,11,.2)">
+            <div class="pts-val" style="color:var(--gold2)" id="ptsRedeemed">0</div>
+            <div class="pts-lbl">النقاط المستردة</div>
+          </div>
+        </div>
+        <!-- ✅ NEW: Progress bar to next point -->
+        <div class="pts-progress-wrap card" id="ptsProgressWrap" style="display:none">
+          <div class="pts-prog-label">
+            <span>التقدم نحو النقطة القادمة</span>
+            <span id="ptsProgText">0 / 100,000 د.ع</span>
+          </div>
+          <div class="pts-prog-bar">
+            <div class="pts-prog-fill" id="ptsProgFill" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:13px">📋 سجل النقاط</div>
+          <div id="ptsHistList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="page" id="pageInventory">
+      <div class="ph"><h1>📦 المخزون</h1><p>مستويات المخزن</p></div>
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-teal"><div class="kpi-icon">📦</div><div class="kpi-val" id="inv_all">0</div><div class="kpi-lbl">إجمالي المنتجات</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-icon">⚠️</div><div class="kpi-val" id="inv_low">0</div><div class="kpi-lbl">مخزون منخفض</div></div>
+        <div class="kpi-card kpi-rose"><div class="kpi-icon">🚫</div><div class="kpi-val" id="inv_out">0</div><div class="kpi-lbl">نفاد المخزون</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">📋 تفاصيل المخزون</div>
+          <button class="btn btn-teal btn-sm" id="addPurBtn" style="display:none" onclick="openModal('purchaseModal');initPurItems()">+ فاتورة شراء</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>المنتج</th><th>التصنيف</th><th>الكمية</th><th>الحد الأدنى</th><th>الحالة</th><th></th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="page" id="pageInvoices">
+      <div class="ph"><h1>🧾 الفواتير</h1><p>سجل فواتير الشراء والبيع</p></div>
+      <div class="tabs">
+        <button class="tab on" onclick="switchInvTab('pur',this)">🛒 شراء</button>
+        <button class="tab" onclick="switchInvTab('sal',this)">💰 بيع</button>
+      </div>
+      <div id="tabPur" class="tab-pane on">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:11px">
+          <button class="btn btn-sky btn-sm" id="newPurBtn" style="display:none" onclick="openModal('purchaseModal');initPurItems()">+ فاتورة شراء جديدة</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>التاريخ</th><th>المورد</th><th>المنتجات</th><th>الإجمالي</th><th>بواسطة</th></tr></thead>
+            <tbody id="purBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="tabSal" class="tab-pane">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>التاريخ</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th>المندوب</th></tr></thead>
+            <tbody id="salBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="pageUsers">
+      <div class="ph"><h1>👥 المستخدمون</h1><p>إدارة حسابات النظام</p></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:15px">
+        <button class="btn btn-sky" onclick="openAddUser()">+ إضافة مستخدم</button>
+      </div>
+      <div id="usersList"></div>
+    </div>
+
+    <!-- MANAGE PRODUCTS -->
+    <div class="page" id="pageManage">
+      <div class="ph"><h1>🛍️ إدارة المنتجات</h1><p>إضافة وتعديل المنتجات</p></div>
+      <div style="display:flex;justify-content:flex-end;gap:9px;margin-bottom:15px">
+        <button class="btn btn-ghost" id="bulkImportBtn" style="display:none" onclick="openModal('bulkImportModal')">📥 استيراد بالجملة</button>
+        <button class="btn btn-sky" onclick="openAddProd()">+ إضافة منتج</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>صورة</th><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>المخزون</th><th>الحالة</th><th></th></tr></thead>
+          <tbody id="manageProdsBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- DELIVERY SETTINGS -->
+    <div class="page" id="pageDeliverySettings">
+      <div class="ph"><h1>🚚 إعدادات التوصيل</h1><p>إدارة مركبات التوصيل وأوزانها وأبعادها</p></div>
+      <div class="glass" style="border-radius:var(--r20);padding:22px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:800;color:var(--deep)">🚐 وحدات النقل والتوصيل</h2>
+            <p style="font-size:.78rem;color:#888;margin-top:2px">تحديد نوع المركبة وأبعاد صندوق الشحن والحمولة القصوى</p>
+          </div>
+          <button class="btn btn-sky" style="width:auto;padding:8px 18px" onclick="saveDeliveryVehicles()">حفظ الإعدادات</button>
+        </div>
+        <div id="dvList"></div>
+        <button class="btn btn-ghost" style="margin-top:10px;width:auto;padding:8px 18px" onclick="addDeliveryVehicleRow()">+ إضافة مركبة</button>
+      </div>
+    </div>
+
+    <!-- OFFERS -->
+    <div class="page" id="pageOffers">
+      <div class="ph"><h1>🎁 العروض</h1><p>العروض الحصرية والباقات الخاصة</p></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:15px" id="addOfferWrap">
+        <button class="btn btn-gold" onclick="openAddOffer()">+ إضافة عرض</button>
+      </div>
+      <div id="offersList"></div>
+    </div>
+
+    <!-- REP TRACKING -->
+    <div class="page" id="pageRepTracking">
+      <div class="ph"><h1>📍 تتبع المندوبين</h1><p>متابعة نشاط المندوبين</p></div>
+      <div id="repTrackList"></div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="page" id="pageNotifications">
+      <div class="ph"><h1>🔔 الإشعارات</h1><p>آخر التنبيهات والإشعارات</p></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">✓ تحديد الكل كمقروء</button>
+      </div>
+      <div id="notifList"></div>
+    </div>
+
+      <!-- POINTS MANAGEMENT -->
+<div class="page" id="pagePointsMgmt">
+  <div class="ph"><h1>⭐ إدارة النقاط</h1><p>التحكم الكامل بنقاط المستخدمين</p></div>
+
+  <!-- إعداد العتبة -->
+  <div class="pts-setting-card">
+    <div style="font-size:.84rem;font-weight:800;color:var(--violet);margin-bottom:12px">⚙️ إعدادات نظام النقاط</div>
+    <div class="pts-setting-row">
+      <div>
+        <div style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.55)">قيمة العتبة الحالية</div>
+        <div style="font-size:1.4rem;font-weight:900;color:var(--violet)" id="currentThresholdDisp">100,000 د.ع</div>
+        <div style="font-size:.68rem;color:rgba(9,50,87,.4)">لكل X د.ع = نقطة واحدة</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="number" id="newThresholdVal" class="fi" style="width:140px" placeholder="مثال: 100000" value="100000">
+        <button class="btn btn-violet btn-sm" onclick="saveThreshold()" style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 4px 14px rgba(139,92,246,.3)">حفظ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" style="margin-bottom:16px" id="ptsMgmtKpi"></div>
+
+  <!-- قائمة المستخدمين -->
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">👥 نقاط المستخدمين</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <input type="text" id="ptsMgmtSearch" class="fi" style="width:150px;padding:7px 11px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderPointsMgmt()">
+        <select id="ptsMgmtFilter" class="fsel" style="width:auto;padding:6px 10px;font-size:.78rem" onchange="renderPointsMgmt()">
+          <option value="all">الكل</option>
+          <option value="rep">مندوبون</option>
+          <option value="market_owner">ماركتات</option>
+        </select>
+      </div>
+    </div>
+    <div id="ptsMgmtList"></div>
+  </div>
+</div>
+
+    <!-- REPORTS -->
+    <div class="page" id="pageReports">
+      <div class="ph"><h1>📊 التقارير</h1><p>إحصائيات ومؤشرات الأداء</p></div>
+      <!-- فلتر الفترة الزمنية -->
+      <div class="card" style="margin-bottom:16px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:.82rem;font-weight:800;color:var(--deep)">📅 الفترة:</span>
+          <div class="tabs" style="margin:0;flex:1;min-width:200px">
+            <button class="tab on" onclick="setRepFilter('all',this)">الكل</button>
+            <button class="tab" onclick="setRepFilter('today',this)">اليوم</button>
+            <button class="tab" onclick="setRepFilter('week',this)">الأسبوع</button>
+            <button class="tab" onclick="setRepFilter('month',this)">الشهر</button>
+            <button class="tab" onclick="setRepFilter('custom',this)">مخصص</button>
+          </div>
+        </div>
+        <div id="repCustomDates" style="display:none;margin-top:10px">
+          <div class="frow">
+            <div class="fg" style="margin:0"><label class="fl">من تاريخ</label><input type="date" id="repFrom" class="fi" onchange="renderReports()"></div>
+            <div class="fg" style="margin:0"><label class="fl">إلى تاريخ</label><input type="date" id="repTo" class="fi" onchange="renderReports()"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="repKpi"></div>
+      <div class="card" id="repRepsCard">
+        <div class="card-hd">
+          <div class="card-title">🏆 أداء المندوبين</div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>المندوب</th><th>الطلبات</th><th>إجمالي المبيعات</th><th>العمولات</th><th>الصافي</th></tr></thead>
+            <tbody id="repRepsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">📦 أكثر المنتجات مبيعاً</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>المنتج</th><th>الكمية المباعة</th><th>الإيراد</th></tr></thead>
+            <tbody id="repProdsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MARKETING PAGE -->
+    <div class="page" id="pageMarketing">
+  <div class="ph"><h1>📣 التسويق</h1><p>إرسال رسائل ترويجية للعملاء</p></div>
+  <div class="kpi-grid" id="mktKpi" style="margin-bottom:16px"></div>
+  <div class="mkt-compose">
+    <div style="font-size:.9rem;font-weight:800;color:var(--deep);margin-bottom:14px">✉️ إنشاء رسالة تسويقية</div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:6px">القناة</div>
+    <div class="mkt-channel-tabs">
+      <button class="mkt-ch on email" id="mktChEmail" onclick="setMktChannel('email')">📧 إيميل</button>
+      <button class="mkt-ch wa" id="mktChWa" onclick="setMktChannel('wa')">💬 واتساب</button>
+      <button class="mkt-ch both" id="mktChBoth" onclick="setMktChannel('both')">🔁 الاثنين</button>
+    </div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">قوالب جاهزة</div>
+    <div class="template-cards" id="mktTemplates"></div>
+    <div class="fg" id="mktSubjectWrap">
+      <label class="fl">موضوع الإيميل *</label>
+      <input id="mktSubject" type="text" class="fi" placeholder="مثال: عرض خاص — خصم 20% هذا الأسبوع">
+    </div>
+    <div class="fg"><label class="fl">نص الرسالة *</label>
+      <textarea id="mktBody" class="fta" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updateMktPreview()"></textarea>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+      <span style="font-size:.7rem;color:rgba(9,50,87,.4);font-weight:700">متغيرات:</span>
+      <span class="badge b-sky" style="cursor:pointer" onclick="insertVar('{name}')">👤 الاسم</span>
+      <span class="badge b-teal" style="cursor:pointer" onclick="insertVar('{shop}')">🏪 الماركت</span>
+    </div>
+    <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:8px">👥 الجمهور المستهدف</div>
+    <div class="audience-selector">
+      <label class="aud-chip" id="aud_all">
+        <input type="checkbox" id="aud_all_cb" checked onchange="toggleAud('all')">
+        <span>🌐 الجميع</span>
+        <span class="badge b-sky" id="aud_all_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_rep">
+        <input type="checkbox" id="aud_rep_cb" onchange="toggleAud('rep')">
+        <span>🤝 المندوبون</span>
+        <span class="badge b-teal" id="aud_rep_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_mkt">
+        <input type="checkbox" id="aud_mkt_cb" onchange="toggleAud('market_owner')">
+        <span>🏪 الماركتات</span>
+        <span class="badge b-mint" id="aud_mkt_cnt">0</span>
+      </label>
+      <label class="aud-chip" id="aud_city">
+        <input type="checkbox" id="aud_city_cb" onchange="toggleAud('city')">
+        <span>📍 مدينة محددة</span>
+      </label>
+    </div>
+    <div id="mktCityFilter" style="display:none" class="fg">
+      <label class="fl">اختر المدينة</label>
+      <select id="mktCitySelect" class="fsel" onchange="updateMktAudience()">
+        <option value="">— اختر —</option>
+        <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+        <option>أربيل</option><option>كربلاء</option><option>النجف</option>
+        <option>كركوك</option><option>السليمانية</option>
+      </select>
+    </div>
+    <div class="mkt-preview-box" id="mktPreviewBox" style="display:none">
+      <div class="mkt-preview-label">👁️ معاينة الرسالة (كما سيستلمها العميل)</div>
+      <div class="mkt-preview-content" id="mktPreviewContent"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:8px">
+      <div class="stats-bar" id="mktAudStats">
+        <span class="stat-pill sp-total">📤 سيُرسل لـ <span id="mktRecipCount">0</span> شخص</span>
+      </div>
+      <button class="btn btn-gold btn-lg" onclick="sendCampaign()" id="mktSendBtn" style="min-width:140px">
+        🚀 إرسال الحملة
+      </button>
+    </div>
+    <div class="send-progress-wrap" id="sendProgressWrap">
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;font-weight:800;color:var(--teal2)">
+        <span id="sendStatusTxt">جاري الإرسال...</span>
+        <span id="sendPct">0%</span>
+      </div>
+      <div class="send-prog-bar"><div class="send-prog-fill" id="sendProgFill"></div></div>
+      <div class="send-log" id="sendLog"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📋 قاعدة بيانات العملاء</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="contactSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="_debouncedContacts()">
+        <button class="btn btn-ghost btn-sm" onclick="exportContacts()">📥 تصدير Excel</button>
+      </div>
+    </div>
+    <!-- تبويبات: مستخدمون / زوار -->
+    <div style="display:flex;gap:0;border-bottom:2px solid rgba(0,0,0,.08);margin-bottom:12px">
+      <button id="mktTabUsers" onclick="switchMktTab('users')" style="flex:1;padding:9px;border:none;background:none;font-weight:800;font-size:.82rem;color:var(--teal2);border-bottom:2.5px solid var(--teal2);cursor:pointer">👥 المستخدمون</button>
+      <button id="mktTabVisitors" onclick="switchMktTab('visitors')" style="flex:1;padding:9px;border:none;background:none;font-weight:700;font-size:.82rem;color:rgba(9,50,87,.45);cursor:pointer">👤 الزوار <span id="visitorsCountBadge" class="badge b-sky" style="margin-right:4px"></span></button>
+    </div>
+    <div id="contactsList"></div>
+    <div id="visitorsList" style="display:none"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">
+      <div class="card-title">📊 سجل الحملات</div>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="campaignSearch" class="fi" style="width:150px;padding:7px 10px;font-size:.8rem" placeholder="🔍 بحث..." oninput="renderCampaignHistory()">
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:1px solid rgba(244,63,94,.18)" onclick="deleteAllCampaigns()">🗑️ حذف الكل</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>التاريخ</th><th>الموضوع</th><th>القناة</th><th>المرسلة</th><th>نجحت</th><th>فشلت</th><th></th></tr></thead>
+        <tbody id="campaignHistory"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    <!-- PREPARER DASHBOARD -->
+    <div class="page" id="pagePrep">
+      <div class="ph"><h1>📦 لوحة المجهز</h1><p>تجهيز الطلبات للتسليم</p></div>
+      <div class="kpi-grid" id="prepKpi"></div>
+      <div id="prepOrdersList"></div>
+    </div>
+
+    <!-- DRIVER DASHBOARD -->
+    <div class="page" id="pageDriver">
+      <div class="ph"><h1>🚗 لوحة السائق</h1><p>طلبات التوصيل</p></div>
+      <div class="kpi-grid" id="driverKpi"></div>
+      <div id="driverOrdersList"></div>
+    </div>
+
+    <!-- PERFORMANCE REPORTS -->
+    <div class="page" id="pagePerfReports">
+      <div class="ph"><h1>📊 تقارير الأداء</h1><p>أداء المجهزين والسائقين</p></div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">🚗 أداء السائقين</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>السائق</th><th>عدد التوصيلات</th><th>متوسط التقييم</th><th>متوسط وقت التوصيل</th></tr></thead>
+            <tbody id="driverPerfBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">📦 أداء المجهزين</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>المجهز</th><th>الطلبات المجهزة</th><th>متوسط وقت التجهيز</th><th>دقة الكميات</th></tr></thead>
+            <tbody id="prepPerfBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- FLOATING CART -->
+<div class="cart-float z1" id="cartFloat" onclick="openCartModal()">
+  <div class="cf-bubble" id="cfBubble">0</div>
+  <div class="cf-txt">السلة</div>
+  <div class="cf-total" id="cfTotal">0 د.ع</div>
+  <div class="cf-arr">←</div>
+</div>
+<div id="toastWrap" class="z1"></div>
+
+<!-- LOGIN -->
+<div id="loginOverlay" class="z1">
+  <div class="login-box">
+    <button class="login-close" onclick="hideLogin()">✕</button>
+    <div class="login-logo">🏪</div>
+    <div class="login-hd"><h2>برجمان</h2><p>سجّل دخولك للمتابعة</p></div>
+    <button class="btn-google" onclick="doGoogleLogin()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      تسجيل الدخول بـ Google
+    </button>
+    <div class="login-divider"><span>أو بالحساب</span></div>
+    <input id="lUser" type="text" class="fi" placeholder="اسم المستخدم" style="margin-bottom:9px" autocomplete="off">
+    <input id="lPass" type="password" class="fi" placeholder="كلمة المرور" style="margin-bottom:9px">
+    <label style="display:flex;align-items:center;gap:7px;font-size:.82rem;color:rgba(9,50,87,.5);margin-bottom:13px;cursor:pointer">
+      <input type="checkbox" id="remMe" checked style="accent-color:var(--teal)">تذكرني
+    </label>
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+    <div class="login-guest">أو <a onclick="hideLogin()">تصفح كزائر بدون حساب</a></div>
+  </div>
+</div>
+
+<!-- CART MODAL -->
+<div class="modal z1" id="cartModal">
+  <div class="m-box" style="max-width:520px;padding:0;overflow-y:auto;border-radius:var(--r24)">
+
+    <!-- ── حالة 1: نموذج الطلب ── -->
+    <div id="cartFormView" style="padding:24px 18px 18px">
+      <button class="m-close" onclick="closeModal('cartModal')">✕</button>
+      <div class="m-title">🛍️ تأكيد الطلب</div>
+      <div class="cart-box" id="cartBox"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">🏪 اسم المحل *</label><input id="shopName" type="text" class="fi" placeholder="اسم المحل"></div>
+        <div class="fg"><label class="fl">📍 العنوان *</label><input id="shopAddr" type="text" class="fi" placeholder="المنطقة / العنوان"></div>
+      </div>
+      <div class="fg" id="visitorPhoneWrap" style="display:none"><label class="fl">📞 رقم هاتفك *</label><input id="visitorPhone" type="tel" class="fi" placeholder="07xxxxxxxxxx"></div>
+      <div class="fg"><label class="fl">📝 ملاحظة</label><textarea id="orderNote" class="fta" rows="2" placeholder="ملاحظات..."></textarea></div>
+      <button id="mapBtn" class="btn btn-ghost btn-full" style="margin-bottom:9px" onclick="toggleMap()">
+        📍 تحديد الموقع <span id="mapOptLabel" style="font-size:.7rem;opacity:.55">(اختياري)</span>
+      </button>
+      <div id="mapContainer" style="display:none">
+        <div class="map-wrap"><div id="map"></div><div class="map-pin"></div></div>
+        <button class="btn btn-sky btn-full" style="margin-top:9px" onclick="confirmLoc()">✅ تأكيد الموقع</button>
+      </div>
+      <div id="locOk" style="display:none;background:rgba(13,148,136,.09);border:1px solid rgba(13,148,136,.22);border-radius:var(--r12);padding:9px 13px;font-size:.82rem;font-weight:700;color:var(--teal2);margin-bottom:9px">✅ تم تحديد الموقع</div>
+      <hr>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
+        <span style="font-weight:800;color:var(--deep)">المجموع الكلي:</span>
+        <span id="cartTotalDisp" style="font-size:1.3rem;font-weight:900;color:var(--teal2)">0 د.ع</span>
+      </div>
+      <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;box-shadow:0 8px 25px rgba(37,211,102,.33)" onclick="sendOrder()">
+        📱 إرسال الطلب عبر الواتساب
+      </button>
+    </div>
+
+    <!-- ── حالة 2: شاشة النجاح بعد الإرسال ── -->
+    <div id="cartSuccessView" style="display:none;padding:36px 24px 32px;text-align:center">
+      <div style="width:72px;height:72px;background:linear-gradient(135deg,var(--teal),var(--teal2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 16px;box-shadow:0 8px 28px rgba(13,148,136,.35)">✅</div>
+      <h2 style="font-size:1.15rem;font-weight:900;color:var(--deep);margin-bottom:6px">تم إرسال طلبك!</h2>
+      <p style="font-size:.82rem;color:rgba(9,50,87,.5);margin-bottom:4px">طلبك قيد المراجعة من المشرف</p>
+      <p id="cartSuccessOrderId" style="font-size:.72rem;color:var(--teal2);font-weight:700;margin-bottom:24px"></p>
+
+      <a id="cartTrackBtn" href="#" target="_blank"
+        style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:var(--r16);background:linear-gradient(135deg,var(--teal),var(--teal2));color:white;font-weight:800;font-size:.95rem;text-decoration:none;box-shadow:0 8px 24px rgba(13,148,136,.35);margin-bottom:12px">
+        📍 تتبع الطلب
+      </a>
+      <button onclick="closeModal('cartModal')" style="width:100%;padding:12px;border-radius:var(--r16);background:rgba(9,50,87,.06);border:1.5px solid rgba(9,50,87,.1);color:var(--deep);font-family:'Tajawal';font-weight:700;font-size:.9rem;cursor:pointer">
+        ✕ إغلاق
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- PRODUCT DETAIL MODAL -->
+<div class="modal z1" id="prodModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('prodModal')">✕</button>
+    <img id="pmImg" src="" style="width:100%;max-height:150px;object-fit:contain;border-radius:var(--r16);margin-bottom:11px;border:1px solid rgba(0,0,0,.07)">
+    <div class="m-title" id="pmName"></div>
+    <div id="pmPrice" style="text-align:center;font-size:1.3rem;font-weight:900;color:var(--dark);margin-bottom:7px"></div>
+    <div id="pmStock" style="text-align:center;margin-bottom:11px"></div>
+    <div id="pmDetail" style="background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.06);border-radius:var(--r12);padding:11px;font-size:.83rem;color:rgba(9,50,87,.62);margin-bottom:14px"></div>
+    <div id="pmQtyRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-weight:700;color:var(--deep)">الكمية:</span>
+      <div style="display:flex;align-items:center;gap:11px">
+        <button class="q-btn" style="width:35px;height:35px" onclick="pmChQty(-1)">−</button>
+        <span id="pmQtyNum" style="font-size:1.1rem;font-weight:900;min-width:22px;text-align:center">1</span>
+        <button class="q-btn plus" style="width:35px;height:35px" onclick="pmChQty(1)">+</button>
+      </div>
+    </div>
+    <button id="pmAddBtn" class="btn btn-mint btn-full btn-lg" onclick="addFromModal()">🛒 أضف للسلة</button>
+  </div>
+</div>
+
+<!-- PRODUCT EDIT MODAL -->
+<div class="modal z1" id="prodEditModal">
+  <div class="m-box" style="max-width:530px">
+    <button class="m-close" onclick="closeModal('prodEditModal')">✕</button>
+    <div class="m-title" id="peTitle">إضافة منتج</div>
+    <img id="pePreview" src="https://via.placeholder.com/100?text=📦" style="width:85px;height:85px;object-fit:cover;border-radius:var(--r16);display:block;margin:0 auto 13px;border:1px solid rgba(0,0,0,.08)">
+    <div class="frow">
+      <div class="fg"><label class="fl">اسم المنتج *</label><input id="pe_name" type="text" class="fi"></div>
+      <div class="fg"><label class="fl">التصنيف *</label><input id="pe_cat" type="text" class="fi"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">السعر (د.ع) *</label><input id="pe_price" type="number" class="fi"></div>
+      <div class="fg"><label class="fl">الكمية في المخزون</label><input id="pe_stock" type="number" class="fi" value="0"></div>
+    </div>
+    <div class="fg"><label class="fl">الحد الأدنى للتحذير</label><input id="pe_min" type="number" class="fi" value="10"></div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">📦 أبعاد الكرتون (سم) — طول × عرض × ارتفاع</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <input id="pe_carton_l" type="number" class="fi" step="0.1" placeholder="طول" oninput="calcCartonVolume()">
+          <input id="pe_carton_w" type="number" class="fi" step="0.1" placeholder="عرض" oninput="calcCartonVolume()">
+          <input id="pe_carton_h" type="number" class="fi" step="0.1" placeholder="ارتفاع" oninput="calcCartonVolume()">
+        </div>
+        <div id="pe_volume_calc" style="display:none;margin-top:6px;background:rgba(13,148,136,.07);border:1px solid rgba(13,148,136,.18);border-radius:var(--r8);padding:8px 12px;font-size:.82rem;font-weight:700;color:var(--teal2)">
+          📐 الحجم: <span id="pe_volume_result">0.0000</span> م³
+        </div>
+      </div>
+      <div class="fg"><label class="fl">⚖️ وزن الكرتون (كغ)</label><input id="pe_carton_weight" type="number" class="fi" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div class="fg"><label class="fl">📷 رابط الصورة</label><input id="pe_img" type="text" class="fi" placeholder="https://..." oninput="peImgPreview()"></div>
+    <div class="fg" style="border:1.5px dashed rgba(13,148,136,.22);border-radius:var(--r12);padding:14px;text-align:center;cursor:pointer" onclick="document.getElementById('peFile').click()">
+      <div style="font-size:1.7rem;margin-bottom:4px">📤</div>
+      <p style="font-size:.78rem;color:rgba(9,50,87,.45)" id="peFileLabel">أو ارفع صورة هنا (سيتم رفعها على Firebase)</p>
+      <input type="file" id="peFile" accept="image/*" style="display:none" onchange="peFileChosen(event)">
+    </div>
+    <div class="upload-progress" id="uploadProgress">
+      <div style="font-size:.77rem;font-weight:700;color:var(--teal2)" id="uploadTxt">جاري الرفع...</div>
+      <div class="up-bar"><div class="up-fill" id="uploadFill"></div></div>
+    </div>
+    <div class="fg"><label class="fl">التفاصيل</label><textarea id="pe_det" class="fta" rows="2" placeholder="وصف المنتج"></textarea></div>
+    <div class="fg"><label class="fl">الحالة</label>
+      <select id="pe_status" class="fsel"><option value="active">🟢 متوفر</option><option value="inactive">🔴 غير متوفر</option></select>
+    </div>
+    <input type="hidden" id="pe_idx">
+    <input type="hidden" id="pe_fbid">
+    <button class="btn btn-sky btn-full btn-lg" style="margin-top:5px" onclick="saveProd()">حفظ</button>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS MODAL -->
+<div class="modal z1" id="accountModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('accountModal')">✕</button>
+    <div class="m-title">⚙️ إعدادات الحساب</div>
+
+    <!-- صورة الملف الشخصي -->
+    <div style="text-align:center;margin-bottom:18px">
+      <div id="acAvatar" onclick="document.getElementById('avatarFileInput').click()"
+        style="width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal2));
+               display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:white;
+               border:3px solid rgba(13,148,136,.3);overflow:hidden;cursor:pointer;transition:opacity .2s">
+        <span id="acAvatarInner">👤</span>
+      </div>
+      <div style="font-size:.7rem;color:rgba(9,50,87,.42);margin-top:6px">اضغط على الصورة لتغييرها</div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarSelect(this)">
+      <div id="acUploadWrap" style="display:none;margin-top:10px">
+        <button class="btn btn-sky btn-sm" id="acUploadBtn" onclick="doUploadAvatar()">⬆️ رفع الصورة</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('acUploadWrap').style.display='none'">إلغاء</button>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(0,0,0,.08);margin-bottom:16px">
+
+    <!-- تغيير كلمة المرور -->
+    <div style="font-size:.86rem;font-weight:800;color:var(--deep);margin-bottom:12px">🔒 تغيير كلمة المرور</div>
+    <div class="fg"><label class="fl">كلمة المرور الحالية</label>
+      <input id="cp_current" type="password" class="fi" placeholder="أدخل كلمة مرورك الحالية"></div>
+    <div class="fg"><label class="fl">كلمة المرور الجديدة</label>
+      <input id="cp_new" type="password" class="fi" placeholder="٦ أحرف على الأقل"></div>
+    <div class="fg"><label class="fl">تأكيد كلمة المرور الجديدة</label>
+      <input id="cp_confirm" type="password" class="fi" placeholder="أعد كتابة كلمة المرور الجديدة"></div>
+    <div id="cp_err" style="color:var(--rose);font-size:.78rem;text-align:center;margin:4px 0 10px;min-height:18px"></div>
+    <button class="btn btn-sky btn-full" onclick="doChangePassword()">🔒 حفظ كلمة المرور</button>
+
+    <hr style="border:none;border-top:1px solid rgba(0,0,0,.08);margin:16px 0">
+
+    <!-- معرف تيليجرام -->
+    <div style="font-size:.86rem;font-weight:800;color:var(--deep);margin-bottom:10px">✈️ معرف تيليجرام للإشعارات</div>
+    <div class="fg">
+      <label class="fl">Chat ID أو معرف القناة</label>
+      <input id="tg_id" type="text" class="fi" placeholder="مثال: 123456789">
+    </div>
+    <div style="font-size:.72rem;color:rgba(9,50,87,.42);margin:-4px 0 12px;line-height:1.6">
+      للحصول على معرفك: ابحث عن <strong>@userinfobot</strong> في تيليجرام وأرسل له /start
+    </div>
+    <button class="btn btn-sky btn-full" onclick="doSaveTelegramId()">حفظ معرف تيليجرام</button>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal z1" id="userModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('userModal')">✕</button>
+    <div class="m-title" id="userModalTitle">إضافة مستخدم</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">الاسم الكامل *</label><input id="um_name" type="text" class="fi"></div>
+      <div class="fg"><label class="fl">اسم المستخدم *</label><input id="um_user" type="text" class="fi" placeholder="username"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">كلمة المرور *</label><input id="um_pass" type="password" class="fi"></div>
+      <div class="fg"><label class="fl">نوع الحساب *</label>
+        <select id="um_type" class="fsel">
+          <option value="rep">🤝 مندوب</option>
+          <option value="market_owner">🏪 صاحب ماركت</option>
+          <option value="sales_manager">📊 مشرف مبيعات</option>
+          <option value="admin">🛡️ أدمن</option>
+          <option value="preparer">📦 مجهز</option>
+          <option value="driver">🚗 سائق</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">رقم الهاتف</label><input id="um_phone" type="text" class="fi" placeholder="07xx..."></div>
+      <div class="fg"><label class="fl">نسبة العمولة %</label><input id="um_comm" type="number" class="fi" value="5"></div>
+    </div>
+    <div class="fg"><label class="fl">💰 رصيد ابتدائي</label><input id="um_bal" type="number" class="fi" value="0"></div>
+    <input type="hidden" id="um_idx">
+    <input type="hidden" id="um_fbid">
+    <button class="btn btn-sky btn-full btn-lg" style="margin-top:5px" onclick="saveUser()">حفظ</button>
+  </div>
+</div>
+
+<!-- PAY MODAL -->
+<div class="modal z1" id="payModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('payModal')">✕</button>
+    <div class="m-title">💸 إدارة الرصيد</div>
+    <div style="background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.13);border-radius:var(--r16);padding:14px;text-align:center;margin-bottom:14px">
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-bottom:3px" id="payUserName">—</div>
+      <div style="font-size:.72rem;color:rgba(9,50,87,.42)">الرصيد الحالي</div>
+      <div style="font-size:1.7rem;font-weight:900;color:var(--teal2)" id="payBal">0 د.ع</div>
+    </div>
+    <div class="fg"><label class="fl">نوع العملية</label>
+      <select id="payType" class="fsel">
+        <option value="credit">✅ إيداع / إضافة رصيد</option>
+        <option value="debit">💸 سحب / خصم رصيد</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">المبلغ (د.ع) *</label><input id="payAmt" type="number" class="fi" placeholder="0"></div>
+    <div class="fg"><label class="fl">الوصف / السبب</label><input id="payDesc" type="text" class="fi" placeholder="مثلاً: دفع عمولة..."></div>
+    <input type="hidden" id="payTarget">
+    <button class="btn btn-sky btn-full btn-lg" style="margin-top:7px" onclick="doPayment()">✅ تنفيذ</button>
+  </div>
+</div>
+
+<!-- PURCHASE MODAL -->
+<div class="modal z1" id="purchaseModal">
+  <div class="m-box" style="max-width:530px">
+    <button class="m-close" onclick="closeModal('purchaseModal')">✕</button>
+    <div class="m-title">🛒 فاتورة شراء جديدة</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">المورد *</label><input id="pur_sup" type="text" class="fi" placeholder="اسم المورد"></div>
+      <div class="fg"><label class="fl">التاريخ</label><input id="pur_date" type="date" class="fi"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">المنتجات</label>
+      <div id="purItemsWrap"></div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:5px" onclick="addPurItem()">+ إضافة منتج</button>
+    </div>
+    <div style="background:rgba(13,148,136,.06);border-radius:var(--r12);padding:12px;text-align:center;font-size:1rem;font-weight:900;color:var(--teal2);margin:13px 0">
+      الإجمالي: <span id="purTotalVal">0</span> د.ع
+    </div>
+    <button class="btn btn-sky btn-full btn-lg" onclick="savePurchase()">✅ حفظ وتحديث المخزون</button>
+  </div>
+</div>
+
+<!-- ORDER DETAIL MODAL -->
+<div class="modal z1" id="ordDetailModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('ordDetailModal')">✕</button>
+    <div class="m-title">🧾 تفاصيل الطلب</div>
+    <div id="ordDetailContent"></div>
+  </div>
+</div>
+
+<!-- DISCOUNT MODAL -->
+<div class="modal z1" id="discModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('discModal')">✕</button>
+    <div class="m-title">🏷️ إضافة خصم</div>
+    <div class="fg"><label class="fl">🏪 اختر الماركت *</label>
+      <select id="disc_user" class="fsel" onchange="discUserChanged()"><option value="">— اختر —</option></select>
+    </div>
+    <div style="display:none;background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.12);border-radius:var(--r12);padding:11px 13px;margin-bottom:11px" id="disc_bal_box">
+      <div style="font-size:.7rem;color:rgba(9,50,87,.45)">الرصيد الحالي</div>
+      <div style="font-size:1.35rem;font-weight:900;color:var(--teal2)" id="disc_bal_val">0 د.ع</div>
+    </div>
+    <div class="fg"><label class="fl">نوع الخصم</label>
+      <select id="disc_type" class="fsel" onchange="discTypeChanged()">
+        <option value="amount">💰 مبلغ ثابت</option>
+        <option value="percent">📊 نسبة مئوية</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl" id="disc_amt_label">المبلغ *</label><input id="disc_amt" type="number" class="fi" oninput="calcDiscPreview()"></div>
+    <div class="fg" id="disc_base_wrap" style="display:none"><label class="fl">قيمة الفاتورة</label><input id="disc_base" type="number" class="fi" oninput="calcDiscPreview()"></div>
+    <div id="disc_preview" style="display:none;background:rgba(13,148,136,.07);border:1px solid rgba(13,148,136,.18);border-radius:var(--r12);padding:11px;text-align:center;font-size:.88rem;font-weight:700;color:var(--teal2);margin-bottom:11px"></div>
+    <div class="fg"><label class="fl">السبب *</label><input id="disc_desc" type="text" class="fi" placeholder="مثلاً: خصم شهري..."></div>
+    <button class="btn btn-sky btn-full btn-lg" onclick="saveDiscount()">✅ تطبيق الخصم</button>
+  </div>
+</div>
+
+<!-- STOCK EDIT MODAL -->
+<div class="modal z1" id="stockModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('stockModal')">✕</button>
+    <div class="m-title">📦 تعديل المخزون</div>
+    <div id="stockProdName" style="text-align:center;font-size:.95rem;font-weight:800;color:var(--deep);margin-bottom:16px"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">الكمية الحالية</label><input id="stock_qty" type="number" class="fi" min="0"></div>
+      <div class="fg"><label class="fl">الحد الأدنى</label><input id="stock_min" type="number" class="fi" min="0"></div>
+    </div>
+    <input type="hidden" id="stock_idx">
+    <button class="btn btn-sky btn-full btn-lg" onclick="saveStockEdit()">حفظ</button>
+  </div>
+</div>
+
+<!-- OFFER MODAL -->
+<div class="modal z1" id="offerModal">
+  <div class="m-box" style="max-width:600px;max-height:90vh;overflow-y:auto">
+    <button class="m-close" onclick="closeModal('offerModal')">✕</button>
+    <div class="m-title" id="offerModalTitle">إضافة عرض</div>
+
+    <!-- المعلومات الأساسية -->
+    <div class="fg"><label class="fl">عنوان العرض *</label>
+      <input id="off_title" type="text" class="fi" placeholder="مثال: عرض رمضان — خصم 20% على المشروبات">
+    </div>
+    <div class="fg"><label class="fl">الوصف</label>
+      <textarea id="off_desc" class="fta" rows="2" placeholder="تفاصيل العرض..."></textarea>
+    </div>
+
+    <!-- صورة العرض -->
+    <div class="fg"><label class="fl">صورة العرض (تظهر في الشريط والكارد)</label>
+      <div class="off-img-zone" onclick="document.getElementById('off_img_file').click()" id="offImgZone">
+        <input type="file" id="off_img_file" accept="image/*" style="display:none" onchange="uploadOfferImg(this)">
+        <div id="offImgLabel" style="font-size:.82rem;color:rgba(9,50,87,.45);font-weight:700">🖼️ اضغط لرفع صورة جديدة</div>
+        <img id="off_img_preview" src="" alt="" style="display:none">
+      </div>
+      <input type="hidden" id="off_img">
+    </div>
+    <!-- منتقي صور المنتجات -->
+    <div class="fg" id="offProdImgWrap" style="display:none;margin-top:-6px">
+      <label class="fl" style="margin-bottom:6px">أو اختر من صور المنتجات</label>
+      <div class="prod-img-picker" id="offProdImgPicker"></div>
+    </div>
+
+    <!-- نوع العرض -->
+    <div class="fg"><label class="fl">نوع العرض *</label>
+      <select id="off_type" class="fsel" onchange="offerTypeChanged()">
+        <option value="pct_any">📊 خصم نسبة % — على أي منتج</option>
+        <option value="pct_prod">📊 خصم نسبة % — على منتج محدد</option>
+        <option value="amt_any">💰 خصم مبلغ ثابت — على أي منتج</option>
+        <option value="amt_prod">💰 خصم مبلغ ثابت — على منتج محدد</option>
+        <option value="buy_get">🎁 اشتري X من منتج واحصل Y مجاناً</option>
+        <option value="buy_combo">🛒 اشتري مجموعة منتجات واحصل على هدية/خصم</option>
+      </select>
+    </div>
+
+    <!-- قيمة الخصم — تظهر لجميع الأنواع عدا buy_combo -->
+    <div id="off_val_wrap">
+      <div class="frow">
+        <div class="fg"><label class="fl" id="off_val_label">نسبة الخصم %</label>
+          <input id="off_val" type="number" class="fi" value="0" min="0">
+        </div>
+        <div class="fg" id="off_prod_wrap"><label class="fl">المنتج المشمول</label>
+          <select id="off_prod" class="fsel"><option value="">— كل المنتجات —</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- اشتري X واحصل Y -->
+    <div id="off_buyget_wrap" style="display:none">
+      <div class="frow">
+        <div class="fg"><label class="fl">اشتري كمية *</label>
+          <input id="off_buy_qty" type="number" class="fi" value="10" min="1">
+        </div>
+        <div class="fg"><label class="fl">احصل مجاناً على (كمية)</label>
+          <input id="off_free_qty" type="number" class="fi" value="1" min="1">
+        </div>
+      </div>
+      <div class="fg"><label class="fl">المنتج *</label>
+        <select id="off_buyget_prod" class="fsel"><option value="">— اختر منتج —</option></select>
+      </div>
+      <div class="fg"><label class="fl">المنتج المجاني (إذا مختلف)</label>
+        <select id="off_free_prod" class="fsel"><option value="">— نفس المنتج —</option></select>
+      </div>
+    </div>
+
+    <!-- اشتري مجموعة واحصل هدية -->
+    <div id="off_combo_wrap" style="display:none">
+      <label class="fl">منتجات يجب شراؤها *</label>
+      <div id="off_combo_items_wrap" style="border:1.5px dashed rgba(13,148,136,.2);border-radius:var(--r12);padding:11px;margin-bottom:9px">
+        <div id="off_combo_items"></div>
+        <button class="btn btn-ghost btn-sm" onclick="addComboItem()" style="margin-top:6px">+ إضافة منتج للشرط</button>
+      </div>
+      <div class="fg"><label class="fl">المكافأة عند تحقق الشرط</label>
+        <select id="off_combo_reward" class="fsel" onchange="comboRewardChanged()">
+          <option value="free_prod">🎁 منتج مجاني</option>
+          <option value="pct">📊 خصم نسبة %</option>
+          <option value="amt">💰 خصم مبلغ ثابت</option>
+        </select>
+      </div>
+      <div id="off_combo_free_wrap">
+        <div class="fg"><label class="fl">المنتج المجاني *</label>
+          <select id="off_combo_free_prod" class="fsel"><option value="">— اختر منتج —</option></select>
+        </div>
+        <div class="fg"><label class="fl">كمية المنتج المجاني</label>
+          <input id="off_combo_free_qty" type="number" class="fi" value="1" min="1">
+        </div>
+      </div>
+      <div id="off_combo_disc_wrap" style="display:none">
+        <div class="fg"><label class="fl" id="off_combo_val_label">قيمة الخصم</label>
+          <input id="off_combo_val" type="number" class="fi" value="0" min="0">
+        </div>
+      </div>
+    </div>
+
+    <!-- الجمهور المستهدف -->
+    <div style="background:rgba(13,148,136,.04);border:1px solid rgba(13,148,136,.12);border-radius:var(--r12);padding:13px;margin:10px 0">
+      <div style="font-size:.82rem;font-weight:800;color:var(--teal2);margin-bottom:10px">👥 الجمهور المستهدف</div>
+      <div class="fg"><label class="fl">يُطبَّق على</label>
+        <select id="off_target_type" class="fsel" onchange="offerTargetChanged()">
+          <option value="all">🌐 الجميع (كل المندوبين والماركتات)</option>
+          <option value="all_reps">🤝 كل المندوبين</option>
+          <option value="all_markets">🏪 كل الماركتات</option>
+          <option value="specific">👤 أشخاص محددين</option>
+        </select>
+      </div>
+      <div id="off_specific_wrap" style="display:none">
+        <label class="fl">اختر المستخدمين المستهدفين</label>
+        <div id="off_target_users" style="border:1.5px dashed rgba(13,148,136,.2);border-radius:var(--r12);padding:10px;max-height:160px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- حد الاستخدام -->
+    <div class="frow">
+      <div class="fg"><label class="fl">عدد مرات الاستخدام للشخص</label>
+        <input id="off_max_uses" type="number" class="fi" value="1" min="1" placeholder="1 = مرة وحدة">
+      </div>
+      <div class="fg"><label class="fl">الحد الكلي (0 = غير محدود)</label>
+        <input id="off_total_uses" type="number" class="fi" value="0" min="0">
+      </div>
+    </div>
+
+    <!-- التواريخ والحالة -->
+    <div class="frow">
+      <div class="fg"><label class="fl">من تاريخ</label><input id="off_from" type="date" class="fi"></div>
+      <div class="fg"><label class="fl">إلى تاريخ</label><input id="off_to" type="date" class="fi"></div>
+    </div>
+    <div class="fg"><label class="fl">الحالة</label>
+      <select id="off_status" class="fsel"><option value="active">🟢 نشط</option><option value="inactive">🔴 موقف</option></select>
+    </div>
+
+    <input type="hidden" id="off_fbid">
+    <button class="btn btn-gold btn-full btn-lg" style="margin-top:10px" onclick="saveOffer()">حفظ العرض</button>
+  </div>
+</div>
+
+
+<!-- PROFILE SETUP MODAL (بعد Google Login) -->
+<div class="modal z2" id="profileSetupModal" style="backdrop-filter:blur(12px)">
+  <div class="m-box" style="max-width:440px">
+    <div class="m-title" style="margin-bottom:4px">👋 أكمل ملفك الشخصي</div>
+    <p style="font-size:.82rem;color:rgba(9,50,87,.5);text-align:center;margin-bottom:18px">خطوة أخيرة لتفعيل حسابك</p>
+
+    <!-- صورة الملف الشخصي -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:18px">
+      <div id="ps_avatar_wrap" style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:rgba(13,148,136,.1);border:2px solid rgba(13,148,136,.2);margin-bottom:10px;display:flex;align-items:center;justify-content:center;font-size:2rem">
+        <img id="ps_avatar_img" src="" style="width:100%;height:100%;object-fit:cover;display:none">
+        <span id="ps_avatar_icon">👤</span>
+      </div>
+      <label style="cursor:pointer">
+        <input type="file" id="ps_photo" accept="image/*" style="display:none" onchange="previewProfilePhoto(this)">
+        <span class="btn btn-ghost btn-sm">📷 رفع صورة</span>
+      </label>
+    </div>
+
+    <div class="fg"><label class="fl">الاسم الكامل *</label>
+      <input id="ps_name" type="text" class="fi" placeholder="اسمك الكامل">
+    </div>
+    <div class="fg"><label class="fl">اسم الماركت / المحل *</label>
+      <input id="ps_shop" type="text" class="fi" placeholder="اسم ماركتك أو محلك">
+    </div>
+    <div class="fg"><label class="fl">رقم الهاتف *</label>
+      <input id="ps_phone" type="tel" class="fi" placeholder="07XX XXX XXXX" dir="ltr">
+    </div>
+    <div class="fg"><label class="fl">العنوان / المنطقة *</label>
+      <input id="ps_address" type="text" class="fi" placeholder="مثال: بغداد — الكرادة">
+    </div>
+    <div class="fg">
+      <label class="fl">الإيميل المسجل</label>
+      <input id="ps_email" type="text" class="fi" readonly style="background:rgba(0,0,0,.03);color:rgba(9,50,87,.5)">
+    </div>
+    <div id="ps_err" style="color:var(--rose);font-size:.8rem;margin-bottom:8px;min-height:18px"></div>
+    <button class="btn btn-gold btn-full btn-lg" onclick="saveProfileSetup()">✅ تفعيل الحساب</button>
+  </div>
+</div>
+
+<!-- PICK USER MODAL -->
+<div class="modal z1" id="pickUserModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('pickUserModal')">✕</button>
+    <div class="m-title">👤 اختر المستخدم</div>
+    <div id="pickUserList"></div>
+  </div>
+</div>
+
+<!-- BULK IMPORT MODAL -->
+<div class="modal z1" id="bulkImportModal">
+  <div class="m-box" style="max-width:600px">
+    <button class="m-close" onclick="closeModal('bulkImportModal')">✕</button>
+    <div class="m-title">📥 استيراد منتجات بالجملة</div>
+    <div style="background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.12);border-radius:var(--r16);padding:13px;margin-bottom:14px;">
+      <div style="font-size:.82rem;font-weight:800;color:var(--teal2);margin-bottom:8px">📋 الأعمدة المطلوبة في الملف:</div>
+      <div class="template-cols">
+        <div class="template-col">name<small>اسم المنتج *</small></div>
+        <div class="template-col">category<small>التصنيف *</small></div>
+        <div class="template-col">price<small>السعر *</small></div>
+        <div class="template-col">stock<small>المخزون</small></div>
+        <div class="template-col">minStock<small>الحد الأدنى</small></div>
+        <div class="template-col">image<small>رابط الصورة</small></div>
+        <div class="template-col">detail<small>التفاصيل</small></div>
+        <div class="template-col">status<small>active/inactive</small></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="downloadTemplate()">⬇️ تحميل نموذج Excel</button>
+    </div>
+    <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('importFile').click()">
+      <div class="import-drop-icon">📂</div>
+      <h4>اسحب ملف Excel أو CSV هنا</h4>
+      <p>أو اضغط للاختيار — يدعم xlsx, xls, csv</p>
+      <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(event)">
+    </div>
+    <div id="importPreviewWrap" style="display:none">
+      <div class="import-preview-wrap">
+        <div class="import-preview-hd">
+          <h4 id="importPreviewTitle">معاينة البيانات</h4>
+          <span class="badge b-sky" id="importCountBadge">0 منتج</span>
+        </div>
+        <div class="import-preview-tbl"><table id="importPreviewTable"></table></div>
+      </div>
+      <div id="importProgressWrap" style="display:none;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;color:var(--teal2);margin-bottom:4px">
+          <span>جاري الاستيراد...</span><span id="importProgressTxt">0%</span>
+        </div>
+        <div class="import-prog-bar"><div class="import-prog-fill" id="importProgFill"></div></div>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:13px" id="importActionBtns">
+        <button class="btn btn-ghost" onclick="resetImport()">❌ إلغاء</button>
+        <button class="btn btn-sky btn-full btn-lg" onclick="confirmBulkImport()" id="confirmImportBtn">✅ استيراد الكل</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ REGISTRATION MODAL (بديل عن loginOverlay) ═══ -->
+<div id="registerModal" class="modal z1">
+  <div class="m-box" style="max-width:440px">
+    <button class="m-close" onclick="closeModal('registerModal')">✕</button>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="width:58px;height:58px;border-radius:var(--r16);background:linear-gradient(135deg,var(--teal),var(--teal2));display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 10px;box-shadow:var(--glow-dark)">🏪</div>
+      <div style="font-size:1.1rem;font-weight:900;color:var(--deep)">إنشاء حساب جديد</div>
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:3px">انضم إلى برجمان</div>
+    </div>
+
+    <!-- Steps Indicator -->
+    <div class="reg-steps" id="regSteps">
+      <div class="reg-step active" id="regDot1"><div class="reg-step-dot">1</div><div class="reg-step-lbl">البيانات</div></div>
+      <div class="reg-step" id="regDot2"><div class="reg-step-dot">2</div><div class="reg-step-lbl">التحقق</div></div>
+      <div class="reg-step" id="regDot3"><div class="reg-step-dot">3</div><div class="reg-step-lbl">إكمال</div></div>
+    </div>
+
+    <!-- Step 1: Basic Info -->
+    <div class="reg-pane active" id="regStep1">
+      <div class="fg"><label class="fl">الاسم الكامل *</label>
+        <input id="reg_name" type="text" class="fi" placeholder="اسمك الكامل">
+      </div>
+      <div class="fg"><label class="fl">رقم الهاتف *</label>
+        <div class="phone-input-wrap">
+          <div class="phone-flag">
+            <span>🇮🇶</span>
+            <select id="reg_country_code">
+              <option value="+964">+964 العراق</option>
+              <option value="+966">+966 السعودية</option>
+              <option value="+971">+971 الإمارات</option>
+              <option value="+962">+962 الأردن</option>
+              <option value="+965">+965 الكويت</option>
+              <option value="+968">+968 عُمان</option>
+              <option value="+974">+974 قطر</option>
+              <option value="+973">+973 البحرين</option>
+              <option value="+20">+20 مصر</option>
+              <option value="+218">+218 ليبيا</option>
+            </select>
+          </div>
+          <input id="reg_phone" type="tel" class="fi" placeholder="07XX XXX XXXX" dir="ltr" style="flex:1">
+        </div>
+      </div>
+      <div class="fg"><label class="fl">البريد الإلكتروني</label>
+        <input id="reg_email" type="email" class="fi" placeholder="example@gmail.com" dir="ltr">
+      </div>
+      <div class="fg"><label class="fl">نوع الحساب</label>
+        <select id="reg_type" class="fsel">
+          <option value="market_owner">🏪 صاحب ماركت / محل</option>
+          <option value="rep">🤝 مندوب مبيعات</option>
+        </select>
+      </div>
+      <div id="reg_shop_wrap" class="fg"><label class="fl">اسم الماركت / المحل *</label>
+        <input id="reg_shop" type="text" class="fi" placeholder="اسم ماركتك">
+      </div>
+      <div class="fg"><label class="fl">كلمة المرور *</label>
+        <input id="reg_pass" type="password" class="fi" placeholder="6 أحرف على الأقل">
+      </div>
+      <div id="reg_err1" style="color:var(--rose);font-size:.78rem;margin-bottom:8px;min-height:18px"></div>
+      <button class="btn btn-sky btn-full btn-lg" onclick="regStep1Next()">التالي ←</button>
+      <div style="text-align:center;margin-top:12px;font-size:.8rem;color:rgba(9,50,87,.45)">
+        عندك حساب؟ <a onclick="closeModal('registerModal');showLogin()" style="color:var(--teal2);font-weight:700;cursor:pointer">سجّل دخول</a>
+      </div>
+    </div>
+
+    <!-- Step 2: OTP Verification -->
+    <div class="reg-pane" id="regStep2">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:2rem;margin-bottom:8px">📱</div>
+        <div style="font-weight:800;color:var(--deep);font-size:.9rem">تحقق من رقم هاتفك</div>
+        <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-top:4px" id="otpSentTo">تم إرسال رمز التحقق إلى...</div>
+      </div>
+      <div class="otp-inputs" id="otpInputs">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,0)" onkeydown="otpKey(event,this,0)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,1)" onkeydown="otpKey(event,this,1)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,2)" onkeydown="otpKey(event,this,2)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,3)" onkeydown="otpKey(event,this,3)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,4)" onkeydown="otpKey(event,this,4)">
+        <input class="otp-in" maxlength="1" type="number" oninput="otpInput(this,5)" onkeydown="otpKey(event,this,5)">
+      </div>
+      <div class="otp-timer" id="otpTimer">انتهاء الصلاحية بعد <span id="otpCountdown">2:00</span></div>
+      <div style="text-align:center;margin-top:6px;font-size:.78rem;color:rgba(9,50,87,.45)">
+        لم تستلم الرمز؟ <span class="otp-resend" onclick="resendOtp()">إعادة الإرسال</span>
+      </div>
+      <div id="reg_err2" style="color:var(--rose);font-size:.78rem;margin:10px 0 6px;min-height:18px;text-align:center"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-ghost" onclick="regGoStep(1)" style="flex:0 0 80px">← رجوع</button>
+        <button class="btn btn-sky btn-full btn-lg" onclick="regStep2Verify()" id="otpVerifyBtn">✅ تحقق</button>
+      </div>
+      <!-- Fallback: Email verification note -->
+      <div style="background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.1);border-radius:var(--r12);padding:10px;margin-top:12px;font-size:.72rem;color:rgba(9,50,87,.45);text-align:center">
+        💡 في حال لم تستلم الرمز، سيتم إرسال رمز احتياطي على إيميلك إذا أدخلته
+      </div>
+    </div>
+
+    <!-- Step 3: Address & Final -->
+    <div class="reg-pane" id="regStep3">
+      <div style="background:rgba(13,148,136,.07);border:1px solid rgba(13,148,136,.2);border-radius:var(--r12);padding:11px 13px;text-align:center;margin-bottom:14px;font-size:.84rem;font-weight:700;color:var(--teal2)">
+        ✅ تم التحقق من رقمك بنجاح!
+      </div>
+      <div class="fg"><label class="fl">العنوان / المنطقة *</label>
+        <input id="reg_address" type="text" class="fi" placeholder="مثال: بغداد — الكرادة">
+      </div>
+      <div class="fg" id="reg_city_wrap"><label class="fl">المدينة</label>
+        <select id="reg_city" class="fsel">
+          <option value="">— اختر المدينة —</option>
+          <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+          <option>أربيل</option><option>السليمانية</option><option>النجف</option>
+          <option>كربلاء</option><option>كركوك</option><option>الأنبار</option>
+          <option>ديالى</option><option>بابل</option><option>واسط</option>
+          <option>ذي قار</option><option>ميسان</option><option>المثنى</option>
+          <option>القادسية</option><option>صلاح الدين</option><option>دهوك</option>
+          <option>حلبجة</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.82rem;color:rgba(9,50,87,.55)">
+          <input type="checkbox" id="reg_newsletter" checked style="accent-color:var(--teal2);width:16px;height:16px">
+          أوافق على استلام العروض والأخبار عبر واتساب وإيميل
+        </label>
+      </div>
+      <div id="reg_err3" style="color:var(--rose);font-size:.78rem;margin-bottom:8px;min-height:18px"></div>
+      <button class="btn btn-full btn-lg" style="background:linear-gradient(135deg,var(--teal),var(--teal2));color:white;border:none;box-shadow:var(--glow-dark)" onclick="regFinish()">
+        🎉 إنشاء الحساب
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ NOTIFICATION DETAIL MODAL ═══ -->
+<div class="modal z1" id="notifDetailModal">
+  <div class="m-box" style="max-width:420px">
+    <button class="m-close" onclick="closeModal('notifDetailModal')">✕</button>
+    <div id="notifDetailIcon" class="notif-detail-icon notif-ico-info">ℹ️</div>
+    <div class="m-title" id="notifDetailTitle" style="margin-bottom:8px"></div>
+    <div id="notifDetailBody" style="font-size:.85rem;color:rgba(9,50,87,.6);line-height:1.7;text-align:center;margin-bottom:12px;white-space:pre-wrap"></div>
+    <div id="notifDetailTime" style="font-size:.72rem;color:rgba(9,50,87,.35);text-align:center"></div>
+  </div>
+</div>
+
+<!-- ═══ WA BULK SENDER MODAL ═══ -->
+<div class="modal z1" id="waBulkModal">
+  <div class="m-box" style="max-width:460px">
+    <button class="m-close" onclick="closeModal('waBulkModal')">✕</button>
+    <div class="m-title">💬 إرسال واتساب</div>
+    <div id="waBulkInfo" style="font-size:.78rem;color:rgba(9,50,87,.45);text-align:center;margin-bottom:12px;background:rgba(37,211,102,.06);border:1px solid rgba(37,211,102,.18);border-radius:var(--r12);padding:10px"></div>
+    <div id="waBulkList" style="max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:7px"></div>
+    <div style="margin-top:12px;text-align:center;font-size:.74rem;color:rgba(9,50,87,.38)">اضغط "فتح" لكل شخص لإرسال الرسالة مباشرة عبر واتساب</div>
+  </div>
+</div>
+
+<!-- ═══ CONTACT DETAIL MODAL ═══ -->
+<div class="modal z1" id="contactDetailModal">
+  <div class="m-box">
+    <button class="m-close" onclick="closeModal('contactDetailModal')">✕</button>
+    <div class="m-title">👤 بيانات العميل</div>
+    <div id="contactDetailContent"></div>
+  </div>
+</div>
+
+<!-- ═══ PREPARER EDIT QUANTITIES MODAL ═══ -->
+<div class="modal z1" id="prepEditModal">
+  <div class="m-box" style="max-width:500px">
+    <button class="m-close" onclick="closeModal('prepEditModal')">✕</button>
+    <div class="m-title">✏️ تعديل كميات الطلب</div>
+    <div id="prepEditOrderInfo" style="background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.1);border-radius:var(--r12);padding:11px 13px;margin-bottom:14px;font-size:.84rem;font-weight:700;color:var(--teal2)"></div>
+    <div id="prepEditItemsList"></div>
+    <div style="background:rgba(13,148,136,.06);border-radius:var(--r12);padding:12px;text-align:center;font-size:.92rem;font-weight:900;color:var(--teal2);margin:13px 0">
+      الإجمالي المحدّث: <span id="prepEditTotal">0</span> د.ع
+    </div>
+    <input type="hidden" id="prepEditOrderId">
+    <button class="btn btn-sky btn-full btn-lg" onclick="savePrepEditQuantities()">حفظ التعديلات</button>
+  </div>
+</div>
+
+<!-- ═══ DRIVER PROOF MODAL ═══ -->
+<div class="modal z1" id="driverProofModal">
+  <div class="m-box" style="max-width:500px">
+    <button class="m-close" onclick="closeModal('driverProofModal')">✕</button>
+    <div class="m-title">📸 تأكيد التسليم — إثبات الاستلام</div>
+    <div style="font-size:.82rem;color:rgba(9,50,87,.5);text-align:center;margin-bottom:14px">يجب تقديم صورة أو توقيع لتأكيد التسليم</div>
+    <div class="proof-tabs">
+      <button class="proof-tab active" id="proofTabPhoto" onclick="switchProofTab('photo')">📷 صورة</button>
+      <button class="proof-tab" id="proofTabSig" onclick="switchProofTab('sig')">✍️ توقيع</button>
+    </div>
+    <!-- Photo capture pane -->
+    <div id="proofPhotoPane">
+      <div style="border:2px dashed rgba(13,148,136,.25);border-radius:var(--r16);padding:20px;text-align:center;cursor:pointer;background:rgba(13,148,136,.03)" onclick="document.getElementById('proofPhotoInput').click()">
+        <div style="font-size:2.5rem;margin-bottom:8px">📷</div>
+        <div style="font-size:.85rem;font-weight:700;color:var(--teal2)">اضغط لالتقاط صورة</div>
+        <div style="font-size:.72rem;color:rgba(9,50,87,.4);margin-top:4px">أو اختر من المعرض</div>
+        <input type="file" id="proofPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleProofPhoto(event)">
+      </div>
+      <img id="proofPhotoPreview" src="" style="display:none;width:100%;max-height:220px;object-fit:contain;border-radius:var(--r12);margin-top:12px;border:2px solid rgba(13,148,136,.15)">
+    </div>
+    <!-- Signature pane -->
+    <div id="proofSigPane" style="display:none">
+      <div style="font-size:.78rem;color:rgba(9,50,87,.45);margin-bottom:7px;text-align:center">ارسم توقيعك باستخدام الإصبع أو الماوس</div>
+      <canvas id="sigCanvas" class="sig-canvas" width="450" height="200"></canvas>
+      <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="clearSignature()">🔄 مسح التوقيع</button>
+    </div>
+    <input type="hidden" id="proofOrderId">
+    <input type="hidden" id="proofDriverId">
+    <div id="proofUploadStatus" style="display:none;background:rgba(13,148,136,.07);border-radius:var(--r12);padding:10px;text-align:center;font-size:.82rem;font-weight:700;color:var(--teal2);margin-top:10px">
+      ⏳ جاري الرفع...
+    </div>
+    <button class="btn btn-mint btn-full btn-lg" style="margin-top:14px" onclick="confirmDeliveryWithProof()">✅ تأكيد التسليم</button>
+  </div>
+</div>
+
+<!-- ═══ CUSTOMER RECEIPT CONFIRMATION MODAL ═══ -->
+<div class="modal z1" id="receiptConfirmModal">
+  <div class="m-box" style="max-width:440px">
+    <button class="m-close" onclick="closeModal('receiptConfirmModal')">✕</button>
+    <div class="receipt-modal-inner">
+      <div class="receipt-check">✅</div>
+      <div class="m-title">استلمت طلبك؟</div>
+      <div style="font-size:.83rem;color:rgba(9,50,87,.5);margin-bottom:16px">يسعدنا تقييم تجربتك مع السائق</div>
+      <div style="font-size:.85rem;font-weight:700;color:var(--deep);margin-bottom:8px">تقييم السائق</div>
+      <div class="star-rating" id="driverStarRating">
+        <button class="star-btn" onclick="setDriverRating(1)" data-val="1">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(2)" data-val="2">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(3)" data-val="3">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(4)" data-val="4">⭐</button>
+        <button class="star-btn" onclick="setDriverRating(5)" data-val="5">⭐</button>
+      </div>
+      <div class="fg" style="margin-top:12px">
+        <label class="fl">ملاحظات (اختياري)</label>
+        <textarea id="customerNotesInput" class="fta" rows="2" placeholder="شاركنا ملاحظاتك..."></textarea>
+      </div>
+      <input type="hidden" id="receiptOrderId">
+      <input type="hidden" id="receiptDriverId">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-ghost" onclick="closeModal('receiptConfirmModal')" style="flex:1">لاحقاً</button>
+        <button class="btn btn-mint btn-full" onclick="submitReceipt()">✅ تأكيد الاستلام</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ APPROVE BOTTOM SHEET ══════════ -->
+<div id="approveSheet" style="display:none;position:fixed;inset:0;z-index:900;align-items:flex-end;justify-content:center">
+  <!-- خلفية شفافة -->
+  <div onclick="closeApproveSheet()" style="position:absolute;inset:0;background:rgba(9,50,87,.45);backdrop-filter:blur(4px)"></div>
+  <!-- البطاقة -->
+  <div style="position:relative;width:100%;max-width:520px;margin:0 auto;background:rgba(255,255,255,.98);border-radius:var(--r24) var(--r24) 0 0;padding:28px 20px 36px;box-shadow:0 -16px 48px rgba(9,50,87,.18);animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)">
+    <div style="width:40px;height:4px;background:rgba(9,50,87,.12);border-radius:99px;margin:0 auto 20px"></div>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2rem;margin-bottom:8px">📦</div>
+      <h3 style="font-size:1rem;font-weight:900;color:var(--deep);margin-bottom:4px">تأكيد الموافقة على الطلب</h3>
+      <p id="approveSheetDesc" style="font-size:.82rem;color:rgba(9,50,87,.5);line-height:1.5"></p>
+    </div>
+    <!-- تعديل السعر قبل الموافقة -->
+    <div style="background:rgba(13,148,136,.05);border:1px solid rgba(13,148,136,.18);border-radius:var(--r16);padding:14px;margin-bottom:12px">
+      <div style="font-weight:800;color:var(--deep);font-size:.86rem;margin-bottom:10px">💰 تعديل السعر (اختياري)</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.82rem">
+        <span style="color:rgba(9,50,87,.55)">السعر الأصلي</span>
+        <span id="approveOrigTotal" style="font-weight:800;color:var(--deep)">—</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <label style="font-size:.74rem;color:rgba(9,50,87,.5);display:block;margin-bottom:4px">➕ رسوم إضافية</label>
+          <input type="number" id="priceAddFee" placeholder="0" min="0"
+            style="width:100%;padding:9px 10px;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;font-family:'Tajawal';font-size:.9rem;outline:none"
+            oninput="updateApproveTotal()">
+        </div>
+        <div>
+          <label style="font-size:.74rem;color:rgba(9,50,87,.5);display:block;margin-bottom:4px">➖ خصم</label>
+          <input type="number" id="priceDiscount" placeholder="0" min="0"
+            style="width:100%;padding:9px 10px;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;font-family:'Tajawal';font-size:.9rem;outline:none"
+            oninput="updateApproveTotal()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:white;border-radius:10px;border:1.5px solid rgba(13,148,136,.3);margin-bottom:9px">
+        <span style="font-size:.82rem;font-weight:700;color:var(--teal2)">الإجمالي المعدّل</span>
+        <span id="approveNewTotal" style="font-weight:900;color:var(--teal2);font-size:1rem">—</span>
+      </div>
+      <input type="text" id="priceAdjNote" placeholder="ملاحظة التعديل (اختياري)..."
+        style="width:100%;padding:9px 10px;border:1.5px solid rgba(0,0,0,.1);border-radius:10px;font-family:'Tajawal';font-size:.84rem;outline:none">
+    </div>
+
+    <div style="background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.18);border-radius:var(--r16);padding:12px 14px;margin-bottom:20px;font-size:.8rem;color:rgba(9,50,87,.6)">
+      ✅ سيتم إرسال الطلب للمجهز عبر الواتساب والتليجرام فور الموافقة
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="closeApproveSheet()"
+        style="padding:14px;border-radius:var(--r16);background:rgba(9,50,87,.07);border:none;font-family:'Tajawal';font-weight:700;font-size:.9rem;color:var(--deep);cursor:pointer">
+        إلغاء
+      </button>
+      <button id="approveSheetBtn" onclick="confirmApproveOrder()"
+        style="padding:14px;border-radius:var(--r16);background:var(--dark);border:none;font-family:'Tajawal';font-weight:800;font-size:.9rem;color:white;cursor:pointer;box-shadow:var(--glow-dark)">
+        ✅ موافقة وإرسال
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<script src="js/app.js"></script>
+
+</body>
+</html>

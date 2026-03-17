@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>برجمان — إدارة النقاط</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="module" src="js/firebase.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="loading-screen" id="loadScreen">
+
+  <div class="ls-spinner"></div>
+  <div class="ls-brand">
+    <div class="loading-txt">برجمان</div>
+    <div class="ls-brand-en">BARJOMAN</div>
+  </div>
+  <div class="loading-sub" id="loadSub">جاري التحميل...</div>
+  <div class="ls-progress"><div class="ls-progress-bar"></div></div>
+</div>
+
+<div class="app-wrap z1">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-gem">🏪</div>
+      <div class="sb-logo-text"><h2>برجمان</h2><span>BARJOMAN</span></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAv">🌐</div>
+      <div>
+        <div class="sb-uname" id="sbName">زائر</div>
+        <div class="sb-urole" id="sbRole">—</div>
+        <div class="sb-online" id="sbOnline" style="display:none">متصل</div>
+      </div>
+    </div>
+    <div id="sbWalletBar" style="display:none;padding:0 8px 2px">
+      <div class="user-wallet-bar">
+        <div class="uw-label">💰 رصيد المحفظة</div>
+        <div class="uw-amount" id="sbWalletAmt">0 د.ع</div>
+        <div class="uw-sub">محفظتك الحالية</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">التنقل</div>
+      <a href="admin.html" class="nav-item" id="navAdmin" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">🏠</span> لوحة الإدارة
+      </a>
+      <a href="wallet.html" class="nav-item" style="text-decoration:none;color:inherit">
+        <span class="nav-icon">💰</span> المحفظة
+      </a>
+      <div class="nav-item active">
+        <span class="nav-icon">⭐</span> إدارة النقاط
+      </div>
+      <a href="reps.html" class="nav-item" id="navReps" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">📍</span> المندوبون والمبيعات
+      </a>
+      <div class="sb-section">أخرى</div>
+      <a href="index.html" class="nav-item" style="text-decoration:none;color:inherit">
+        <span class="nav-icon">🛍️</span> المتجر
+      </a>
+    </div>
+    <div class="sb-bottom"><div id="sbLoginLogout"></div></div>
+  </nav>
+
+  <main class="main" style="flex:1;display:flex;flex-direction:column;min-height:100vh;width:100%">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="القائمة">☰</button>
+      <div class="topbar-title">⭐ إدارة النقاط</div>
+      <div class="topbar-right">
+        <div class="fb-status" id="fbStatusBadge">
+          <div class="fb-dot" id="fbDot"></div>
+          <span id="fbStatusTxt">...</span>
+        </div>
+        <button class="top-btn sky" id="topLoginBtn" onclick="showLoginBox()"><span>دخول</span></button>
+      </div>
+    </div>
+
+    <div id="pageContent" style="flex:1;padding:16px 14px">
+
+      <div class="ph"><h1>⭐ إدارة النقاط</h1><p>التحكم الكامل بنقاط المستخدمين</p></div>
+
+      <!-- إعداد العتبة -->
+      <div class="pts-setting-card">
+        <div style="font-size:.84rem;font-weight:800;color:var(--violet);margin-bottom:12px">⚙️ إعدادات نظام النقاط</div>
+        <div class="pts-setting-row">
+          <div>
+            <div style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.55)">قيمة العتبة الحالية</div>
+            <div style="font-size:1.4rem;font-weight:900;color:var(--violet)" id="currentThresholdDisp">100,000 د.ع</div>
+            <div style="font-size:.68rem;color:rgba(9,50,87,.4)">لكل X د.ع = نقطة واحدة</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="number" id="newThresholdVal" class="fi" style="width:140px" placeholder="مثال: 100000" value="100000">
+            <button class="btn btn-sm" onclick="saveThreshold()"
+              style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 4px 14px rgba(139,92,246,.3)">
+              حفظ
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-grid" style="margin-bottom:16px" id="ptsMgmtKpi"></div>
+
+      <!-- قائمة المستخدمين -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">👥 نقاط المستخدمين</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <input type="text" id="ptsMgmtSearch" class="fi"
+              style="width:150px;padding:7px 11px;font-size:.8rem"
+              placeholder="🔍 بحث..."
+              oninput="renderPointsMgmt()">
+            <select id="ptsMgmtFilter" class="fsel"
+              style="width:auto;padding:6px 10px;font-size:.78rem"
+              onchange="renderPointsMgmt()">
+              <option value="all">الكل</option>
+              <option value="rep">مندوبون</option>
+              <option value="market_owner">ماركتات</option>
+            </select>
+          </div>
+        </div>
+        <div id="ptsMgmtList"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toastWrap" class="z1"></div>
+
+<!-- ADJUST POINTS MODAL -->
+<div class="modal z1" id="adjModal">
+  <div class="m-box" style="max-width:380px">
+    <button class="m-close" onclick="document.getElementById('adjModal').classList.remove('open')">✕</button>
+    <div class="m-title" id="adjModalTitle">✏️ تعديل النقاط</div>
+    <input type="hidden" id="adjUsername">
+    <div style="background:rgba(139,92,246,.07);border-radius:var(--r12);padding:11px;text-align:center;margin-bottom:14px">
+      <div style="font-size:.75rem;color:rgba(9,50,87,.5)">النقاط الحالية</div>
+      <div style="font-size:1.8rem;font-weight:900;color:var(--violet)" id="adjCurrentPts">0</div>
+    </div>
+    <div class="fg">
+      <label class="fl">نوع التعديل</label>
+      <select id="adjType" class="fsel">
+        <option value="add">➕ إضافة نقاط</option>
+        <option value="sub">➖ خصم نقاط</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">عدد النقاط</label>
+      <input type="number" id="adjAmount" class="fi" placeholder="مثال: 5" min="1">
+    </div>
+    <div class="fg">
+      <label class="fl">ملاحظة (اختياري)</label>
+      <input type="text" id="adjNote" class="fi" placeholder="سبب التعديل...">
+    </div>
+    <button class="btn btn-full btn-lg" onclick="savePointsAdj()"
+      style="background:linear-gradient(135deg,var(--violet),var(--violet2));color:white;border:none;box-shadow:0 4px 14px rgba(139,92,246,.3)">
+      حفظ التعديل
+    </button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginOverlay" class="z1" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(15,23,42,.5);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+  <div class="login-box">
+    <div class="login-logo">🏪</div>
+    <div class="login-hd"><h2>برجمان</h2><p>سجّل دخولك للمتابعة</p></div>
+    <input id="lUser" type="text" class="fi" placeholder="اسم المستخدم" style="margin-bottom:9px" autocomplete="off">
+    <input id="lPass" type="password" class="fi" placeholder="كلمة المرور" style="margin-bottom:13px"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/points.js"></script>
+</body>
+</html>

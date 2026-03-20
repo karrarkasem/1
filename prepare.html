@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تجهيز الطلب - برجمان</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Tajawal',sans-serif; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo',sans-serif; }
         body {
             background: linear-gradient(135deg, #093257, #0ea5e9);
             min-height: 100vh;
@@ -55,14 +55,14 @@
         .input-field {
             width:100%; padding:12px 14px; border:2px solid #ddd;
             border-radius:12px; font-size:1rem; margin-bottom:13px;
-            font-family:'Tajawal',sans-serif;
+            font-family:'Cairo',sans-serif;
         }
         .input-field:focus { border-color:#0ea5e9; outline:none; }
         .btn {
             background:linear-gradient(135deg,#0ea5e9,#0284c7);
             color:white; border:none; padding:13px 20px; border-radius:14px;
             font-weight:700; font-size:1rem; cursor:pointer; width:100%;
-            transition:all .2s; font-family:'Tajawal',sans-serif; margin-bottom:8px;
+            transition:all .2s; font-family:'Cairo',sans-serif; margin-bottom:8px;
         }
         .btn:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(14,165,233,.3); }
         .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
@@ -141,7 +141,7 @@
             background:linear-gradient(135deg,#10b981,#059669); color:white;
             border:none; padding:10px 18px; border-radius:10px;
             font-weight:700; font-size:.9rem; cursor:pointer;
-            font-family:'Tajawal',sans-serif; width:100%; margin-bottom:6px;
+            font-family:'Cairo',sans-serif; width:100%; margin-bottom:6px;
         }
         .section-title { font-weight:800; color:#093257; margin-bottom:10px; font-size:1rem; }
         hr { border:none; border-top:1px solid #e8e8e8; margin:16px 0; }
@@ -382,7 +382,7 @@
                     : `<div id="phaseBadge" class="phase-badge phase-done">✅ تم التجهيز</div>`;
 
             // driver link box (shown when done)
-            const driverLink = `https://karrarkasem.github.io/1/driver.html?order=${orderId}`;
+            const driverLink = `https://brjman.com/driver.html?order=${orderId}`;
             const driverLinkHtml = preparerPhase >= 2 ? `
                 <div class="driver-link-box">
                     <h3>🚗 رابط السائق جاهز</h3>
@@ -512,7 +512,7 @@
             const btn = document.getElementById('mainPrepBtn');
             btn.disabled=true; btn.textContent='⏳ جاري التأكيد...';
             try {
-                const driverLink = `https://karrarkasem.github.io/1/driver.html?order=${orderId}`;
+                const driverLink = `https://brjman.com/driver.html?order=${orderId}`;
                 const prepDurationSec = prepStartTime ? Math.floor((Date.now() - prepStartTime.getTime()) / 1000) : null;
                 if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
                 await db.collection('orders').doc(orderData.id).update({
@@ -581,7 +581,7 @@
         function showToast(msg, ok=true) {
             const t=document.createElement('div');
             t.textContent=msg;
-            t.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${ok?'#10b981':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 15px rgba(0,0,0,.2);font-family:'Tajawal',sans-serif;`;
+            t.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${ok?'#10b981':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 15px rgba(0,0,0,.2);font-family:'Cairo',sans-serif;`;
             document.body.appendChild(t);
             setTimeout(()=>t.remove(),2800);
         }

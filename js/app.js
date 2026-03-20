@@ -974,33 +974,23 @@ function buildProdUnits(p) {
   const frac = p.packagingFractions || {};
   const entries = Object.entries(pkg).filter(([,q])=>q>0).sort((a,b)=>b[1]-a[1]);
 
-  // وضع الجملة: يشتري كرتون فأكثر بسعر الجملة
+  // وضع الجملة: كرتون كامل + نصف + ربع حسب الإعدادات
   if (buyerMode === 'wholesale') {
     const wsPrice = p.wholesalePrice || p.price || 0;
     if (!entries.length) return [{label:'كرتون', piecesPerUnit:1, price:wsPrice}];
-    const [uName, uQty] = entries[0];
-    return [{label:uName, piecesPerUnit:uQty, price:wsPrice}];
+    const units = [];
+    entries.forEach(([uName, uQty]) => {
+      const uf = frac[uName] || {};
+      if (uf.quarter && uQty >= 4) units.push({label:`ربع ${uName}`, piecesPerUnit:Math.round(uQty/4), price:Math.round(wsPrice*0.25)});
+      if (uf.half    && uQty >= 2) units.push({label:`نصف ${uName}`, piecesPerUnit:Math.round(uQty/2), price:Math.round(wsPrice*0.5)});
+      units.push({label:uName, piecesPerUnit:uQty, price:wsPrice});
+    });
+    return units;
   }
 
-  // وضع المفرد: استخدام وحدة المفرد المخصصة
+  // وضع المفرد: وحدة المفرد فقط
   const rUnit = p.retailUnit || 'قطعة';
-  if (!entries.length) {
-    return [{label:rUnit, piecesPerUnit:1, price: p.price||0}];
-  }
-  const maxQty = entries[0][1];
-  const units = [];
-  entries.forEach(([uName,uQty]) => {
-    const fullPrice = Math.round((p.price||0) * uQty / maxQty);
-    const uf = frac[uName] || {};
-    if (uf.quarter && uQty >= 4) units.push({label:`ربع ${uName}`, piecesPerUnit:Math.round(uQty/4), price:Math.round(fullPrice*0.25)});
-    if (uf.half    && uQty >= 2) units.push({label:`نصف ${uName}`, piecesPerUnit:Math.round(uQty/2), price:Math.round(fullPrice*0.5)});
-    units.push({label:uName, piecesPerUnit:uQty, price:fullPrice});
-  });
-  // أضف وحدة المفرد كأول خيار إذا كانت مختلفة عن باقي الوحدات
-  if (!units.find(u => u.label === rUnit)) {
-    units.unshift({label:rUnit, piecesPerUnit:1, price:p.price||0});
-  }
-  return units;
+  return [{label:rUnit, piecesPerUnit:1, price: p.price||0}];
 }
 
 function pmSelectUnit(piecesPerUnit, label, price, btn) {

@@ -26,7 +26,7 @@ async function pageInit() {
         <div style="text-align:center;padding:60px 20px">
           <div style="font-size:3rem;margin-bottom:16px">🔒</div>
           <div style="font-size:1.1rem;font-weight:800;color:var(--deep)">هذه الصفحة للأدمن والمشرف فقط</div>
-          <a href="wallet.html" class="btn btn-sky" style="margin-top:20px;display:inline-flex;text-decoration:none">💰 اذهب للمحفظة</a>
+          <a href="wallet.html" class="btn btn-sky" style="margin-top:20px;display:inline-flex;text-decoration:none">اذهب للمحفظة</a>
         </div>`;
       hideLoader();
       return;

@@ -845,12 +845,12 @@ function renderStore(filter='الكل',btn=null){
       priceHtml = `<div class="prod-price">${p.price.toLocaleString()} <span style="font-size:.68rem;color:rgba(9,50,87,.38);font-weight:600">د.ع / ${rUnitLabel}</span></div>`;
     }
     return `<div class="prod-card" style="animation-delay:${i*.05}s">
-      <div class="prod-img-box" onclick='openProdModal(${escj(p)})'>
+      <div class="prod-img-box" onclick='openProdModal("${esc(p._id)}")'>
         <img src="${p.img}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=📦'">
         ${isOut?'<div class="stock-badge sb-out">نفاد المخزون</div>':isLow?'<div class="stock-badge sb-low">كمية محدودة</div>':''}
       </div>
       <div class="prod-body">
-        <div class="prod-name" onclick='openProdModal(${escj(p)})'>${p.name}</div>
+        <div class="prod-name" onclick='openProdModal("${esc(p._id)}")'>${p.name}</div>
         ${priceHtml}
         ${p.stock>0?`<div class="qty-ctrl">
           <button class="q-btn" onclick="cartDelta('${esc(p.name)}',-1,${activePrice})">−</button>
@@ -870,7 +870,7 @@ function doSearch(q){
     const priceDisp = isWS
       ? (p.wholesalePrice>0 ? `<div class="prod-price-wholesale">${p.wholesalePrice.toLocaleString()} د.ع / كرتون</div>` : `<div class="prod-price-no-ws">اطلب تسعير</div>`)
       : `<div class="prod-price">${p.price.toLocaleString()} د.ع / ${p.retailUnit||'قطعة'}</div>`;
-    return `<div class="prod-card" onclick='openProdModal(${escj(p)})'>
+    return `<div class="prod-card" onclick='openProdModal("${esc(p._id)}")'>
       <div class="prod-img-box"><img src="${p.img}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=📦'"></div>
       <div class="prod-body">
         <div class="prod-name">${p.name}</div>
@@ -1042,7 +1042,9 @@ function _pmUpdateWeightVol(p, unitPieces, qty) {
   el.innerHTML = parts.join(' &nbsp;·&nbsp; ');
 }
 
-function openProdModal(p){
+function openProdModal(pOrId){
+  const p = (typeof pOrId === 'string') ? products.find(x=>x._id===pOrId) : pOrId;
+  if (!p) return;
   curProd=p; pmQtyVal=1; pmUnitLbl='قطعة';
   document.getElementById('pmImg').src=p.img;
   document.getElementById('pmName').textContent=p.name;
@@ -1127,6 +1129,17 @@ function pmChQty(d){
 
 function addFromModal(){
   if(!curProd) return;
+  // تحقق من المخزون قبل الإضافة
+  const prod = products.find(x => x.name === curProd.name) || curProd;
+  const needed = pmQtyVal * _pmPiecesPerUnit;
+  if (prod.stock <= 0) {
+    toast('⚠️ هذا المنتج نفد من المخزون', false);
+    return;
+  }
+  if (prod.stock < needed) {
+    toast(`⚠️ المخزون المتاح ${prod.stock} قطعة — لا يكفي لـ ${pmQtyVal} ${pmUnitLbl}`, false);
+    return;
+  }
   const addedAs = _pmPiecesPerUnit > 1 ? pmUnitLbl : '';
   cartAdd(curProd.name, pmQtyVal, _pmUnitPrice, _pmPiecesPerUnit, addedAs);
   closeModal('prodModal');
@@ -6440,3 +6453,4 @@ function updateModeBadge() {
   }
 }
 window.addEventListener('resize', () => { if (buyerMode) updateModeBadge(); });
+

@@ -37,4 +37,4 @@ window._fb = {
   signInWithPopup, signOut
 };
 window._fbReady = true;
-document.dispatchEvent(new Event('fbReady'));
+document.dispatchEvent(new Event('fbReady'));

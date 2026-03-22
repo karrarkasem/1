@@ -1,6 +1,38 @@
 // Burjuman — Service Worker v1.0
 // يعمل في الخلفية حتى لو المتصفح مغلق
 
+const IMG_CACHE = 'bj-img-v1';
+const IMG_MAX   = 200;
+
+self.addEventListener('fetch', event => {
+  const url = event.request.url;
+  const isImg = /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(url)
+    || url.includes('firebasestorage.googleapis.com')
+    || url.includes('drive.google.com/uc');
+  if (!isImg) return;
+
+  event.respondWith(
+    caches.open(IMG_CACHE).then(async cache => {
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) {
+          cache.put(event.request, response.clone());
+          cache.keys().then(keys => {
+            if (keys.length > IMG_MAX) cache.delete(keys[0]);
+          });
+        }
+        return response;
+      } catch {
+        return cached || new Response('', { status: 408 });
+      }
+    })
+  );
+});
+
+
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 

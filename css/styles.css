@@ -338,7 +338,7 @@ tbody tr{transition:all .15s}
 
 /* ── شريط الفئات: عائم واحترافي ── */
 .cats-wrap{
-  position:sticky;top:62px;z-index:300;
+  position:sticky;top:25px;z-index:300;
   margin:10px 12px 14px;
   border-radius:16px;
   background:#ffffff;

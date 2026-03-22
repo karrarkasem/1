@@ -170,7 +170,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
   <div class="tabs">
     <button class="tab active" onclick="switchTab('info')">🏢 معلومات المتجر</button>
     <button class="tab" onclick="switchTab('design')">🎨 التصميم</button>
-    <button class="tab" onclick="switchTab('notif')">🔔 الإشعارات</button>
+    <a href="notif-settings.html" class="tab" style="text-decoration:none">🔔 الإشعارات</a>
     <button class="tab" onclick="switchTab('api')">🔑 مفاتيح API</button>
     <button class="tab" onclick="switchTab('mobile')">📱 ربط التطبيق</button>
     <button class="tab" onclick="switchTab('system')">⚙️ النظام</button>
@@ -277,8 +277,8 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
-  <!-- ═══ TAB 3: الإشعارات ═══ -->
-  <div class="section" id="sec-notif">
+  <!-- ═══ TAB 3: الإشعارات — صفحة مستقلة ═══ -->
+  <div class="section" id="sec-notif" style="display:none">
 
     <!-- واتساب -->
     <div class="card">
@@ -858,12 +858,14 @@ function populateFields(s) {
 
 /* ══ TABS ══ */
 function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  const tabIds = ['info','design','api','mobile','system'];
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const ids = ['info','design','notif','api','mobile','system'];
-  const idx = ids.indexOf(id);
-  document.querySelectorAll('.tab')[idx].classList.add('active');
-  document.getElementById('sec-' + id).classList.add('active');
+  const idx = tabIds.indexOf(id);
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
 }
 
 /* ══ LOGO ══ */

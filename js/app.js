@@ -1,3 +1,6 @@
+// ── صورة بديلة للمنتجات بدون صورة (SVG محلي — بدون طلب شبكة) ──
+const NO_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f1f5f9'/%3E%3Crect x='65' y='68' width='70' height='64' rx='8' fill='%23e2e8f0'/%3E%3Crect x='55' y='61' width='90' height='20' rx='5' fill='%23cbd5e1'/%3E%3Cline x1='100' y1='81' x2='100' y2='132' stroke='%23d1d5db' stroke-width='2'/%3E%3C/svg%3E";
+
 // ⚙️ أضف معرّفاتك من emailjs.com (مجاني)
 const EMAILJS_SERVICE_ID  = 'service_e1sj8tn';
 const EMAILJS_TEMPLATE_ID = 'template_2vxg15b';
@@ -964,7 +967,7 @@ function renderStore(filter='الكل',btn=null){
     }
     return `<div class="prod-card" style="animation-delay:${i*.05}s">
       <div class="prod-img-box" onclick='openProdModal("${esc(p._id)}")'>
-        <img src="${p.img}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=📦'">
+        <img src="${p.img}" loading="lazy" onerror="this.src=NO_IMG">
         ${isOut?'<div class="stock-badge sb-out">نفاد المخزون</div>':isLow?'<div class="stock-badge sb-low">كمية محدودة</div>':''}
       </div>
       <div class="prod-body">
@@ -989,7 +992,7 @@ function doSearch(q){
       ? (p.wholesalePrice>0 ? `<div class="prod-price-wholesale">${p.wholesalePrice.toLocaleString()} د.ع / كرتون</div>` : `<div class="prod-price-no-ws">اطلب تسعير</div>`)
       : `<div class="prod-price">${p.price.toLocaleString()} د.ع / ${p.retailUnit||'قطعة'}</div>`;
     return `<div class="prod-card" onclick='openProdModal("${esc(p._id)}")'>
-      <div class="prod-img-box"><img src="${p.img}" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=📦'"></div>
+      <div class="prod-img-box"><img src="${p.img}" loading="lazy" onerror="this.src=NO_IMG"></div>
       <div class="prod-body">
         <div class="prod-name">${p.name}</div>
         ${priceDisp}
@@ -2408,7 +2411,7 @@ async function saveUser(){
 function renderManageProds(){
   document.getElementById('manageProdsBody').innerHTML=products.map((p,i)=>`
     <tr>
-      <td><img src="${p.img}" style="width:40px;height:40px;object-fit:cover;border-radius:var(--r8);border:1px solid rgba(0,0,0,.07)" onerror="this.src='https://via.placeholder.com/42?text=📦'"></td>
+      <td><img src="${p.img}" style="width:40px;height:40px;object-fit:cover;border-radius:var(--r8);border:1px solid rgba(0,0,0,.07)" onerror="this.src=NO_IMG"></td>
       <td style="font-weight:700;color:var(--deep)">${p.name}</td>
       <td><span class="badge b-sky">${p.cat}</span></td>
       <td style="font-weight:800;color:var(--dark)">${p.price.toLocaleString()} د.ع</td>
@@ -2427,7 +2430,7 @@ function openAddProd(){
   document.getElementById('pe_stock').value='0';
   document.getElementById('pe_min').value='10';
   document.getElementById('pe_status').value='active';
-  document.getElementById('pePreview').src='https://via.placeholder.com/100?text=📦';
+  document.getElementById('pePreview').src=NO_IMG;
   document.getElementById('peFile').value='';
   document.getElementById('peFileLabel').textContent='أو ارفع صورة هنا (سيتم رفعها على Firebase)';
   document.getElementById('uploadProgress').style.display='none';
@@ -2550,7 +2553,7 @@ async function saveProd(){
   const idx=document.getElementById('pe_idx').value;
   const fbid=document.getElementById('pe_fbid').value;
   if(!name||!cat||!price){toast('الاسم والتصنيف والسعر مطلوبة',false);return;}
-  const img = _uploadedImgUrl || (imgRaw ? fixDrive(imgRaw) : 'https://via.placeholder.com/200?text=📦');
+  const img = _uploadedImgUrl || (imgRaw ? fixDrive(imgRaw) : NO_IMG);
   // ── أبعاد الكرتون ──
   const carton_l = parseFloat(document.getElementById('pe_carton_l')?.value)||0;
   const carton_w = parseFloat(document.getElementById('pe_carton_w')?.value)||0;
@@ -3585,7 +3588,7 @@ function isThisMonth(dateStr){
 }
 
 function fixDrive(u){
-  if(!u) return 'https://via.placeholder.com/200?text=📦';
+  if(!u) return NO_IMG;
   if(u.includes('drive.google.com')){const m=u.match(/[-\w]{25,}/);if(m) return `https://drive.google.com/uc?export=view&id=${m[0]}`;}
   return u;
 }
@@ -5106,7 +5109,7 @@ ROLES.driver   = '🚗 سائق';
 // ── Helper: send browser notification ──
 function browserNotif(title, body, icon) {
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-    try { new Notification(title, { body, icon: icon || 'https://via.placeholder.com/64?text=🏪' }); } catch(e) {}
+    try { new Notification(title, { body, icon: icon || NO_IMG }); } catch(e) {}
   }
 }
 

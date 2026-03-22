@@ -551,7 +551,7 @@ function buildSidebar() {
     {id:'pageNotifications',icon:'🔔', lbl:'الإشعارات',          perm:'notif', badge:true},
     {id:'pageReports',     icon:'📈',  lbl:'التقارير',           perm:'reports'},
     {id:'pagePointsMgmt', icon:'⭐', lbl:'إدارة النقاط', perm:'users'},
-    {id:'pageMarketing', icon:'📣', lbl:'التسويق', perm:'manage'},
+    // pageMarketing handled by injectMarketingNav() — opens marketing.html directly
     {id:'pageDeliverySettings', icon:'🚚', lbl:'إعدادات التوصيل', perm:'delivery_cfg'},
   ];
 

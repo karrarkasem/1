@@ -1004,8 +1004,8 @@ function renderStore(filter='الكل',btn=null){
       priceHtml = `<div class="prod-price">${p.price.toLocaleString()} <span style="font-size:.68rem;color:rgba(9,50,87,.38);font-weight:600">د.ع / ${rUnitLabel}</span></div>`;
     }
     return `<div class="prod-card" style="animation-delay:${i*.05}s">
-      <div class="prod-img-box" onclick='openProdModal("${esc(p._id)}")'>
-        <img src="${p.img}" loading="lazy" onerror="this.src=NO_IMG">
+      <div class="prod-img-box img-loading" onclick='openProdModal("${esc(p._id)}")'>
+        <img src="${p.img}" loading="lazy" decoding="async" class="img-fade" onload="this.classList.replace('img-fade','img-ready');this.parentElement.classList.remove('img-loading')" onerror="this.src=NO_IMG;this.classList.replace('img-fade','img-ready');this.parentElement.classList.remove('img-loading')">
         ${isOut?'<div class="stock-badge sb-out">نفاد المخزون</div>':isLow?'<div class="stock-badge sb-low">كمية محدودة</div>':''}
       </div>
       <div class="prod-body">
@@ -1030,7 +1030,7 @@ function doSearch(q){
       ? (p.wholesalePrice>0 ? `<div class="prod-price-wholesale">${p.wholesalePrice.toLocaleString()} د.ع / كرتون</div>` : `<div class="prod-price-no-ws">اطلب تسعير</div>`)
       : `<div class="prod-price">${p.price.toLocaleString()} د.ع / ${p.retailUnit||'قطعة'}</div>`;
     return `<div class="prod-card" onclick='openProdModal("${esc(p._id)}")'>
-      <div class="prod-img-box"><img src="${p.img}" loading="lazy" onerror="this.src=NO_IMG"></div>
+      <div class="prod-img-box img-loading"><img src="${p.img}" loading="lazy" decoding="async" class="img-fade" onload="this.classList.replace('img-fade','img-ready');this.parentElement.classList.remove('img-loading')" onerror="this.src=NO_IMG;this.classList.replace('img-fade','img-ready');this.parentElement.classList.remove('img-loading')"></div>
       <div class="prod-body">
         <div class="prod-name">${p.name}</div>
         ${priceDisp}

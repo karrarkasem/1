@@ -31,7 +31,7 @@
   <div class="ls-spinner"></div>
   <div class="ls-brand">
     <div class="loading-txt">برجمان</div>
-    <div class="ls-brand-en">BURJUMAN</div>
+    <div class="ls-brand-en">BARJOMAN</div>
   </div>
   <div class="loading-sub" id="loadSub">جاري الاتصال بقاعدة البيانات...</div>
   <div class="ls-progress"><div class="ls-progress-bar"></div></div>
@@ -588,6 +588,46 @@
       <div class="send-log" id="sendLog"></div>
     </div>
   </div>
+  <!-- ══ Phone Extractor ══ -->
+  <div class="section-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-weight:900;font-size:.95rem;color:var(--deep)">📱 استخراج الأرقام الذكي</div>
+        <div style="font-size:.75rem;color:rgba(9,50,87,.45);margin-top:2px">الصق نصاً أو ارفع ملف لاستخراج أرقام الهاتف تلقائياً</div>
+      </div>
+      <span id="phoneExtractCount" style="background:var(--teal2);color:white;padding:3px 12px;border-radius:99px;font-weight:800;font-size:.78rem">0</span>
+    </div>
+
+    <!-- Input area -->
+    <textarea id="phoneExtractInput" rows="4" style="width:100%;background:var(--surface2);border:1.5px solid rgba(9,50,87,.12);border-radius:var(--r12);padding:12px;font-family:inherit;font-size:.85rem;color:var(--text);resize:vertical;outline:none;margin-bottom:10px;direction:ltr" placeholder="الصق النص هنا... يدعم الأرقام العراقية 07xxxxxxxxx أو الدولية +964..."></textarea>
+
+    <!-- File upload -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+      <label style="cursor:pointer">
+        <input type="file" accept=".txt,.csv,.xlsx,.xls" style="display:none" onchange="processPhoneExtractFile(this.files[0])">
+        <span class="btn btn-ghost btn-sm">📂 رفع ملف (txt/csv/xlsx)</span>
+      </label>
+      <button class="btn btn-sky btn-sm" onclick="doExtractPhones()">🔍 استخراج الأرقام</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('phoneExtractInput').value='';_extractedPhones=[];renderExtractedPhones()">مسح</button>
+    </div>
+
+    <!-- Results -->
+    <div id="phoneExtractResults" style="max-height:320px;overflow-y:auto"></div>
+
+    <!-- Actions for extracted phones -->
+    <div id="phoneExtractActions" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="selectAllExtractedPhones(true)">تحديد الكل</button>
+      <button class="btn btn-ghost btn-sm" onclick="selectAllExtractedPhones(false)">إلغاء الكل</button>
+      <button class="btn btn-sm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none" onclick="exportExtractedPhonesWhatsApp()">💬 إرسال عبر WA</button>
+      <button class="btn btn-outline btn-sm" onclick="exportExtractedPhones()">📥 تصدير CSV</button>
+    </div>
+
+    <!-- Info note -->
+    <div style="margin-top:10px;padding:8px 12px;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);border-radius:10px;font-size:.74rem;color:#b45309;line-height:1.6">
+      💡 <strong>للتحقق من واتساب/تيليجرام:</strong> اضغط زر WA أو TG بجانب كل رقم — إذا فتح المحادثة مباشرة فالرقم نشط، وإذا أظهر رسالة خطأ فهو غير مسجل.
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-hd">
       <div class="card-title">📋 قاعدة بيانات العملاء</div>

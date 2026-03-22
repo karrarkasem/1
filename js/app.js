@@ -74,6 +74,7 @@ async function loadCompanySettings() {
     const s = {};
     snap.docs.forEach(d => { const data = d.data(); if (data.key) s[data.key] = data.value; });
     window.COMPANY = s;
+    _cacheSet('bj_company', s);
 
     const nameAr = s.company_name_ar;
     const nameEn = s.company_name_en;
@@ -405,7 +406,7 @@ async function init() {
     // Race: either Firebase loads, or 10-second timeout
     await Promise.race([
       new Promise(res => document.addEventListener('fbReady', res, {once:true})),
-      new Promise(res => setTimeout(res, 10000))
+      new Promise(res => setTimeout(res, 6000))
     ]);
     if (window._fbReady) {
       fbReady = true;
@@ -417,6 +418,17 @@ async function init() {
   }
   setFbStatus(true, 'متصل');
   document.getElementById('loadSub').textContent = 'جاري تحميل البيانات...';
+
+  // ── عرض الكاش فوراً بدون انتظار Firebase ──
+  const _cachedProds = _cacheGet('bj_products', CACHE_TTL);
+  if (_cachedProds && _cachedProds.length) {
+    products = _cachedProds;
+    try { renderStore('الكل'); renderCats(); } catch(e){}
+  }
+  const _cachedOffers = _cacheGet('bj_offers', CACHE_TTL);
+  if (_cachedOffers && _cachedOffers.length) { offers = _cachedOffers; }
+  const _cachedComp = _cacheGet('bj_company', CACHE_TTL * 12);
+  if (_cachedComp) { window.COMPANY = _cachedComp; }
 
   try {
     await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadPreparerSettings(), loadCompanySettings()]);
@@ -588,9 +600,22 @@ async function loadUsers() {
   })).filter(u=>u.username);
 }
 
+// ── Cache helpers ──
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+function _cacheSet(key, data) { try { localStorage.setItem(key, JSON.stringify({t: Date.now(), d: data})); } catch(e){} }
+function _cacheGet(key, maxAge) { try { const c = JSON.parse(localStorage.getItem(key)||'null'); if(c && (Date.now()-c.t) < (maxAge||CACHE_TTL)) return c.d; } catch(e){} return null; }
+
 async function loadProducts() {
+  // 1. Show cached data instantly
+  const cached = _cacheGet('bj_products', CACHE_TTL);
+  if (cached && cached.length) {
+    products = cached;
+    renderStore('الكل'); renderCats();
+  }
+  // 2. Fetch fresh data in background
   const raw = await fbGet('products');
-  products = raw.map((p,i) => ({
+  if (!raw.length) return;
+  const fresh = raw.map((p,i) => ({
     idx: i, _id: p._id,
     name:           p.name||'',
     cat:            p.category||'عام',
@@ -610,6 +635,8 @@ async function loadProducts() {
     carton_volume: parseFloat(p.carton_volume)||0,
     carton_weight: parseFloat(p.carton_weight)||0
   })).filter(p=>p.name&&p.price>0);
+  products = fresh;
+  _cacheSet('bj_products', fresh);
   renderStore('الكل'); renderCats();
 }
 
@@ -626,6 +653,7 @@ async function loadOffers() {
     type:o.discountType||'percent', value:parseFloat(o.value)||0,
     from:o.startDate||'', to:o.endDate||'', status:o.status||'active'
   }));
+  _cacheSet('bj_offers', offers);
   renderOffers();
 }
 

@@ -3616,26 +3616,7 @@ function safeName(s){return(s||'').replace(/[^\w\u0621-\u064A]/g,'_');}
 function renderOffersBanner() {
   const wrap = document.getElementById('offersBannerWrap');
   if (!wrap) return;
-  const activeOffers = offers.filter(o => o.status === 'active' && !isOfferExpired(o));
-  if (!activeOffers.length) {
-    // Default promotional slides when no offers
-    const defaults = [
-      { title:'مرحباً بك في برجمان 🏪', desc:'اكتشف أفضل المنتجات بأفضل الأسعار', val:'عروض', sub:'حصرية', color:0 },
-      { title:'نظام النقاط ⭐', desc:'لكل 100,000 د.ع تحصل على نقطة مكافأة', val:'1 نقطة', sub:'لكل 100K', color:1 },
-    ];
-    renderBannerSlides(defaults.map((d,i) => ({...d, idx:i})));
-    return;
-  }
-  const slides = activeOffers.map((o, i) => ({
-    title: o.title,
-    desc: o.desc || '',
-    val: o.type==='percent' ? o.value+'%' : o.type==='free' ? 'مجاني' : (parseFloat(o.value)||0).toLocaleString()+' د.ع',
-    sub: o.type==='percent' ? 'خصم' : o.type==='free' ? 'هدية' : 'توفير',
-    color: i % 5,
-    img: o.img || null,
-    idx: i
-  }));
-  renderBannerSlides(slides);
+  wrap.innerHTML = '';
 }
 
 let bannerRafId = null, bannerRafStart = 0;
@@ -3727,11 +3708,11 @@ function bannerGoTo(idx) {
 // BANNER MODAL — full-screen popup on load / new offer
 // ═══════════════════════════════════════════════════════
 const BM_COLORS = [
-  'linear-gradient(135deg,#0d9488,#0f766e)',
-  'linear-gradient(135deg,#1e293b,#0f172a)',
-  'linear-gradient(135deg,#f59e0b,#d97706)',
-  'linear-gradient(135deg,#8b5cf6,#7c3aed)',
-  'linear-gradient(135deg,#f43f5e,#e11d48)',
+  'rgba(255,255,255,0.28)',
+  'rgba(255,255,255,0.28)',
+  'rgba(255,255,255,0.28)',
+  'rgba(255,255,255,0.28)',
+  'rgba(255,255,255,0.28)',
 ];
 const BM_ICONS = ['🎁','⭐','🔥','💎','🚀'];
 

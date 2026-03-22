@@ -421,7 +421,16 @@ tbody tr{transition:all .15s}
   transition:transform .35s ease;
 }
 .prod-card:hover .prod-img-box img{transform:scale(1.08)}
-
+/* shimmer while image loads */
+.prod-img-box.img-loading::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+  background-size:300% 100%;
+  animation:shimmer 1.5s infinite;
+  z-index:1;border-radius:inherit;
+}
+.prod-img-box img.img-fade{opacity:0;}
+.prod-img-box img.img-ready{opacity:1;}
 /* ── شارة المخزون ── */
 .stock-badge{
   position:absolute;top:8px;left:8px;

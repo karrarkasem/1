@@ -334,7 +334,7 @@ tbody tr{transition:all .15s}
    ═══════════════════════════════════════════ */
 
 /* ── الصفحة الرئيسية: خلفية ناعمة ── */
-#pageStore{background:transparent;padding:0 0 100px;}
+#pageStore{background:transparent;padding:0 0 100px !important;}
 
 /* ── شريط الفئات: لزج وجميل ── */
 .cats-wrap{
@@ -342,7 +342,6 @@ tbody tr{transition:all .15s}
   background:#ffffff;
   border-bottom:1px solid rgba(0,0,0,.06);
   padding:10px 14px 11px;
-  margin:0 -14px;
   box-shadow:0 4px 12px rgba(0,0,0,.04);
 }
 .cats-row{
@@ -1408,11 +1407,10 @@ body.sidebar-open{overflow:hidden}
 
 /* ── هاتف: شبكة 2 عمود محسّنة ── */
 @media(max-width:768px){
-  #pageStore{padding:0 0 110px;}
+  #pageStore{padding:0 0 110px !important;}
   .cats-wrap{
     top:58px;
     padding:9px 12px 10px;
-    margin:0 -12px;
   }
   .store-body{padding:12px 12px 0;}
   .prod-grid{
@@ -1432,7 +1430,7 @@ body.sidebar-open{overflow:hidden}
 
 /* ── هاتف صغير: تعديل طفيف ── */
 @media(max-width:380px){
-  .cats-wrap{padding:8px 10px 9px;margin:0 -10px;}
+  .cats-wrap{padding:8px 10px 9px;}
   .store-body{padding:10px 10px 0;}
   .prod-grid{gap:9px;}
   .prod-img-box{max-height:130px;min-height:110px;}
@@ -1443,7 +1441,7 @@ body.sidebar-open{overflow:hidden}
 /* ── وضع الديسكتوب: شبكة 3-4 أعمدة ── */
 @media(min-width:900px){
   .prod-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
-  .cats-wrap{padding:12px 20px 13px;margin:0 -20px;}
+  .cats-wrap{padding:12px 20px 13px;}
   .store-body{padding:16px 20px 0;}
   .prod-img-box{max-height:190px;min-height:150px;}
 }

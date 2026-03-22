@@ -551,7 +551,7 @@ function buildSidebar() {
     {id:'pageNotifications',icon:'🔔', lbl:'الإشعارات',          perm:'notif', badge:true},
     {id:'pageReports',     icon:'📈',  lbl:'التقارير',           perm:'reports'},
     {id:'pagePointsMgmt', icon:'⭐', lbl:'إدارة النقاط', perm:'users'},
-    // pageMarketing handled by injectMarketingNav() — opens marketing.html directly
+    {id:'pageMarketing', icon:'📣', lbl:'التسويق', perm:'manage', extUrl:'marketing.html'},
     {id:'pageDeliverySettings', icon:'🚚', lbl:'إعدادات التوصيل', perm:'delivery_cfg'},
   ];
 
@@ -563,7 +563,8 @@ function buildSidebar() {
     const pendingCnt = (n.pendingApproval && (CU?.type==='admin'||CU?.type==='sales_manager'))
       ? orders.filter(o=>(o.status||'')==='pending_approval').length : 0;
     const badgeVal = unread || pendingCnt;
-    html+=`<div class="nav-item" id="nav_${n.id}" onclick="showPage('${n.id}')">
+    const clickAct = n.extUrl ? `window.open('${n.extUrl}','_blank')` : `showPage('${n.id}')`;
+    html+=`<div class="nav-item" id="nav_${n.id}" onclick="${clickAct}">
       <span class="nav-icon">${n.icon}</span>${n.lbl}
       ${badgeVal>0?`<span class="nav-badge" style="${pendingCnt>0?'background:#f59e0b':''}">${badgeVal}</span>`:''}
     </div>`;

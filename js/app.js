@@ -4697,6 +4697,133 @@ function renderVisitors() {
   : '<div style="text-align:center;padding:35px;color:rgba(9,50,87,.35)">لا يوجد زوار بعد</div>';
 }
 
+// ══════════════════════════════════════════════════════
+// PHONE NUMBER EXTRACTOR — استخراج الأرقام الذكي
+// ══════════════════════════════════════════════════════
+let _extractedPhones = [];
+
+function normalizeIraqiPhone(raw) {
+  // Remove all non-digits
+  let n = raw.replace(/\D/g, '');
+  // Iraqi: starts with 07 → 9647...
+  if (/^07[3-9]\d{8}$/.test(n)) return '+964' + n.slice(1);
+  // Already has 964
+  if (/^9647[3-9]\d{8}$/.test(n)) return '+' + n;
+  if (/^00964/.test(n)) return '+' + n.slice(2);
+  // International with +
+  if (raw.startsWith('+') && n.length >= 10) return '+' + n;
+  // Generic 10-11 digit
+  if (n.length >= 10 && n.length <= 14) return '+' + n;
+  return null;
+}
+
+function extractPhoneNumbers(text) {
+  if (!text) return [];
+  // Multiple regex patterns to catch all formats
+  const patterns = [
+    /(?:\+964|00964|0)7[3-9]\d{8}/g,   // Iraqi mobile
+    /\+\d{10,14}/g,                      // International +xx
+    /\b07[3-9]\d{8}\b/g,                 // Iraqi without prefix
+    /\b\d{11,13}\b/g,                    // Long numeric sequences
+  ];
+  const found = new Set();
+  patterns.forEach(p => {
+    const m = text.match(p);
+    if (m) m.forEach(num => {
+      const normalized = normalizeIraqiPhone(num);
+      if (normalized) found.add(normalized);
+    });
+  });
+  return [...found];
+}
+
+async function doExtractPhones() {
+  const raw = document.getElementById('phoneExtractInput')?.value || '';
+  const phones = extractPhoneNumbers(raw);
+  _extractedPhones = phones.map(p => ({ phone: p, wa: null, tg: null, selected: true }));
+  renderExtractedPhones();
+}
+
+async function processPhoneExtractFile(file) {
+  const el = document.getElementById('phoneExtractInput');
+  if (!file || !el) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt' || ext === 'csv') {
+    const text = await file.text();
+    el.value = text;
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    if (typeof XLSX === 'undefined') { toast('جاري تحميل مكتبة Excel...', 'info'); return; }
+    const arr = await file.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(arr), {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    el.value = rows.map(r => r.join(' ')).join('\n');
+  } else {
+    toast('صيغة الملف غير مدعومة — استخدم txt, csv, xlsx', false);
+    return;
+  }
+  doExtractPhones();
+}
+
+function renderExtractedPhones() {
+  const el = document.getElementById('phoneExtractResults');
+  if (!el) return;
+  const countEl = document.getElementById('phoneExtractCount');
+  if (countEl) countEl.textContent = _extractedPhones.length;
+  if (!_extractedPhones.length) {
+    el.innerHTML = '<div style="text-align:center;padding:22px;color:rgba(9,50,87,.35)">لم يتم العثور على أرقام</div>';
+    return;
+  }
+  el.innerHTML = _extractedPhones.map((item, i) => {
+    const waNum = item.phone.replace('+', '');
+    const waUrl = `https://wa.me/${waNum}`;
+    const tgUrl = `https://t.me/+${waNum}`;
+    return `
+    <div class="phone-extract-row" id="per_${i}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(9,50,87,.03);border-radius:10px;margin-bottom:6px;border:1px solid rgba(9,50,87,.07)">
+      <input type="checkbox" ${item.selected?'checked':''} onchange="_extractedPhones[${i}].selected=this.checked" style="width:16px;height:16px;accent-color:var(--teal2);flex-shrink:0">
+      <span style="flex:1;font-weight:700;font-size:.88rem;direction:ltr;color:var(--deep)">${item.phone}</span>
+      <a href="${waUrl}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;text-decoration:none;padding:5px 10px;font-size:.72rem" onclick="_extractedPhones[${i}].wa=true;this.textContent='✅ WA'">
+        💬 WA
+      </a>
+      <a href="${tgUrl}" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,#2AABEE,#229ED9);color:white;border:none;text-decoration:none;padding:5px 10px;font-size:.72rem" onclick="_extractedPhones[${i}].tg=true;this.textContent='✅ TG'">
+        ✈️ TG
+      </a>
+      <button class="btn btn-sm" style="background:rgba(244,63,94,.08);color:#e11d48;border:none;padding:5px 8px;font-size:.72rem" onclick="_extractedPhones.splice(${i},1);renderExtractedPhones()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function selectAllExtractedPhones(val) {
+  _extractedPhones.forEach(p => p.selected = val);
+  renderExtractedPhones();
+}
+
+function exportExtractedPhones() {
+  const sel = _extractedPhones.filter(p => p.selected);
+  if (!sel.length) { toast('اختر أرقاماً أولاً', false); return; }
+  const csv = 'phone\n' + sel.map(p => p.phone).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'phones_' + Date.now() + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast(`تم تصدير ${sel.length} رقم`);
+}
+
+function exportExtractedPhonesWhatsApp() {
+  const sel = _extractedPhones.filter(p => p.selected);
+  if (!sel.length) { toast('اختر أرقاماً أولاً', false); return; }
+  // Open wa.me links one by one
+  if (sel.length > 10) {
+    if (!confirm(`سيتم فتح ${sel.length} نافذة — المتصفح قد يحجب بعضها. استمر؟`)) return;
+  }
+  const body = document.getElementById('mktBody')?.value || 'مرحباً';
+  sel.forEach((item, i) => {
+    const num = item.phone.replace('+','');
+    setTimeout(() => window.open(`https://wa.me/${num}?text=${encodeURIComponent(body)}`, '_blank'), i * 300);
+  });
+}
+
 function renderContacts() {
   const el = document.getElementById('contactsList');
   if (!el) return;

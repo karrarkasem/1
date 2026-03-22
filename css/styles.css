@@ -339,10 +339,21 @@ tbody tr{transition:all .15s}
 /* ── شريط الفئات: لزج وجميل ── */
 .cats-wrap{
   position:sticky;top:62px;z-index:300;
-  background:#ffffff;
+  background:rgba(255,255,255,.88);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
   border-bottom:1px solid rgba(0,0,0,.06);
   padding:10px 14px 11px;
-  box-shadow:0 4px 12px rgba(0,0,0,.04);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.cats-wrap::after{
+  content:'';
+  position:absolute;
+  bottom:-16px;left:0;right:0;
+  height:16px;
+  background:linear-gradient(to bottom,rgba(255,255,255,.55),transparent);
+  pointer-events:none;
+  z-index:1;
 }
 .cats-row{
   display:flex;gap:8px;
@@ -1541,7 +1552,7 @@ body.sidebar-open{overflow:hidden}
     top:58px;
     padding:9px 12px 10px;
   }
-  .store-body{padding:12px 12px 0;}
+  .store-body{padding:18px 12px 0;}
   .prod-grid{
     grid-template-columns:repeat(2,1fr);
     gap:11px;

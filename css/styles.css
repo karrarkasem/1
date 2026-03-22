@@ -422,7 +422,7 @@ tbody tr{transition:all .15s}
   width:100%;height:100%;
   object-fit:contain;
   transition:transform .35s ease;
-  padding:1px;
+  padding:object-fit:contain;
 }
 .prod-card:hover .prod-img-box img{transform:scale(1.08)}
 

@@ -330,6 +330,208 @@ tbody tr{transition:all .15s}
 @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
 
 /* ═══════════════════════════════════════════
+   STORE PAGE — REDESIGN
+   ═══════════════════════════════════════════ */
+
+/* ── الصفحة الرئيسية: خلفية ناعمة ── */
+#pageStore{background:transparent;padding:0 0 100px;}
+
+/* ── شريط الفئات: لزج وجميل ── */
+.cats-wrap{
+  position:sticky;top:62px;z-index:300;
+  background:#ffffff;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  padding:10px 14px 11px;
+  margin:0 -14px;
+  box-shadow:0 4px 12px rgba(0,0,0,.04);
+}
+.cats-row{
+  display:flex;gap:8px;
+  overflow-x:auto;padding-bottom:0;
+  scrollbar-width:none;margin-bottom:0;
+}
+.cats-row::-webkit-scrollbar{display:none}
+
+.cat-chip{
+  padding:7px 16px;
+  border-radius:var(--r99);
+  white-space:nowrap;
+  background:#f8fafc;
+  border:1.5px solid rgba(0,0,0,0.07);
+  font-size:.82rem;font-weight:700;
+  color:var(--mid);cursor:pointer;
+  transition:all .2s;font-family:'Cairo';
+  box-shadow:var(--shadow-sm);
+  display:flex;align-items:center;gap:5px;
+}
+.cat-chip:hover{
+  background:#ffffff;
+  border-color:var(--teal);
+  color:var(--teal2);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(13,148,136,.12);
+}
+.cat-chip.on{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  border-color:transparent;color:white;
+  box-shadow:0 6px 16px rgba(13,148,136,.30);
+  transform:translateY(-1px);
+}
+
+/* ── منطقة العروض والمنتجات ── */
+.store-body{padding:14px 14px 0;}
+
+/* ── شبكة المنتجات ── */
+.prod-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(158px,1fr));
+  gap:13px;
+  margin-top:2px;
+}
+
+/* ── كرت المنتج ── */
+.prod-card{
+  background:#ffffff;
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:20px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:all .24s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  position:relative;
+  display:flex;flex-direction:column;
+}
+.prod-card:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 40px rgba(0,0,0,.10);
+  border-color:rgba(13,148,136,.18);
+}
+.prod-card:active{transform:scale(.97);}
+
+/* ── صورة المنتج ── */
+.prod-img-box{
+  aspect-ratio:1/1;
+  max-height:170px;
+  min-height:130px;
+  background:linear-gradient(135deg,#f8fafc,#f1f5f9);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative;
+}
+.prod-img-box img{
+  width:100%;height:100%;
+  object-fit:contain;
+  transition:transform .35s ease;
+  padding:6px;
+}
+.prod-card:hover .prod-img-box img{transform:scale(1.08)}
+
+/* ── شارة المخزون ── */
+.stock-badge{
+  position:absolute;top:8px;left:8px;
+  border-radius:var(--r8);
+  padding:3px 9px;font-size:.64rem;font-weight:800;
+  backdrop-filter:blur(6px);
+}
+.sb-low{background:rgba(245,158,11,.85);color:#fff;border:none;}
+.sb-out{background:rgba(244,63,94,.85);color:#fff;border:none;}
+
+/* ── جسم الكرت ── */
+.prod-body{
+  padding:12px 12px 13px;
+  flex:1;display:flex;flex-direction:column;
+  gap:0;
+}
+.prod-name{
+  font-size:.86rem;font-weight:800;
+  color:var(--deep);margin-bottom:4px;
+  line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;
+}
+.prod-price{
+  font-size:1rem;font-weight:900;
+  color:var(--teal2);margin-bottom:10px;
+  display:flex;align-items:baseline;gap:3px;
+}
+
+/* ── أزرار الكمية ── */
+.qty-ctrl{
+  display:flex;align-items:center;gap:0;
+  justify-content:space-between;
+  background:#f8fafc;
+  border:1.5px solid rgba(0,0,0,.07);
+  border-radius:var(--r12);
+  overflow:hidden;
+  margin-top:auto;
+}
+.q-btn{
+  width:36px;height:36px;
+  border-radius:0;border:none;
+  background:transparent;
+  color:var(--deep);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;font-weight:900;
+  transition:all .18s;font-family:'Cairo';
+  box-shadow:none;flex-shrink:0;
+}
+.q-btn:hover{background:rgba(0,0,0,.06);}
+.q-btn:active{transform:scale(.82);}
+.q-btn.plus{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:white;
+  box-shadow:none;
+}
+.q-btn.plus:hover{background:var(--teal2);transform:none;}
+.q-num{
+  font-weight:900;font-size:.92rem;
+  min-width:28px;text-align:center;color:var(--deep);
+  flex:1;
+}
+
+/* ── سكيليتون ── */
+.skel{
+  background:linear-gradient(90deg,#f1f5f9 25%,#e8eef5 50%,#f1f5f9 75%);
+  background-size:300% 100%;
+  animation:shimmer 1.5s infinite;
+  border-radius:20px;
+  height:240px;
+}
+
+/* ── الـ Topbar — تحسين ── */
+.topbar{
+  background:#ffffff;
+  border-bottom:1px solid rgba(0,0,0,.06);
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+  padding:10px 14px;
+  position:sticky;top:0;z-index:400;
+  display:flex;align-items:center;gap:10px;
+  width:100%;
+}
+.menu-toggle{
+  width:40px;height:40px;
+  border-radius:14px;
+  background:#f8fafc;
+  border:1.5px solid rgba(0,0,0,.07);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1.1rem;
+  transition:all .2s;box-shadow:var(--shadow-sm);
+  flex-shrink:0;color:var(--deep);
+}
+.menu-toggle:hover{background:white;border-color:var(--teal);color:var(--teal2);}
+
+/* ── بانر الزائر ── */
+.guest-banner{
+  background:linear-gradient(135deg,rgba(13,148,136,.08),rgba(13,148,136,.03));
+  border:1.5px dashed rgba(13,148,136,.22);
+  border-radius:var(--r20);
+  padding:14px 16px;
+  display:flex;align-items:center;
+  justify-content:space-between;
+  margin:14px 14px 0;
+  flex-wrap:wrap;gap:10px;
+}
+
+/* ═══════════════════════════════════════════
    CART FLOAT — MOBILE FIX
    ═══════════════════════════════════════════ */
 .cart-float{
@@ -1198,4 +1400,50 @@ body.sidebar-open{overflow:hidden}
   .tab{min-height:40px;}
   select,.fi,.fsel{min-height:44px;}
   .cat-chip{min-height:36px;padding:7px 14px;}
+}
+
+/* ═══════════════════════════════════════════
+   STORE PAGE — MOBILE RESPONSIVE
+   ═══════════════════════════════════════════ */
+
+/* ── هاتف: شبكة 2 عمود محسّنة ── */
+@media(max-width:768px){
+  #pageStore{padding:0 0 110px;}
+  .cats-wrap{
+    top:58px;
+    padding:9px 12px 10px;
+    margin:0 -12px;
+  }
+  .store-body{padding:12px 12px 0;}
+  .prod-grid{
+    grid-template-columns:repeat(2,1fr);
+    gap:11px;
+  }
+  .prod-img-box{
+    max-height:150px;min-height:120px;
+  }
+  .prod-body{padding:10px 10px 11px;}
+  .prod-name{font-size:.82rem;}
+  .prod-price{font-size:.95rem;}
+  .q-btn{width:34px;height:34px;}
+  .skel{height:210px;border-radius:18px;}
+  .guest-banner{margin:12px 12px 0;border-radius:var(--r16);padding:12px 14px;}
+}
+
+/* ── هاتف صغير: تعديل طفيف ── */
+@media(max-width:380px){
+  .cats-wrap{padding:8px 10px 9px;margin:0 -10px;}
+  .store-body{padding:10px 10px 0;}
+  .prod-grid{gap:9px;}
+  .prod-img-box{max-height:130px;min-height:110px;}
+  .prod-name{font-size:.79rem;}
+  .q-btn{width:32px;height:32px;font-size:1rem;}
+}
+
+/* ── وضع الديسكتوب: شبكة 3-4 أعمدة ── */
+@media(min-width:900px){
+  .prod-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
+  .cats-wrap{padding:12px 20px 13px;margin:0 -20px;}
+  .store-body{padding:16px 20px 0;}
+  .prod-img-box{max-height:190px;min-height:150px;}
 }

@@ -112,6 +112,63 @@ async function loadCompanySettings() {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// PUSH NOTIFICATIONS (FCM + Service Worker)
+// ═══════════════════════════════════════════════════════
+
+async function registerPush() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  if (!window._messaging) return;
+  try {
+    const sw = await navigator.serviceWorker.register('/sw.js');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const vapidKey = window.COMPANY?.vapid_key;
+    if (!vapidKey) return; // VAPID key مطلوب
+
+    const token = await window._fb.getToken(window._messaging, {
+      vapidKey,
+      serviceWorkerRegistration: sw
+    });
+    if (token && CU?._id) {
+      await fbUpdate('users', CU._id, { fcmToken: token });
+      const idx = users.findIndex(u => u._id === CU._id);
+      if (idx !== -1) users[idx].fcmToken = token;
+    }
+
+    // إشعارات وهي الصفحة مفتوحة
+    window._fb.onMessage(window._messaging, payload => {
+      const title = payload.notification?.title || 'برجمان';
+      const body  = payload.notification?.body  || '';
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/icon.png', dir: 'rtl' });
+      }
+    });
+  } catch(e) { console.warn('registerPush:', e); }
+}
+
+async function sendFCMPushToAdmins(title, body, url = '/') {
+  const serverKey = window.COMPANY?.fcm_server_key;
+  if (!serverKey) return;
+  const adminTypes = ['admin','sales_manager','supervisor'];
+  const tokens = users
+    .filter(u => adminTypes.includes(u.type) && u.fcmToken)
+    .map(u => u.fcmToken);
+  if (!tokens.length) return;
+  for (const token of tokens) {
+    fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'key=' + serverKey },
+      body: JSON.stringify({
+        to: token,
+        notification: { title, body, icon: '/icon.png', dir: 'rtl' },
+        data: { url, tag: 'order' }
+      })
+    }).catch(()=>{});
+  }
+}
+
 async function createPreparerNotification(orderData, totalVolume) {
   try {
     const q = fb().query(fb().collection(db(), 'users'), fb().where('type', '==', 'preparer'));
@@ -792,6 +849,7 @@ async function doLogin() {
   localStorage.setItem('bjUser', JSON.stringify({username: CU.username, loginTime: Date.now()}));
   if(found._id) fbUpdate('users',found._id,{lastLogin:new Date().toLocaleDateString('ar-IQ')}).catch(()=>{});
   hideLogin(); buildUI();
+  setTimeout(() => registerPush(), 1500);
   const _loginTarget=(CU.type==='preparer')?'pagePrep':(CU.type==='driver')?'pageDriver':'pageDashboard';
 showPage(_loginTarget); toast('✅ مرحباً '+CU.name);
 }
@@ -1313,26 +1371,36 @@ sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId,
   const trackUrl = `https://brjman.com/track.html?order=${orderId}`;
   const trackBtn = document.getElementById('cartTrackBtn');
   if (trackBtn) trackBtn.href = trackUrl;
-  // إشعار تيليغرام — المجموعة + كل مستخدم معني عنده معرف
-  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
-  const TG_CHAT  = '-5246620507';
+  // إشعار تيليغرام — القيم من Firestore settings
+  const TG_TOKEN = window.COMPANY?.telegram_token || '';
+  const TG_CHAT  = window.COMPANY?.telegram_chat  || '';
   const _newOrderTgText = `🛍️ *طلب جديد يحتاج موافقة*\n\n📅 ${nowStr}\n${CU?.name||'زائر'}\n🏪 ${shop}\n📍 ${addr}\n📦 ${prodList.join('، ')}\n💰 ${total.toLocaleString()} د.ع\nعمولة: ${commission.toLocaleString()} د.ع`;
-  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ chat_id: TG_CHAT, text: _newOrderTgText, parse_mode: 'Markdown' })
-  }).catch(()=>{});
-  // إشعار فردي لكل ادمن / مشرف / مدير مبيعات / مجهز / سائق عنده معرف تيليجرام
-  const _notifyTypes = ['admin','sales_manager','supervisor','preparer','driver'];
-  users.filter(u => _notifyTypes.includes(u.type) && u.telegram).forEach(u => {
-    const _isApprover = ['admin','sales_manager','supervisor'].includes(u.type);
-    const _personalMsg = _newOrderTgText + (_isApprover ? '\n\n✅ *افتح لوحة التحكم للموافقة على الطلب*' : '');
+  if (TG_TOKEN && TG_CHAT) {
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: u.telegram, text: _personalMsg, parse_mode: 'Markdown' })
+      body: JSON.stringify({ chat_id: TG_CHAT, text: _newOrderTgText, parse_mode: 'Markdown' })
     }).catch(()=>{});
-  });
+  }
+  // إشعار فردي لكل مستخدم عنده معرف تيليجرام
+  const _notifyTypes = ['admin','sales_manager','supervisor','preparer','driver'];
+  if (TG_TOKEN) {
+    users.filter(u => _notifyTypes.includes(u.type) && u.telegram).forEach(u => {
+      const _isApprover = ['admin','sales_manager','supervisor'].includes(u.type);
+      const _personalMsg = _newOrderTgText + (_isApprover ? '\n\n✅ *افتح لوحة التحكم للموافقة على الطلب*' : '');
+      fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: u.telegram, text: _personalMsg, parse_mode: 'Markdown' })
+      }).catch(()=>{});
+    });
+  }
+  // إشعار Push للأجهزة (FCM) — يصل حتى لو المتصفح مغلق
+  sendFCMPushToAdmins(
+    '📦 طلب جديد يحتاج موافقة',
+    `${CU?.name||'زائر'} — ${shop} — ${total.toLocaleString()} د.ع`,
+    '/'
+  );
 
   toast(CU&&commission>0?`✅ الطلب أُرسل! عمولتك: ${commission.toLocaleString()} د.ع`:'تم إرسال الطلب');
 

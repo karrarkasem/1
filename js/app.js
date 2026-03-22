@@ -4084,7 +4084,7 @@ function injectMarketingNav() {
   div.className = 'nav-item';
   div.id = 'nav_pageMarketing';
   div.innerHTML = `<span class="nav-icon">📣</span>التسويق`;
-  div.onclick = () => showPage('pageMarketing');
+  div.onclick = () => window.open('marketing.html', '_blank');
   sbNav.appendChild(div);
   // Also inject register link in login overlay
   injectRegisterLink();

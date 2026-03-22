@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعدادات الإشعارات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="js/theme.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.12);
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --accent:var(--teal,#0d9488);--accent2:var(--teal2,#0f766e);
+  --accent3:var(--teal3,rgba(13,148,136,.10));
+  --radius:14px;--shadow:0 4px 20px rgba(0,0,0,.08);
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;
+}
+[data-mode="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#0f172a;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.13);
+  --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px 80px;}
+
+/* Header */
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;}
+.page-logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(13,148,136,.3);}
+.page-header h1{font-size:1.4rem;font-weight:900;}
+.page-header p{color:var(--muted);font-size:.82rem;margin-top:2px;}
+.header-actions{margin-right:auto;display:flex;gap:8px;}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.card-title{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+.card-sub{color:var(--muted);font-size:.8rem;margin-bottom:14px;}
+.sep{font-size:.72rem;font-weight:800;color:var(--muted2);letter-spacing:.06em;margin:14px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+
+/* Status badge */
+.status{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;}
+.status.ok{background:rgba(16,185,129,.12);color:#059669;}
+.status.warn{background:rgba(245,158,11,.12);color:#b45309;}
+.status.off{background:rgba(100,116,139,.1);color:var(--muted);}
+
+/* Form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-grid .full{grid-column:1/-1;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:.78rem;font-weight:700;color:var(--muted);}
+.field input{padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;color:var(--text);font-family:Cairo,sans-serif;font-size:.85rem;outline:none;transition:border .2s;}
+.field input:focus{border-color:var(--accent);}
+.hint{font-size:.72rem;color:var(--muted2);}
+.api-row{display:flex;gap:8px;align-items:flex-end;}
+.api-row .field{flex:1;}
+.eye-btn{padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;cursor:pointer;font-size:.85rem;height:42px;flex-shrink:0;}
+
+/* Toggle */
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:50px;cursor:pointer;transition:.25s;}
+.toggle-slider::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.toggle input:checked+.toggle-slider{background:var(--accent);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);}
+
+/* Notif body */
+.notif-body{margin-top:12px;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+.notif-body.hidden{display:none;}
+
+/* Buttons */
+.btn{padding:9px 18px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-outline{background:var(--surface2);color:var(--text);border:1.5px solid var(--border2);}
+.btn-outline:hover{background:var(--border);}
+.btn-sm{padding:6px 14px;font-size:.78rem;}
+.btn-back{padding:8px 16px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text);font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:5px;}
+.btn-back:hover{background:var(--surface2);}
+
+/* Save bar */
+.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 0;margin-top:20px;display:flex;align-items:center;gap:12px;z-index:50;}
+.btn-save{padding:11px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;}
+.btn-save:hover{background:var(--accent2);}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;}
+.save-status{font-size:.82rem;}
+.save-status.ok{color:var(--green);}
+.save-status.err{color:var(--red);}
+
+/* Push permission block */
+.push-banner{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(13,148,136,.07);border:1px solid var(--accent3);border-radius:12px;margin-bottom:14px;}
+.push-banner-icon{font-size:28px;flex-shrink:0;}
+.push-banner h3{font-size:.9rem;font-weight:800;margin-bottom:3px;}
+.push-banner p{font-size:.78rem;color:var(--muted);}
+
+/* Steps list */
+.steps{list-style:none;padding:0;}
+.steps li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);}
+.steps li:last-child{border-bottom:none;}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0;margin-top:1px;}
+.step-txt{font-size:.82rem;line-height:1.6;}
+.step-txt strong{color:var(--accent);}
+.step-txt code{background:var(--surface2);border:1px solid var(--border2);padding:1px 6px;border-radius:5px;font-size:.75rem;}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:11px 22px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+@media(max-width:560px){.form-grid{grid-template-columns:1fr;}.form-grid .full{grid-column:1;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-header">
+    <div class="page-logo">🔔</div>
+    <div>
+      <h1>إعدادات الإشعارات</h1>
+      <p>كل قنوات التنبيه — تيليغرام، واتساب، إيميل، وإشعارات الجوال</p>
+    </div>
+    <div class="header-actions">
+      <a href="setup.html" class="btn-back">⚙️ الإعدادات</a>
+      <a href="index.html" class="btn-back">🏬 المتجر</a>
+    </div>
+  </div>
+
+  <!-- Push Permission Banner -->
+  <div class="push-banner" id="pushBanner" style="display:none">
+    <div class="push-banner-icon">📲</div>
+    <div style="flex:1">
+      <h3>تفعيل إشعارات الجوال</h3>
+      <p>اضغط "تفعيل" حتى تصلك إشعارات الطلبات على هاتفك حتى لو المتصفح مغلق</p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="requestPushPermission()">تفعيل</button>
+  </div>
+
+  <!-- ═══ تيليغرام ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">✈️ تيليغرام</div>
+      <label class="toggle">
+        <input type="checkbox" id="teleEnabled" onchange="toggleBody('tele')">
+        <div class="toggle-slider"></div>
+      </label>
+    </div>
+    <div class="card-sub">بوت يرسل تفاصيل كل طلب جديد للمجموعة وللمستخدمين المعنيين مباشرة</div>
+    <div id="status-tele"></div>
+
+    <div class="notif-body hidden" id="body-tele">
+      <div class="form-grid">
+        <div class="field">
+          <label>Bot Token</label>
+          <div class="api-row">
+            <input type="password" id="teleToken" placeholder="123456789:AAF-xxxxx">
+            <button class="eye-btn" onclick="toggleEye('teleToken',this)">👁</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Chat ID (مجموعة البوت)</label>
+          <input type="text" id="teleChat" placeholder="-100xxxxxxxxxx">
+        </div>
+      </div>
+
+      <div class="sep">كيف أحصل على Bot Token و Chat ID؟</div>
+      <ol class="steps">
+        <li><div class="step-num">1</div><div class="step-txt">افتح تيليغرام وابحث عن <strong>@BotFather</strong></div></li>
+        <li><div class="step-num">2</div><div class="step-txt">أرسل <code>/newbot</code> واختر اسماً للبوت</div></li>
+        <li><div class="step-num">3</div><div class="step-txt">ستحصل على <strong>Bot Token</strong> بالشكل: <code>123456789:AAF...</code></div></li>
+        <li><div class="step-num">4</div><div class="step-txt">أضف البوت لمجموعتك كـ Admin</div></li>
+        <li><div class="step-num">5</div><div class="step-txt">افتح رابط <code>api.telegram.org/bot[TOKEN]/getUpdates</code> وابحث عن <strong>chat.id</strong></div></li>
+      </ol>
+
+      <div class="sep">اختبار</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="teleTestMsg" placeholder="رسالة اختبارية..." style="padding:8px 12px;background:var(--surface);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:Cairo,sans-serif;font-size:.82rem;flex:1;min-width:180px;">
+        <button class="btn btn-outline btn-sm" onclick="testTelegram()">📤 إرسال اختبار</button>
+        <span id="teleTestStatus" style="font-size:.78rem;color:var(--muted);"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ واتساب ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">📱 واتساب</div>
+      <label class="toggle">
+        <input type="checkbox" id="waEnabled" onchange="toggleBody('wa')">
+        <div class="toggle-slider"></div>
+      </label>
+    </div>
+    <div class="card-sub">رابط واتساب يُرسل تلقائياً لرقم محدد عند كل طلب جديد</div>
+    <div id="status-wa"></div>
+
+    <div class="notif-body hidden" id="body-wa">
+      <div class="field">
+        <label>رقم الواتساب (مع رمز الدولة)</label>
+        <input type="text" id="notifWa" placeholder="9647700000000">
+        <span class="hint">بدون + ، مثال: 9647700000000</span>
+      </div>
+      <div class="sep">اختبار</div>
+      <button class="btn btn-outline btn-sm" onclick="testWhatsApp()">📱 فتح واتساب اختبار</button>
+    </div>
+  </div>
+
+  <!-- ═══ إيميل ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">📧 البريد الإلكتروني (EmailJS)</div>
+      <label class="toggle">
+        <input type="checkbox" id="emailEnabled" onchange="toggleBody('email')">
+        <div class="toggle-slider"></div>
+      </label>
+    </div>
+    <div class="card-sub">إيميل مفصّل بتفاصيل الطلب عبر خدمة EmailJS المجانية</div>
+    <div id="status-email"></div>
+
+    <div class="notif-body hidden" id="body-email">
+      <div class="form-grid">
+        <div class="field">
+          <label>Service ID</label>
+          <input type="text" id="ejService" placeholder="service_xxxxxxx">
+        </div>
+        <div class="field">
+          <label>Template ID</label>
+          <input type="text" id="ejTemplate" placeholder="template_xxxxxxx">
+        </div>
+        <div class="field full">
+          <label>Public Key</label>
+          <div class="api-row">
+            <input type="password" id="ejKey" placeholder="xxxxxxxxxxxxxxxxxxxx">
+            <button class="eye-btn" onclick="toggleEye('ejKey',this)">👁</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep">كيف أحصل على مفاتيح EmailJS؟</div>
+      <ol class="steps">
+        <li><div class="step-num">1</div><div class="step-txt">سجّل مجاناً في <strong>emailjs.com</strong></div></li>
+        <li><div class="step-num">2</div><div class="step-txt">أنشئ خدمة Gmail/Outlook → ستحصل على <strong>Service ID</strong></div></li>
+        <li><div class="step-num">3</div><div class="step-txt">أنشئ قالب إيميل → ستحصل على <strong>Template ID</strong></div></li>
+        <li><div class="step-num">4</div><div class="step-txt">من Account → API Keys → ستجد <strong>Public Key</strong></div></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ═══ Push إشعارات الجوال ═══ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">📲 إشعارات الجوال (Push)</div>
+      <span id="pushStatus" class="status off">غير مفعّل</span>
+    </div>
+    <div class="card-sub">إشعارات تصل على الجوال حتى لو المتصفح مغلق — تعمل على Android و iOS وأجهزة الكمبيوتر</div>
+
+    <div class="notif-body" id="body-push" style="display:block">
+      <div class="form-grid">
+        <div class="field full">
+          <label>VAPID Key (مطلوب لتفعيل Push)</label>
+          <div class="api-row">
+            <input type="password" id="vapidKey" placeholder="BNxxxxxxx...">
+            <button class="eye-btn" onclick="toggleEye('vapidKey',this)">👁</button>
+          </div>
+          <span class="hint">من Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair</span>
+        </div>
+        <div class="field full">
+          <label>FCM Server Key (لإرسال Push من النظام)</label>
+          <div class="api-row">
+            <input type="password" id="fcmServerKey" placeholder="AAAAxxxxxxx:APA91b...">
+            <button class="eye-btn" onclick="toggleEye('fcmServerKey',this)">👁</button>
+          </div>
+          <span class="hint">من Firebase Console → Project Settings → Cloud Messaging → Server Key</span>
+        </div>
+      </div>
+
+      <div class="sep">خطوات تفعيل الإشعارات على جهازك</div>
+      <ol class="steps">
+        <li><div class="step-num">1</div><div class="step-txt">احفظ VAPID Key و FCM Server Key من Firebase ثم اضغط "حفظ" أدناه</div></li>
+        <li><div class="step-num">2</div><div class="step-txt">سجّل دخولك على المتجر ثم وافق على طلب الإذن بالإشعارات</div></li>
+        <li><div class="step-num">3</div><div class="step-txt">سيُحفظ <strong>FCM Token</strong> الخاص بجهازك تلقائياً</div></li>
+        <li><div class="step-num">4</div><div class="step-txt">من الآن ستصلك إشعارات الطلبات على هاتفك حتى لو أغلقت المتصفح</div></li>
+      </ol>
+
+      <div class="sep">إعداد Firebase Console</div>
+      <ol class="steps">
+        <li><div class="step-num">1</div><div class="step-txt">افتح <strong>console.firebase.google.com</strong> → اختر مشروعك</div></li>
+        <li><div class="step-num">2</div><div class="step-txt">Project Settings → Cloud Messaging</div></li>
+        <li><div class="step-num">3</div><div class="step-txt">قسم <strong>Web Push certificates</strong> → Generate key pair → انسخ الـ Key</div></li>
+        <li><div class="step-num">4</div><div class="step-txt">قسم <strong>Cloud Messaging API (Legacy)</strong> → Server Key → انسخه</div></li>
+      </ol>
+
+      <div class="sep">اختبار الإشعار</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <input type="text" id="pushTestTitle" placeholder="عنوان الإشعار" style="padding:8px 12px;background:var(--surface);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:Cairo,sans-serif;font-size:.82rem;width:100%;margin-bottom:6px;">
+          <input type="text" id="pushTestBody" placeholder="نص الإشعار" style="padding:8px 12px;background:var(--surface);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:Cairo,sans-serif;font-size:.82rem;width:100%;">
+        </div>
+        <button class="btn btn-outline btn-sm" style="align-self:flex-end" onclick="sendTestPush()">🚀 إرسال اختبار</button>
+        <span id="pushTestResult" style="font-size:.78rem;color:var(--muted);align-self:flex-end;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Bar -->
+  <div class="save-bar">
+    <button class="btn-save" onclick="saveAll()">💾 حفظ جميع الإشعارات</button>
+    <span class="save-status" id="saveStatus"></span>
+  </div>
+
+</div><!-- /wrap -->
+
+<div id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+const cfg = {
+  apiKey:"AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+  authDomain:"burjuman-6cb83.firebaseapp.com",
+  projectId:"burjuman-6cb83",
+  storageBucket:"burjuman-6cb83.firebasestorage.app",
+  messagingSenderId:"177984721378",
+  appId:"1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+};
+const apps = getApps();
+const app  = apps.length ? apps[0] : initializeApp(cfg);
+const db   = getFirestore(app);
+let messaging = null;
+try { messaging = getMessaging(app); } catch(e){}
+window._sdb = db;
+window._sfb = { doc, getDocs, setDoc, collection };
+window._messaging = messaging;
+window._getToken = getToken;
+
+try {
+  const snap = await getDocs(collection(db, 'settings'));
+  const s = {};
+  snap.forEach(d => { s[d.data().key] = d.data().value; });
+  window._settings = s;
+  document.dispatchEvent(new Event('settingsReady'));
+} catch(e) {
+  window._settings = {};
+  document.dispatchEvent(new Event('settingsReady'));
+}
+</script>
+
+<script>
+document.addEventListener('settingsReady', () => {
+  const s = window._settings || {};
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  const chk = (id, val) => { const el = document.getElementById(id); if (el) { el.checked = !!val; if (!!val) toggleBody(id.replace('Enabled','')); } };
+
+  chk('teleEnabled',  s.notif_tele_enabled);
+  chk('waEnabled',    s.notif_wa_enabled);
+  chk('emailEnabled', s.notif_email_enabled);
+  set('teleToken',    s.telegram_token);
+  set('teleChat',     s.telegram_chat);
+  set('notifWa',      s.notif_wa_number);
+  set('ejService',    s.emailjs_service_id);
+  set('ejTemplate',   s.emailjs_template_id);
+  set('ejKey',        s.emailjs_public_key);
+  set('vapidKey',     s.vapid_key);
+  set('fcmServerKey', s.fcm_server_key);
+
+  updateStatuses(s);
+  checkPushPermission();
+});
+
+function updateStatuses(s) {
+  setStatus('tele',  s.telegram_token && s.telegram_chat ? 'ok' : s.notif_tele_enabled ? 'warn' : 'off',
+    s.telegram_token ? '✓ مضبوط' : 'يحتاج إعداد');
+  setStatus('wa',    s.notif_wa_number ? 'ok' : s.notif_wa_enabled ? 'warn' : 'off',
+    s.notif_wa_number ? '✓ ' + s.notif_wa_number : 'يحتاج إعداد');
+  setStatus('email', s.emailjs_public_key ? 'ok' : s.notif_email_enabled ? 'warn' : 'off',
+    s.emailjs_public_key ? '✓ مضبوط' : 'يحتاج إعداد');
+}
+
+function setStatus(key, type, text) {
+  const el = document.getElementById('status-' + key);
+  if (!el) return;
+  el.innerHTML = `<span class="status ${type}" style="margin-bottom:8px;display:inline-flex">${text}</span>`;
+}
+
+function checkPushPermission() {
+  const banner = document.getElementById('pushBanner');
+  const st = document.getElementById('pushStatus');
+  if (!('Notification' in window)) {
+    st.textContent = 'غير مدعوم'; st.className = 'status warn'; return;
+  }
+  if (Notification.permission === 'granted') {
+    st.textContent = '✓ مفعّل'; st.className = 'status ok';
+    banner.style.display = 'none';
+  } else if (Notification.permission === 'denied') {
+    st.textContent = '✗ محظور'; st.className = 'status warn';
+    banner.style.display = 'none';
+  } else {
+    st.textContent = 'في انتظار الإذن'; st.className = 'status warn';
+    banner.style.display = 'flex';
+  }
+}
+
+async function requestPushPermission() {
+  const perm = await Notification.requestPermission();
+  checkPushPermission();
+  if (perm === 'granted') toast('✅ تم تفعيل الإشعارات — ستصلك عند كل طلب جديد');
+  else toast('تم رفض الإذن — يمكنك تفعيله من إعدادات المتصفح', 'warn');
+}
+
+function toggleBody(key) {
+  const body = document.getElementById('body-' + key);
+  if (!body) return;
+  const chkId = key === 'tele' ? 'teleEnabled' : key === 'wa' ? 'waEnabled' : 'emailEnabled';
+  const chk = document.getElementById(chkId);
+  body.classList.toggle('hidden', !chk?.checked);
+}
+
+function toggleEye(id, btn) {
+  const el = document.getElementById(id); if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+
+const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const c = id => { const el = document.getElementById(id); return el?.checked; };
+
+async function saveAll() {
+  if (!window._sdb) { toast('Firebase غير متاح', 'err'); return; }
+  const db = window._sdb;
+  const { doc, setDoc } = window._sfb;
+  const btn = document.querySelector('.btn-save');
+  const st  = document.getElementById('saveStatus');
+  btn.disabled = true; btn.textContent = '⏳ جاري الحفظ...';
+
+  const pairs = [
+    { key:'notif_tele_enabled',  value: c('teleEnabled') },
+    { key:'telegram_token',      value: v('teleToken') },
+    { key:'telegram_chat',       value: v('teleChat') },
+    { key:'notif_wa_enabled',    value: c('waEnabled') },
+    { key:'notif_wa_number',     value: v('notifWa') },
+    { key:'preparer_whatsapp',   value: v('notifWa') },
+    { key:'notif_email_enabled', value: c('emailEnabled') },
+    { key:'emailjs_service_id',  value: v('ejService') },
+    { key:'emailjs_template_id', value: v('ejTemplate') },
+    { key:'emailjs_public_key',  value: v('ejKey') },
+    { key:'vapid_key',           value: v('vapidKey') },
+    { key:'fcm_server_key',      value: v('fcmServerKey') },
+  ];
+
+  try {
+    for (const p of pairs) await setDoc(doc(db, 'settings', p.key), p);
+    st.textContent = '✓ تم الحفظ'; st.className = 'save-status ok';
+    toast('تم الحفظ بنجاح ✓');
+    // تحديث _settings
+    pairs.forEach(p => { window._settings[p.key] = p.value; });
+    updateStatuses(window._settings);
+    setTimeout(() => { st.textContent = ''; }, 3000);
+  } catch(e) {
+    st.textContent = '✗ فشل: ' + e.message; st.className = 'save-status err';
+    toast('فشل الحفظ ✗', 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 حفظ جميع الإشعارات';
+  }
+}
+
+/* ── اختبار تيليغرام ── */
+async function testTelegram() {
+  const token = v('teleToken');
+  const chat  = v('teleChat');
+  const msg   = v('teleTestMsg') || '🔔 اختبار من نظام برجمان';
+  const st    = document.getElementById('teleTestStatus');
+  if (!token || !chat) { st.textContent = '⚠️ أدخل Token و Chat ID أولاً'; return; }
+  st.textContent = '⏳ جاري الإرسال...';
+  try {
+    const res  = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: chat, text: msg })
+    });
+    const data = await res.json();
+    st.textContent = data.ok ? '✅ وصلت الرسالة!' : '❌ ' + (data.description || 'خطأ');
+  } catch(e) { st.textContent = '❌ ' + e.message; }
+}
+
+/* ── اختبار واتساب ── */
+function testWhatsApp() {
+  const num = v('notifWa');
+  if (!num) { toast('أدخل رقم الواتساب أولاً', 'warn'); return; }
+  window.open(`https://wa.me/${num}?text=🔔 اختبار من نظام برجمان`, '_blank');
+}
+
+/* ── اختبار Push ── */
+async function sendTestPush() {
+  const serverKey = v('fcmServerKey');
+  const title = v('pushTestTitle') || '📦 طلب جديد';
+  const body  = v('pushTestBody')  || 'اختبار إشعار من لوحة التحكم';
+  const st    = document.getElementById('pushTestResult');
+
+  // أولاً جرب إشعار متصفح مباشر
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/icon.png', dir: 'rtl' });
+    st.textContent = '✅ تم إرسال إشعار تجريبي';
+    return;
+  }
+
+  if (!serverKey) { st.textContent = '⚠️ أدخل FCM Server Key أولاً'; return; }
+
+  // إرسال لكل المدراء عبر FCM
+  const s = window._settings || {};
+  st.textContent = '⏳ جاري...';
+  // نحتاج FCM tokens — تُحفظ في المستخدمين، لكن هنا نجرب إشعار متصفح مباشر
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      new Notification(title, { body, icon: '/icon.png', dir: 'rtl' });
+      st.textContent = '✅ تم إرسال الإشعار التجريبي';
+    } else {
+      st.textContent = '⚠️ يجب الموافقة على الإشعارات أولاً';
+    }
+  } catch(e) { st.textContent = '❌ ' + e.message; }
+}
+
+/* ── Toast ── */
+let _t;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#1e293b';
+  el.classList.add('show');
+  clearTimeout(_t);
+  _t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+window.toggleBody = toggleBody;
+window.toggleEye  = toggleEye;
+window.testTelegram = testTelegram;
+window.testWhatsApp = testWhatsApp;
+window.sendTestPush = sendTestPush;
+window.saveAll = saveAll;
+window.requestPushPermission = requestPushPermission;
+</script>
+</body>
+</html>

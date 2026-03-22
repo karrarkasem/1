@@ -291,6 +291,8 @@ let _uploadedImgUrl = '';
 let _sendingOrder = false;
 // Banner state
 let bannerSlide=0, bannerTimer=null;
+// Banner Modal state
+let bmSlide=0, bmTimer=null, bmTimerAnim=null, _bmShownOfferIds=new Set();
 // Import state
 let importData=[];
 
@@ -523,9 +525,17 @@ function startRealtimeListeners() {
   renderNotifications();
 });
   fb().onSnapshot(fb().collection(db(), 'offers'), snap => {
+    const prev = new Set(_bmShownOfferIds);
     offers = snap.docs.map(d=>({_id:d.id, ...d.data()}));
+    const activeOffers = offers.filter(o => o.status==='active' && !isOfferExpired(o));
+    const newOnes = activeOffers.filter(o => !prev.has(o._id));
     renderOffersBanner();
     renderOffers();
+    // Show modal: first load (prev empty) OR new banner added
+    if (activeOffers.length && (prev.size === 0 || newOnes.length > 0)) {
+      setTimeout(() => showBannerModal(activeOffers), prev.size === 0 ? 1200 : 600);
+    }
+    activeOffers.forEach(o => _bmShownOfferIds.add(o._id));
   });
 }
 
@@ -3628,10 +3638,13 @@ function renderOffersBanner() {
   renderBannerSlides(slides);
 }
 
+let bannerRafId = null, bannerRafStart = 0;
+const BANNER_DURATION = 4000;
+
 function renderBannerSlides(slides) {
   const wrap = document.getElementById('offersBannerWrap');
   if (!slides.length) { wrap.innerHTML=''; return; }
-  clearInterval(bannerTimer);
+  clearInterval(bannerTimer); cancelAnimationFrame(bannerRafId);
   bannerSlide = 0;
   wrap.innerHTML = `
     <div class="offers-banner">
@@ -3639,13 +3652,13 @@ function renderBannerSlides(slides) {
         ${slides.map((s,i) => `
           <div class="offer-slide offer-slide-${s.color}">
             ${s.img
-              ? `<img class="offer-slide-img" src="${s.img}" alt="">`
+              ? `<img class="offer-slide-img" src="${s.img}" alt="" onerror="this.style.display='none'">`
               : `<div class="offer-slide-icon">${['🎁','⭐','🔥','💎','🚀'][s.color]}</div>`}
             <div class="offer-slide-text">
               <div class="offer-slide-title">${s.title}</div>
-              <div class="offer-slide-desc">${s.desc}</div>
+              ${s.desc ? `<div class="offer-slide-desc">${s.desc}</div>` : ''}
             </div>
-            <div>
+            <div style="flex-shrink:0;text-align:center">
               <div class="offer-slide-val">${s.val}</div>
               <div class="offer-slide-sub">${s.sub}</div>
             </div>
@@ -3655,6 +3668,7 @@ function renderBannerSlides(slides) {
         <button class="offers-banner-btn prev" onclick="bannerNav(-1)">›</button>
         <button class="offers-banner-btn next" onclick="bannerNav(1)">‹</button>
       ` : ''}
+      <div class="offers-banner-progress"><div class="offers-banner-progress-fill" id="bannerProgressFill"></div></div>
     </div>
     ${slides.length > 1 ? `
       <div class="offers-dots" id="bannerDots">
@@ -3662,7 +3676,7 @@ function renderBannerSlides(slides) {
       </div>
     ` : ''}
   `;
-  // Add touch/swipe support
+  // Swipe support
   const track = document.getElementById('bannerTrack');
   if (track && slides.length > 1) {
     let startX = 0;
@@ -3672,9 +3686,21 @@ function renderBannerSlides(slides) {
       if (Math.abs(diff) > 40) bannerNav(diff > 0 ? 1 : -1);
     }, {passive:true});
   }
-  if (slides.length > 1) {
-    bannerTimer = setInterval(() => bannerNav(1), 4000);
+  if (slides.length > 1) _startBannerProgress();
+}
+
+function _startBannerProgress() {
+  cancelAnimationFrame(bannerRafId);
+  bannerRafStart = performance.now();
+  function tick(now) {
+    const fill = document.getElementById('bannerProgressFill');
+    if (!fill) return;
+    const pct = Math.min(100, (now - bannerRafStart) / BANNER_DURATION * 100);
+    fill.style.width = pct + '%';
+    if (pct < 100) { bannerRafId = requestAnimationFrame(tick); }
+    else { bannerNav(1); }
   }
+  bannerRafId = requestAnimationFrame(tick);
 }
 
 function bannerNav(dir) {
@@ -3684,13 +3710,146 @@ function bannerNav(dir) {
   bannerSlide = (bannerSlide + dir + total) % total;
   track.style.transform = `translateX(${bannerSlide * 100}%)`;
   document.querySelectorAll('.offers-dot').forEach((d,i) => d.classList.toggle('on', i===bannerSlide));
-  clearInterval(bannerTimer);
-  bannerTimer = setInterval(() => bannerNav(1), 4000);
+  if (total > 1) _startBannerProgress();
 }
 
 function bannerGoTo(idx) {
-  bannerSlide = idx - 1;
-  bannerNav(1);
+  const track = document.getElementById('bannerTrack');
+  if (!track) return;
+  const total = track.children.length;
+  bannerSlide = ((idx % total) + total) % total;
+  track.style.transform = `translateX(${bannerSlide * 100}%)`;
+  document.querySelectorAll('.offers-dot').forEach((d,i) => d.classList.toggle('on', i===bannerSlide));
+  if (total > 1) _startBannerProgress();
+}
+
+// ═══════════════════════════════════════════════════════
+// BANNER MODAL — full-screen popup on load / new offer
+// ═══════════════════════════════════════════════════════
+const BM_COLORS = [
+  'linear-gradient(135deg,#0d9488,#0f766e)',
+  'linear-gradient(135deg,#1e293b,#0f172a)',
+  'linear-gradient(135deg,#f59e0b,#d97706)',
+  'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+  'linear-gradient(135deg,#f43f5e,#e11d48)',
+];
+const BM_ICONS = ['🎁','⭐','🔥','💎','🚀'];
+
+function showBannerModal(activeOffers) {
+  // Remove any existing modal
+  const old = document.getElementById('bannerModal');
+  if (old) old.remove();
+  clearInterval(bmTimer); cancelAnimationFrame(bmTimerAnim);
+  bmSlide = 0;
+
+  const slides = activeOffers.map((o, i) => ({
+    title: o.title,
+    desc: o.desc || '',
+    val: o.type==='percent' ? o.value+'%' : o.type==='free' ? 'مجاني' : (parseFloat(o.value)||0).toLocaleString()+' د.ع',
+    sub: o.type==='percent' ? 'خصم' : o.type==='free' ? 'هدية' : 'توفير',
+    color: i % 5,
+    img: o.img || null,
+    endDate: o.endDate || null,
+  }));
+
+  const modal = document.createElement('div');
+  modal.id = 'bannerModal';
+  modal.className = 'bm-overlay';
+  modal.innerHTML = `
+    <div class="bm-backdrop" onclick="closeBannerModal()"></div>
+    <div class="bm-card" id="bmCard">
+      <button class="bm-close" onclick="closeBannerModal()" title="إغلاق">✕</button>
+      <div class="bm-slides" id="bmSlides">
+        ${slides.map((s, i) => `
+          <div class="bm-slide ${i===0?'bm-active':''}" style="background:${BM_COLORS[s.color]}">
+            <div class="bm-slide-shine"></div>
+            ${s.img
+              ? `<div class="bm-img-wrap"><img src="${s.img}" alt="" onerror="this.parentElement.innerHTML='<span class=bm-icon>${BM_ICONS[s.color]}</span>'"></div>`
+              : `<div class="bm-img-wrap"><span class="bm-icon">${BM_ICONS[s.color]}</span></div>`}
+            <div class="bm-slide-body">
+              <div class="bm-title">${s.title}</div>
+              ${s.desc ? `<div class="bm-desc">${s.desc}</div>` : ''}
+              <div class="bm-badge">
+                <span class="bm-val">${s.val}</span>
+                <span class="bm-sub">${s.sub}</span>
+              </div>
+              ${s.endDate ? `<div class="bm-end">⏰ ينتهي ${s.endDate}</div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="bm-progress-wrap">
+        <div class="bm-progress-bar" id="bmProgressBar"></div>
+      </div>
+      ${slides.length > 1 ? `
+        <div class="bm-footer">
+          <button class="bm-nav bm-nav-prev" onclick="bmNav(-1)">‹</button>
+          <div class="bm-dots" id="bmDots">
+            ${slides.map((_,i) => `<button class="bm-dot ${i===0?'on':''}" onclick="bmGoTo(${i})"></button>`).join('')}
+          </div>
+          <button class="bm-nav bm-nav-next" onclick="bmNav(1)">›</button>
+        </div>` : `<div class="bm-footer" style="justify-content:center">
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.3)" onclick="closeBannerModal()">حسناً، شكراً!</button>
+        </div>`}
+    </div>
+  `;
+  document.body.appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('bm-show'));
+  _bmStartProgress(slides.length);
+}
+
+let _bmProgressStart = 0, _bmProgressDuration = 4000;
+function _bmStartProgress(total) {
+  clearInterval(bmTimer); cancelAnimationFrame(bmTimerAnim);
+  const bar = document.getElementById('bmProgressBar');
+  if (!bar) return;
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  _bmProgressStart = performance.now();
+  function tick(now) {
+    const el = document.getElementById('bmProgressBar');
+    if (!el) return;
+    const pct = Math.min(100, (now - _bmProgressStart) / _bmProgressDuration * 100);
+    el.style.transition = 'none';
+    el.style.width = pct + '%';
+    if (pct < 100) { bmTimerAnim = requestAnimationFrame(tick); }
+    else {
+      const slides = document.querySelectorAll('#bmSlides .bm-slide');
+      const total = slides.length;
+      if (bmSlide < total - 1) { bmNav(1); }
+      else { closeBannerModal(); }
+    }
+  }
+  bmTimerAnim = requestAnimationFrame(tick);
+}
+
+function bmNav(dir) {
+  const slides = document.querySelectorAll('#bmSlides .bm-slide');
+  const dots = document.querySelectorAll('#bmDots .bm-dot');
+  if (!slides.length) return;
+  slides[bmSlide].classList.remove('bm-active');
+  bmSlide = (bmSlide + dir + slides.length) % slides.length;
+  slides[bmSlide].classList.add('bm-active');
+  dots.forEach((d,i) => d.classList.toggle('on', i===bmSlide));
+  _bmProgressStart = performance.now();
+}
+
+function bmGoTo(idx) {
+  const slides = document.querySelectorAll('#bmSlides .bm-slide');
+  const dots = document.querySelectorAll('#bmDots .bm-dot');
+  if (!slides.length) return;
+  slides[bmSlide].classList.remove('bm-active');
+  bmSlide = idx;
+  slides[bmSlide].classList.add('bm-active');
+  dots.forEach((d,i) => d.classList.toggle('on', i===bmSlide));
+  _bmProgressStart = performance.now();
+}
+
+function closeBannerModal() {
+  cancelAnimationFrame(bmTimerAnim); clearInterval(bmTimer);
+  const modal = document.getElementById('bannerModal');
+  if (!modal) return;
+  modal.classList.remove('bm-show');
+  setTimeout(() => modal.remove(), 380);
 }
 
 // ═══════════════════════════════════════════════════════

@@ -10,6 +10,9 @@ import {
 import {
   getAuth, GoogleAuthProvider, signInWithPopup, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getMessaging, getToken, onMessage
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
@@ -24,17 +27,21 @@ const db  = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+let messaging = null;
+try { messaging = getMessaging(app); } catch(e) { console.warn('FCM not supported:', e); }
 window._db = db;
 window._storage = storage;
 window._auth = auth;
 window._googleProvider = googleProvider;
+window._messaging = messaging;
 window._fb = {
   collection, doc, getDocs, getDoc, addDoc, updateDoc,
   setDoc, deleteDoc, query, where, orderBy, limit, onSnapshot,
   serverTimestamp, writeBatch, increment, Timestamp,
-  storageRef: ref,   // ✅ تم التغيير هنا من 'ref' إلى 'storageRef'
+  storageRef: ref,
   uploadBytes, getDownloadURL,
-  signInWithPopup, signOut
+  signInWithPopup, signOut,
+  getToken, onMessage
 };
 window._fbReady = true;
 document.dispatchEvent(new Event('fbReady'));

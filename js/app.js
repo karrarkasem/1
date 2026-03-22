@@ -1112,9 +1112,9 @@ function buildProdUnits(p) {
     const units = [];
     entries.forEach(([uName, uQty]) => {
       const uf = frac[uName] || {};
-      if (uf.quarter && uQty >= 4) units.push({label:`ربع ${uName}`, piecesPerUnit:Math.round(uQty/4), price:Math.round(wsPrice*0.25)});
-      if (uf.half    && uQty >= 2) units.push({label:`نصف ${uName}`, piecesPerUnit:Math.round(uQty/2), price:Math.round(wsPrice*0.5)});
       units.push({label:uName, piecesPerUnit:uQty, price:wsPrice});
+      if (uf.half    && uQty >= 2) units.push({label:`نصف ${uName}`, piecesPerUnit:Math.round(uQty/2), price:Math.round(wsPrice*0.5)});
+      if (uf.quarter && uQty >= 4) units.push({label:`ربع ${uName}`, piecesPerUnit:Math.round(uQty/4), price:Math.round(wsPrice*0.25)});
     });
     return units;
   }

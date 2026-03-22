@@ -511,6 +511,11 @@ body{
         <input type="email" id="compEmail" placeholder="info@company.com">
       </div>
       <div class="field full">
+        <label>📧 ايميل الأدمن للإشعارات</label>
+        <input type="email" id="adminNotifEmail" placeholder="admin@company.com">
+        <span class="hint">سيصله إشعار تلقائي بكل طلب جديد عبر الإيميل</span>
+      </div>
+      <div class="field full">
         <label>العنوان</label>
         <input type="text" id="address" placeholder="المحافظة، الحي، الشارع...">
       </div>
@@ -823,7 +828,7 @@ body{
 
       <div style="margin:16px 0;padding:13px 14px;border-radius:10px;background:var(--accent3);border:1px solid var(--border);font-size:.82rem;line-height:1.8;">
         📦 المجموعات التي ستُنشأ:
-        <span style="color:var(--accent2);font-weight:700">settings / users / products / orders / purInvoices / discounts / offers / notifications</span>
+        <span style="color:var(--accent2);font-weight:700">settings / categories / users / products / orders / purInvoices / discounts / offers / notifications</span>
       </div>
 
       <div class="create-progress" id="createProgress">
@@ -1081,6 +1086,10 @@ function validateStep(n) {
   if (n === 2) {
     if (!v('nameAr')) { alert('يرجى إدخال اسم الشركة بالعربي'); return false; }
     if (!v('phone'))  { alert('يرجى إدخال رقم الهاتف');          return false; }
+    const notifEmail = v('adminNotifEmail');
+    if (notifEmail && !/\S+@\S+\.\S+/.test(notifEmail)) {
+      alert('يرجى إدخال ايميل الأدمن بصيغة صحيحة'); return false;
+    }
   }
   if (n === 7) {
     if (!v('adminName'))  { alert('يرجى إدخال اسم المدير');        return false; }
@@ -1142,6 +1151,7 @@ function buildReview() {
     ri('الهاتف',          v('phone')||'—'),
     ri('واتساب',          v('whatsapp')||'—'),
     ri('البريد',          v('compEmail')||'—'),
+    ri('إيميل الأدمن',    v('adminNotifEmail')||'—'),
     ri('العنوان',         v('address')||'—'),
     ri('العملة',          v('currency')||'د.ع'),
     ri('حد النقاط',       (v('pointsThreshold')||'100000') + ' = نقطة'),
@@ -1201,6 +1211,7 @@ async function createDatabase() {
       { key:'company_phone',       value: v('phone') },
       { key:'company_whatsapp',    value: v('whatsapp') || v('phone') },
       { key:'company_email',       value: v('compEmail') },
+      { key:'admin_notification_email', value: v('adminNotifEmail') || v('adminEmail') || v('compEmail') },
       { key:'company_address',     value: v('address') },
       { key:'currency',            value: v('currency') || 'د.ع' },
       { key:'pointsThreshold',     value: Number(v('pointsThreshold') || 100000) },
@@ -1262,6 +1273,29 @@ async function createDatabase() {
 
     // ─ 3. هيكل المجموعات ─
     log('إنشاء هيكل قاعدة البيانات...');
+
+    // ─ Business-type specific initial data ─
+    log('إنشاء بيانات حسب نوع النشاط...');
+    const bizInitData = {
+      store:     { cats: ['إلكترونيات','ملابس','أغذية','مستلزمات منزلية','أخرى'] },
+      restaurant:{ cats: ['مشروبات','وجبات رئيسية','مقبلات','حلويات','إضافات'] },
+      clothing:  { cats: ['رجالي','نسائي','أطفال','رياضي','إكسسوارات'] },
+      pharmacy:  { cats: ['أدوية','مستلزمات طبية','مستحضرات تجميل','مكملات','أخرى'] },
+      company:   { cats: ['منتجات الشركة','مواد أولية','تجهيزات','أخرى'] },
+      warehouse: { cats: ['مجموعة A','مجموعة B','مجموعة C','منتجات متنوعة'] },
+      services:  { cats: ['خدمات تقنية','صيانة','استشارات','أخرى'] },
+      other:     { cats: ['عام','أخرى'] },
+    };
+    const initCats = (bizInitData[selBiz] || bizInitData.other).cats;
+    for (let i = 0; i < initCats.length; i++) {
+      await setDoc(doc(db, 'categories', 'cat_' + i), {
+        name: initCats[i], order: i, active: true,
+        createdAt: new Date().toISOString()
+      });
+    }
+    await setDoc(doc(db, 'settings', 'categories_init'), { key:'categories_init', value: initCats });
+    setP(70); log('التصنيفات الأولية — تم', 'ok');
+
     const init = { _placeholder: true, createdAt: new Date().toISOString() };
     for (const col of ['products','orders','purInvoices','discounts','offers','notifications']) {
       await setDoc(doc(db, col, '_init'), init);

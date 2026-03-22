@@ -116,6 +116,7 @@ async function loadCompanySettings() {
 // PUSH NOTIFICATIONS (FCM + Service Worker)
 // ═══════════════════════════════════════════════════════
 
+// ─── تسجيل Service Worker وتخزين التوكن لكل زائر (حتى الزوار غير المسجلين) ───
 async function registerPush() {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
   if (!window._messaging) return;
@@ -125,19 +126,21 @@ async function registerPush() {
     if (permission !== 'granted') return;
 
     const vapidKey = window.COMPANY?.vapid_key;
-    if (!vapidKey) return; // VAPID key مطلوب
+    if (!vapidKey) return;
 
     const token = await window._fb.getToken(window._messaging, {
       vapidKey,
       serviceWorkerRegistration: sw
     });
-    if (token && CU?._id) {
-      await fbUpdate('users', CU._id, { fcmToken: token });
-      const idx = users.findIndex(u => u._id === CU._id);
-      if (idx !== -1) users[idx].fcmToken = token;
+    if (token) {
+      localStorage.setItem('_fcmToken', token); // يُحفظ لكل زائر
+      if (CU?._id) {
+        await fbUpdate('users', CU._id, { fcmToken: token });
+        const idx = users.findIndex(u => u._id === CU._id);
+        if (idx !== -1) users[idx].fcmToken = token;
+      }
     }
 
-    // إشعارات وهي الصفحة مفتوحة
     window._fb.onMessage(window._messaging, payload => {
       const title = payload.notification?.title || 'برجمان';
       const body  = payload.notification?.body  || '';
@@ -148,25 +151,81 @@ async function registerPush() {
   } catch(e) { console.warn('registerPush:', e); }
 }
 
-async function sendFCMPushToAdmins(title, body, url = '/') {
+// ─── تسجيل صامت عند تحميل الصفحة (بدون طلب إذن جديد) ───
+async function initPushSilent() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return; // لا نطلب إذن هنا
+  if (!window._messaging || !window.COMPANY?.vapid_key) return;
+  try {
+    const sw = await navigator.serviceWorker.register('/sw.js');
+    const token = await window._fb.getToken(window._messaging, {
+      vapidKey: window.COMPANY.vapid_key,
+      serviceWorkerRegistration: sw
+    });
+    if (token) {
+      localStorage.setItem('_fcmToken', token);
+      if (CU?._id) {
+        await fbUpdate('users', CU._id, { fcmToken: token }).catch(()=>{});
+      }
+    }
+  } catch(e) {}
+}
+
+// ─── إرسال Push لعدة توكنات ───
+async function _sendFCM(tokens, title, body, url = '/', tag = 'order') {
   const serverKey = window.COMPANY?.fcm_server_key;
-  if (!serverKey) return;
-  const adminTypes = ['admin','sales_manager','supervisor'];
-  const tokens = users
-    .filter(u => adminTypes.includes(u.type) && u.fcmToken)
-    .map(u => u.fcmToken);
-  if (!tokens.length) return;
+  if (!serverKey || !tokens.length) return;
   for (const token of tokens) {
     fetch('https://fcm.googleapis.com/fcm/send', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'Authorization':'key=' + serverKey },
       body: JSON.stringify({
         to: token,
-        notification: { title, body, icon: '/icon.png', dir: 'rtl' },
-        data: { url, tag: 'order' }
+        priority: 'high',
+        notification: { title, body, icon: '/icon.png', dir: 'rtl', sound: 'default' },
+        data: { url, tag }
       })
     }).catch(()=>{});
   }
+}
+
+// ─── Push للأدمن والمشرفين ───
+async function sendFCMPushToAdmins(title, body, url = '/') {
+  const adminTypes = ['admin','sales_manager','supervisor'];
+  const tokens = users.filter(u => adminTypes.includes(u.type) && u.fcmToken).map(u => u.fcmToken);
+  await _sendFCM(tokens, title, body, url, 'admin-order');
+}
+
+// ─── Push للزبون (من التوكن المحفوظ في الطلب) ───
+async function notifyCustomer(order, title, body) {
+  const trackUrl = `/track.html?order=${order.orderId || order._id || ''}`;
+
+  // 1. FCM Push — التوكن المحفوظ في الطلب
+  const custToken = order.customerFcmToken;
+  if (custToken) await _sendFCM([custToken], title, body, trackUrl, 'customer-order');
+
+  // 2. Push للمستخدم المسجل (لو له توكن محفوظ في حسابه)
+  const custUser = users.find(u => u.username === order.repUsername);
+  if (custUser?.fcmToken && custUser.fcmToken !== custToken) {
+    await _sendFCM([custUser.fcmToken], title, body, trackUrl, 'customer-order');
+  }
+
+  // 3. تيليغرام للمستخدم المسجل
+  const TG = window.COMPANY?.telegram_token;
+  if (TG && custUser?.telegram) {
+    fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: custUser.telegram, text: `${title}\n${body}` })
+    }).catch(()=>{});
+  }
+
+  // 4. إشعار داخلي في النظام
+  const targetUser = custUser?.username || order.repUsername || order.visitorPhone || 'customer';
+  fbAdd('notifications', {
+    title, body, type: 'order', read: false,
+    targetUser, orderId: order._id || order.orderId,
+    date: new Date().toLocaleDateString('ar-IQ')
+  }).catch(()=>{});
 }
 
 async function createPreparerNotification(orderData, totalVolume) {
@@ -1280,6 +1339,7 @@ const trackingLink = `https://brjman.com/track.html?order=${orderId}`;
     total, commission, net,
     purchaseMode: buyerMode || 'retail',
     status: 'pending_approval',
+    customerFcmToken: localStorage.getItem('_fcmToken') || '',
   };
 
   // ✅ فتح واتساب قبل أي await لأن المتصفح يحجب window.open بعد العمليات غير المتزامنة
@@ -1933,11 +1993,20 @@ async function confirmApproveOrder() {
     _finalTgMsg = _approveTgMsg + _priceBlock;
   }
 
-  const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
-  fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ chat_id: '-5246620507', text: _finalTgMsg, parse_mode: 'Markdown' })
-  }).catch(() => {});
+  const TG_TOKEN = window.COMPANY?.telegram_token || '';
+  const TG_CHAT  = window.COMPANY?.telegram_chat  || '';
+  if (TG_TOKEN && TG_CHAT) {
+    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: TG_CHAT, text: _finalTgMsg, parse_mode: 'Markdown' })
+    }).catch(() => {});
+  }
+
+  // Push للزبون: تم قبول الطلب
+  if (o) notifyCustomer(o, '✅ تم قبول طلبك', 'طلبك قيد التجهيز الآن — سيتم توصيله قريباً').catch(()=>{});
+
+  // Push للأدمن
+  sendFCMPushToAdmins('✅ طلب مقبول', `${o?.shopName||'—'} — ${_adjTotal.toLocaleString()} د.ع`).catch(()=>{});
 
   _approvePreparers.forEach(prep => {
     fbAdd('notifications', {
@@ -5487,17 +5556,11 @@ async function markAsPrepared(orderId) {
 
   // Notify customer that their order is prepared and leaving warehouse
   if (prepOrd) {
-    const custUser = users.find(u => u.name === prepOrd.shopName || u.shop === prepOrd.shopName);
-    const targetUser = custUser?.username || prepOrd.repUsername || prepOrd.visitorPhone || 'customer';
-    await fbAdd('notifications', {
-      title: '🚛 تم تجهيز طلبك!',
-      body: `طلبك جاهز وخرج من المخزن — جارٍ تعيين السائق`,
-      type: 'order', read: false,
-      targetUser,
-      orderId,
-      date: new Date().toLocaleDateString('ar-IQ')
-    }).catch(() => {});
+    await notifyCustomer(prepOrd, '📦 تم تجهيز طلبك!', 'طلبك جاهز وخرج من المخزن — جارٍ تعيين السائق').catch(()=>{});
   }
+
+  // Push للأدمن
+  sendFCMPushToAdmins('📦 طلب جاهز للتوصيل', `${prepOrd?.shopName||orderId} — جاهز للتحميل`).catch(()=>{});
 }
 
 function openPrepEditModal(orderId) {
@@ -5691,21 +5754,14 @@ async function markAsLoaded(orderId) {
   toast('تم تحديد الطلب كـ "قيد التوصيل"');
   renderDriverDashboard();
 
-  // Notify customer (via notification)
+  // Notify customer via FCM push + in-app
   const ord = orders.find(o => o._id === orderId);
   if (ord) {
-    const custUser = users.find(u => u.name === ord.shopName || u.shop === ord.shopName);
-    const targetUser = custUser?.username || ord.repUsername || ord.visitorPhone || 'customer';
-    await fbAdd('notifications', {
-      title: '🚗 طلبك في الطريق إليك!',
-      body: `طلبك من ${ord.shopName || ''} أصبح في الطريق — السائق: ${CU.name}`,
-      type: 'order', read: false,
-      targetUser,
-      orderId,
-      date: new Date().toLocaleDateString('ar-IQ')
-    }).catch(() => {});
-    browserNotif('🚗 طلبك في الطريق', `طلبك من ${ord.shopName || ''} أصبح في الطريق`);
+    await notifyCustomer(ord, '🚗 طلبك في الطريق إليك!', `طلبك أصبح في الطريق — السائق: ${CU.name}`).catch(()=>{});
   }
+
+  // Push للأدمن
+  sendFCMPushToAdmins('🚗 طلب قيد التوصيل', `${ord?.shopName||orderId} — السائق: ${CU.name}`).catch(()=>{});
 }
 
 async function markAsNearCustomer(orderId) {
@@ -5716,16 +5772,7 @@ async function markAsNearCustomer(orderId) {
 
   const ord = orders.find(o => o._id === orderId);
   if (ord) {
-    const custUser = users.find(u => u.name === ord.shopName || u.shop === ord.shopName);
-    const targetUser = custUser?.username || ord.repUsername || ord.visitorPhone || 'customer';
-    await fbAdd('notifications', {
-      title: '🚚 السائق قريب منك!',
-      body: `طلبك من ${ord.shopName || ''} سيصل خلال دقائق — ${CU.name} في طريقه إليك`,
-      type: 'order', read: false,
-      targetUser,
-      orderId,
-      date: new Date().toLocaleDateString('ar-IQ')
-    }).catch(() => {});
+    await notifyCustomer(ord, '🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق — ${CU.name} في طريقه إليك`).catch(()=>{});
   }
 }
 
@@ -5859,14 +5906,14 @@ async function confirmDeliveryWithProof() {
   toast('تم تأكيد التسليم');
   renderDriverDashboard();
 
-  // Notify customer
-  await fbAdd('notifications', {
-    title: 'تم توصيل طلبك!',
-    body: `تم توصيل طلبك بنجاح — برجمان`,
-    type: 'order', read: false, targetUser: 'customer',
-    date: new Date().toLocaleDateString('ar-IQ')
-  }).catch(() => {});
-  browserNotif('تم توصيل طلبك!', 'طلبك تم توصيله بنجاح');
+  // Notify customer via FCM push + in-app
+  const delivOrd = orders.find(o => o._id === orderId);
+  if (delivOrd) {
+    await notifyCustomer(delivOrd, '✅ تم توصيل طلبك!', 'طلبك وصل بنجاح — شكراً لاختيارك برجمان').catch(()=>{});
+  }
+
+  // Push للأدمن
+  sendFCMPushToAdmins('✅ طلب مُسلَّم', `${delivOrd?.shopName||orderId} — تم التسليم`).catch(()=>{});
 }
 
 // ══════════════════════════════════════════════════════
@@ -6444,6 +6491,8 @@ buildUI = function() {
 // ── Initialize on DOMContentLoaded ──
 document.addEventListener('fbReady', () => {
   cacheProducts();
+  // تسجيل Push صامت لكل زائر لو الإذن ممنوح مسبقاً
+  setTimeout(() => initPushSilent(), 3000);
 });
 
 

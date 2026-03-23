@@ -1919,15 +1919,29 @@ async function confirmApproveOrder() {
   }
 
   // إرسال لقناة/مجموعة المجهزين العامة (من إعدادات النظام)
+  console.log('[TG-SEND] محاولة إرسال للمجموعة:', preparerTelegram, '| توكن موجود:', !!TG_TOKEN);
   if (TG_TOKEN && preparerTelegram) {
+    // إرسال بدون Markdown لتجنب أخطاء التنسيق
+    const _plainMsg = _finalTgMsg.replace(/\*/g, '').replace(/_/g, '').replace(/`/g, '');
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: preparerTelegram, text: _finalTgMsg, parse_mode: 'Markdown' })
-    }).catch(e => console.error('[TG] خطأ مجموعة المجهزين:', e));
+      body: JSON.stringify({ chat_id: preparerTelegram, text: _plainMsg })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        console.log('[TG] ✅ وصل للمجموعة بنجاح');
+        toast('📨 أُرسل لمجموعة تيليجرام');
+      } else {
+        console.error('[TG] ❌ رد Telegram:', JSON.stringify(data));
+        toast('⚠️ تيليجرام: ' + (data.description || 'خطأ غير معروف'), false);
+      }
+    })
+    .catch(e => console.error('[TG] خطأ شبكة:', e));
   } else if (!TG_TOKEN) {
-    console.warn('[TG] لم يُرسَل: telegram_token غير مضبوط في إعدادات Firebase');
+    console.warn('[TG] لم يُرسَل: telegram_token فارغ');
   } else if (!preparerTelegram) {
-    console.warn('[TG] لم يُرسَل للمجهزين: preparer_telegram غير مضبوط في إعدادات Firebase');
+    console.warn('[TG] لم يُرسَل: preparerTelegram فارغ');
   }
 
   // Push للزبون: تم قبول الطلب

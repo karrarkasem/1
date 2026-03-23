@@ -1904,10 +1904,20 @@ async function confirmApproveOrder() {
 
   const TG_TOKEN = window.COMPANY?.telegram_token || '';
   const TG_CHAT  = window.COMPANY?.telegram_chat  || '';
+
+  // إرسال لمجموعة الشركة
   if (TG_TOKEN && TG_CHAT) {
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ chat_id: TG_CHAT, text: _finalTgMsg, parse_mode: 'Markdown' })
+    }).catch(() => {});
+  }
+
+  // إرسال لقناة/مجموعة المجهزين العامة (من إعدادات النظام)
+  if (TG_TOKEN && preparerTelegram) {
+    fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id: preparerTelegram, text: _finalTgMsg, parse_mode: 'Markdown' })
     }).catch(() => {});
   }
 
@@ -1926,7 +1936,8 @@ async function confirmApproveOrder() {
       date: new Date().toLocaleDateString('ar-IQ')
     }).catch(() => {});
 
-    if (prep.telegram) {
+    // إرسال لتليجرام المجهز الفردي (إن كان مختلفاً عن القناة العامة)
+    if (TG_TOKEN && prep.telegram && prep.telegram !== preparerTelegram) {
       fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ chat_id: prep.telegram, text: _finalTgMsg, parse_mode: 'Markdown' })

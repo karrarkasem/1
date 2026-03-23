@@ -24,7 +24,7 @@ async function loadAllSettings() {
 
     // إعدادات المجهز
     preparerWhatsApp = s.preparer_whatsapp || '';
-    preparerTelegram = s.preparer_telegram || '';
+    preparerTelegram = s.preparer_telegram || '-5246620507';
 
     // عتبة النقاط — تُحدَّث إن وُجد العنصر في الصفحة
     if (s.pointsThreshold) {
@@ -1902,15 +1902,20 @@ async function confirmApproveOrder() {
     _finalTgMsg = _approveTgMsg + _priceBlock;
   }
 
-  const TG_TOKEN = window.COMPANY?.telegram_token || '';
+  const TG_TOKEN = window.COMPANY?.telegram_token || '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
   const TG_CHAT  = window.COMPANY?.telegram_chat  || '';
+
+  // تشخيص: طباعة القيم في الكونسول
+  console.log('[TG-DEBUG] telegram_token:', TG_TOKEN ? '✅ موجود' : '❌ فارغ');
+  console.log('[TG-DEBUG] telegram_chat (شركة):', TG_CHAT || '❌ فارغ');
+  console.log('[TG-DEBUG] preparer_telegram (مجموعة المجهزين):', preparerTelegram || '❌ فارغ');
 
   // إرسال لمجموعة الشركة
   if (TG_TOKEN && TG_CHAT) {
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ chat_id: TG_CHAT, text: _finalTgMsg, parse_mode: 'Markdown' })
-    }).catch(() => {});
+    }).catch(e => console.error('[TG] خطأ مجموعة الشركة:', e));
   }
 
   // إرسال لقناة/مجموعة المجهزين العامة (من إعدادات النظام)
@@ -1918,7 +1923,11 @@ async function confirmApproveOrder() {
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ chat_id: preparerTelegram, text: _finalTgMsg, parse_mode: 'Markdown' })
-    }).catch(() => {});
+    }).catch(e => console.error('[TG] خطأ مجموعة المجهزين:', e));
+  } else if (!TG_TOKEN) {
+    console.warn('[TG] لم يُرسَل: telegram_token غير مضبوط في إعدادات Firebase');
+  } else if (!preparerTelegram) {
+    console.warn('[TG] لم يُرسَل للمجهزين: preparer_telegram غير مضبوط في إعدادات Firebase');
   }
 
   // Push للزبون: تم قبول الطلب

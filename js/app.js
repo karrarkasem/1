@@ -1,48 +1,10 @@
-// ── صورة بديلة للمنتجات بدون صورة (SVG محلي — بدون طلب شبكة) ──
-const NO_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23f1f5f9'/%3E%3Crect x='65' y='68' width='70' height='64' rx='8' fill='%23e2e8f0'/%3E%3Crect x='55' y='61' width='90' height='20' rx='5' fill='%23cbd5e1'/%3E%3Cline x1='100' y1='81' x2='100' y2='132' stroke='%23d1d5db' stroke-width='2'/%3E%3C/svg%3E";
-
-// ⚙️ أضف معرّفاتك من emailjs.com (مجاني)
-const EMAILJS_SERVICE_ID  = 'service_e1sj8tn';
-const EMAILJS_TEMPLATE_ID = 'template_2vxg15b';
-const EMAILJS_PUBLIC_KEY  = 'vXft7Q_VrPCL4VBQJ';
-const ADMIN_EMAILS = [
-  'sale.burjuman@gmail.com' 
- 
-];
-// ✅ init
-(function(){
-  if(typeof emailjs !== 'undefined')
-    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-})();
-
-// ✅ sendOrderEmail
-async function sendOrderEmail({shop, addr, note, prodList, total, commission, commPct, orderId, nowStr, selLoc}) {
-  try {
-    if(typeof emailjs === 'undefined') return;
-    const repName = CU?.name || 'زائر';
-    for(const email of ADMIN_EMAILS) {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        // ... باقي الكود بدون تغيير
-    to_email: email,
-    subject: `🛍️ طلب جديد — ${shop} — ${total.toLocaleString()} د.ع`,
-    order_id: orderId,
-    order_date: nowStr,
-    rep_name: repName,
-    shop_name: shop,
-    shop_addr: addr,
-    shop_note: note || '—',
-    location: selLoc || '—',
-    products: prodList.join('\n'),
-    total: total.toLocaleString() + ' د.ع',
-    commission: commission.toLocaleString() + ' د.ع (' + commPct + '%)',
-    net: (total - commission).toLocaleString() + ' د.ع',
-  });
-  
-}
-  } catch(e) {
-    console.error('Error sending email:', e);
-}
-}
+// ════════════════════════════════════════════════════════
+// app.js — المنطق الرئيسي للتطبيق
+// الثوابت ومفاتيح API  ← config.js
+// إشعارات FCM + emailJS ← push.js
+// لوحة المجهز           ← preparer.js
+// لوحة السائق           ← driver.js
+// ════════════════════════════════════════════════════════
 
 
 // ═══════════════════════════════════════════════════════
@@ -109,164 +71,7 @@ async function loadAllSettings() {
 async function loadPreparerSettings() {}
 async function loadCompanySettings() {}
 
-// ═══════════════════════════════════════════════════════
-// PUSH NOTIFICATIONS (FCM + Service Worker)
-// ═══════════════════════════════════════════════════════
-
-// ─── تسجيل Service Worker وتخزين التوكن لكل زائر (حتى الزوار غير المسجلين) ───
-async function registerPush() {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
-  if (!window._messaging) return;
-  try {
-    const sw = await navigator.serviceWorker.register('/sw.js');
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-
-    const vapidKey = window.COMPANY?.vapid_key;
-    if (!vapidKey) return;
-
-    const token = await window._fb.getToken(window._messaging, {
-      vapidKey,
-      serviceWorkerRegistration: sw
-    });
-    if (token) {
-      localStorage.setItem('_fcmToken', token); // يُحفظ لكل زائر
-      if (CU?._id) {
-        await fbUpdate('users', CU._id, { fcmToken: token });
-        const idx = users.findIndex(u => u._id === CU._id);
-        if (idx !== -1) users[idx].fcmToken = token;
-      }
-    }
-
-    window._fb.onMessage(window._messaging, payload => {
-      const title = payload.notification?.title || 'برجمان';
-      const body  = payload.notification?.body  || '';
-      if (Notification.permission === 'granted') {
-        new Notification(title, { body, icon: '/icon.png', dir: 'rtl' });
-      }
-    });
-  } catch(e) { console.warn('registerPush:', e); }
-}
-
-// ─── تسجيل صامت عند تحميل الصفحة (بدون طلب إذن جديد) ───
-async function initPushSilent() {
-  if (!('serviceWorker' in navigator) || !('Notification' in window)) return;
-  if (Notification.permission !== 'granted') return; // لا نطلب إذن هنا
-  if (!window._messaging || !window.COMPANY?.vapid_key) return;
-  try {
-    const sw = await navigator.serviceWorker.register('/sw.js');
-    const token = await window._fb.getToken(window._messaging, {
-      vapidKey: window.COMPANY.vapid_key,
-      serviceWorkerRegistration: sw
-    });
-    if (token) {
-      localStorage.setItem('_fcmToken', token);
-      if (CU?._id) {
-        await fbUpdate('users', CU._id, { fcmToken: token }).catch(()=>{});
-      }
-    }
-  } catch(e) {}
-}
-
-// ─── إرسال Push لعدة توكنات ───
-async function _sendFCM(tokens, title, body, url = '/', tag = 'order') {
-  const serverKey = window.COMPANY?.fcm_server_key;
-  if (!serverKey || !tokens.length) return;
-  for (const token of tokens) {
-    fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'key=' + serverKey },
-      body: JSON.stringify({
-        to: token,
-        priority: 'high',
-        notification: { title, body, icon: '/icon.png', dir: 'rtl', sound: 'default' },
-        data: { url, tag }
-      })
-    }).catch(()=>{});
-  }
-}
-
-// ─── Push للأدمن والمشرفين ───
-async function sendFCMPushToAdmins(title, body, url = '/') {
-  const adminTypes = ['admin','sales_manager','supervisor'];
-  const tokens = users.filter(u => adminTypes.includes(u.type) && u.fcmToken).map(u => u.fcmToken);
-  await _sendFCM(tokens, title, body, url, 'admin-order');
-}
-
-// ─── Push للزبون (من التوكن المحفوظ في الطلب) ───
-async function notifyCustomer(order, title, body) {
-  const trackUrl = `/track.html?order=${order.orderId || order._id || ''}`;
-
-  // 1. FCM Push — التوكن المحفوظ في الطلب
-  const custToken = order.customerFcmToken;
-  if (custToken) await _sendFCM([custToken], title, body, trackUrl, 'customer-order');
-
-  // 2. Push للمستخدم المسجل (لو له توكن محفوظ في حسابه)
-  const custUser = users.find(u => u.username === order.repUsername);
-  if (custUser?.fcmToken && custUser.fcmToken !== custToken) {
-    await _sendFCM([custUser.fcmToken], title, body, trackUrl, 'customer-order');
-  }
-
-  // 3. تيليغرام للمستخدم المسجل
-  const TG = window.COMPANY?.telegram_token;
-  if (TG && custUser?.telegram) {
-    fetch(`https://api.telegram.org/bot${TG}/sendMessage`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ chat_id: custUser.telegram, text: `${title}\n${body}` })
-    }).catch(()=>{});
-  }
-
-  // 4. إشعار داخلي في النظام
-  const targetUser = custUser?.username || order.repUsername || order.visitorPhone || 'customer';
-  fbAdd('notifications', {
-    title, body, type: 'order', read: false,
-    targetUser, orderId: order._id || order.orderId,
-    date: new Date().toLocaleDateString('ar-IQ')
-  }).catch(()=>{});
-}
-
-async function createPreparerNotification(orderData, totalVolume) {
-  try {
-    const q = fb().query(fb().collection(db(), 'users'), fb().where('type', '==', 'preparer'));
-    const snap = await fb().getDocs(q);
-    const promises = snap.docs.map(d => {
-      const preparer = d.data();
-      return fbAdd('notifications', {
-        title: '📦 طلب جديد للتجهيز',
-        body: `${orderData.shopName} - ${(orderData.total||0).toLocaleString()} د.ع - حجم: ${(totalVolume||0).toFixed(3)} م³`,
-        type: 'preparer',
-        read: false,
-        targetUser: preparer.username || preparer.uid || '',
-        orderId: orderData.orderId || '',
-        date: new Date().toLocaleDateString('ar-IQ'),
-        timestamp: new Date().toISOString()
-      });
-    });
-    await Promise.all(promises);
-  } catch (e) {
-    console.error('createPreparerNotification:', e);
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════
-const WA  = '9647742222194';
-const HQ  = [32.57664096812528, 44.05991539922393];
-const IMGBB_API_KEY = 'a2173ed14e8a5d9288b6dbb4a56c8c78'; // ← أضف مفتاحك هنا
-
-
-// ✅ POINTS: 1 point per 100,000 IQD
-const POINTS_THRESHOLD = 100000;
-
-const PERMS = {
-  admin:         { order:1, manage:1, dash:1, users:1, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1, delivery_cfg:1 },
-  sales_manager: { order:1, manage:1, dash:1, users:0, wallet:1, inv:1, inv_write:1, offers:1, tracking:1, reports:1, notif:1, delivery_cfg:1 },
-  rep:           { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1, delivery_cfg:0 },
-  market_owner:  { order:1, manage:0, dash:1, users:0, wallet:1, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:1, delivery_cfg:0 },
-  guest:         { order:0, manage:0, dash:0, users:0, wallet:0, inv:0, inv_write:0, offers:1, tracking:0, reports:0, notif:0, delivery_cfg:0 }
-};
-const ROLES = { admin:'🛡️ أدمن', sales_manager:'📊 مشرف', rep:'🤝 مندوب', market_owner:'🏪 صاحب ماركت', guest:'🌐 زائر' };
+// (push notifications → push.js | config → config.js)
 
 // ═══ UTILS ════════════════════════════════════════════
 function debounce(fn, ms=300){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
@@ -2197,8 +2002,28 @@ async function loadPointsForUser(){
   const totalOrderAmt = parseFloat(uo.totalOrdersAmount) || 0;
 
   // Points from Firebase points collection (legacy support)
-  const allPts = await fbGet('points');
-  const myPts  = allPts.find(p=>p.userId===uo._id||p.username===CU.username);
+  let myPts = null;
+  if (window._fbReady && uo._id) {
+    try {
+      const q = fb().query(
+        fb().collection(db(), 'points'),
+        fb().where('userId', '==', uo._id),
+        fb().limit(1)
+      );
+      const snap = await fb().getDocs(q);
+      if (!snap.empty) myPts = { _id: snap.docs[0].id, ...snap.docs[0].data() };
+      else {
+        // fallback: try by username
+        const q2 = fb().query(
+          fb().collection(db(), 'points'),
+          fb().where('username', '==', CU.username),
+          fb().limit(1)
+        );
+        const snap2 = await fb().getDocs(q2);
+        if (!snap2.empty) myPts = { _id: snap2.docs[0].id, ...snap2.docs[0].data() };
+      }
+    } catch(e) { console.warn('loadPointsForUser points:', e); }
+  }
   const redeemed = parseFloat(myPts?.redeemedPoints)||0;
 
   document.getElementById('ptsTotal').textContent = totalEarned.toLocaleString();
@@ -2717,7 +2542,17 @@ async function saveStockEdit(){
 async function renderDiscounts(){
   if(!CU) return;
   const isAdmin=CU.type==='admin'||CU.type==='sales_manager';
-  if(!discounts.length) discounts=await fbGet('discounts');
+  if(!discounts.length && window._fbReady) {
+    try {
+      const q = fb().query(
+        fb().collection(db(), 'discounts'),
+        fb().orderBy('createdAt', 'desc'),
+        fb().limit(200)
+      );
+      const snap = await fb().getDocs(q);
+      discounts = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    } catch(e) { console.warn('renderDiscounts:', e); discounts = []; }
+  }
   const list=isAdmin?discounts:discounts.filter(d=>d.shopUsername===CU.username);
   document.getElementById('discBody').innerHTML=list.length
     ?[...list].reverse().map(d=>`
@@ -5244,11 +5079,18 @@ async function renderCampaignHistory() {
   const el = document.getElementById('campaignHistory');
   if (!el) return;
   if (!campaigns.length) {
-    const raw = await fbGet('campaigns');
-    campaigns = raw.sort((a,b)=>{
-      const da=a.createdAt?.seconds||0, db_=b.createdAt?.seconds||0;
-      return db_-da;
-    });
+    if (!window._fbReady) { campaigns = []; }
+    else {
+      try {
+        const q = fb().query(
+          fb().collection(db(), 'campaigns'),
+          fb().orderBy('createdAt', 'desc'),
+          fb().limit(100)
+        );
+        const snap = await fb().getDocs(q);
+        campaigns = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      } catch(e) { console.warn('renderCampaignHistory:', e); campaigns = []; }
+    }
   }
   const q = (document.getElementById('campaignSearch')?.value||'').toLowerCase();
   const filtered = q ? campaigns.filter(c=>
@@ -5587,560 +5429,7 @@ buildUI = function() {
   }
 };
 
-// ══════════════════════════════════════════════════════
-// FEATURE 3: PREPARER DASHBOARD
-// ══════════════════════════════════════════════════════
-
-// onSnapshot for orders — extended
-let _prepSnapshot = null, _driverSnapshot = null;
-function startNewRoleListeners() {
-  if (!fbReady || !CU) return;
-
-  if (CU.type === 'preparer' && !_prepSnapshot) {
-    _prepSnapshot = fb().onSnapshot(
-      fb().query(fb().collection(db(), 'orders'),
-        fb().where('status', 'in', ['Pending', 'Confirmed', 'pending', 'confirmed'])),
-      snap => {
-        renderPrepDashboard();
-        // Notify preparer of new orders
-        snap.docChanges().forEach(change => {
-          if (change.type === 'added') {
-            const o = change.doc.data();
-            browserNotif('📦 طلب جديد للتجهيز', `${o.shopName || ''} — ${(o.total || 0).toLocaleString()} د.ع`);
-            fbAdd('notifications', {
-              title: '📦 طلب جديد للتجهيز',
-              body: `${o.shopName || ''} — ${(o.total || 0).toLocaleString()} د.ع`,
-              type: 'order', read: false, targetUser: CU.username,
-              date: new Date().toLocaleDateString('ar-IQ')
-            }).catch(() => {});
-          }
-        });
-      }
-    );
-  }
-
-  if (CU.type === 'driver' && !_driverSnapshot) {
-    _driverSnapshot = fb().onSnapshot(
-      fb().query(fb().collection(db(), 'orders'), fb().where('status', '==', 'Prepared')),
-      snap => {
-        renderDriverDashboard();
-        snap.docChanges().forEach(change => {
-          if (change.type === 'added') {
-            const o = change.doc.data();
-            browserNotif('🚗 طلب جاهز للتوصيل', `${o.shopName || ''}`);
-            fbAdd('notifications', {
-              title: '🚗 طلب جاهز للتوصيل',
-              body: `طلب ${o.shopName || ''} جاهز للتحميل`,
-              type: 'order', read: false, targetUser: CU.username,
-              date: new Date().toLocaleDateString('ar-IQ')
-            }).catch(() => {});
-          }
-        });
-      }
-    );
-  }
-}
-
-// Calc order volume & weight from items
-function calcOrderVolumeWeight(order) {
-  let totalVol = 0, totalWgt = 0;
-  const items = order.cartItemsArray || parseCartItems(order.products);
-  items.forEach(item => {
-    const prod = products.find(p => p.name === item.name);
-    if (prod) {
-      totalVol += (prod.carton_volume || 0) * (item.qty || 1);
-      totalWgt += (prod.carton_weight || 0) * (item.qty || 1);
-    }
-  });
-  return { vol: totalVol.toFixed(3), wgt: totalWgt.toFixed(2) };
-}
-
-// Render Preparer Dashboard
-async function renderPrepDashboard() {
-  const listEl = document.getElementById('prepOrdersList');
-  const kpiEl  = document.getElementById('prepKpi');
-  if (!listEl || !kpiEl) return;
-
-  // Load all orders with status Pending or Confirmed
-  let prepOrders = [];
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
-    snap.docs.forEach(d => {
-      const data = d.data();
-      const st = (data.status || 'Pending').toLowerCase();
-      if (['pending', 'confirmed'].includes(st)) {
-        prepOrders.push({ _id: d.id, ...data });
-      }
-    });
-  } catch(e) {
-    prepOrders = orders.filter(o => {
-      const st = (o.status || 'pending').toLowerCase();
-      return ['pending', 'confirmed'].includes(st);
-    });
-  }
-
-  const totalVol = prepOrders.reduce((s, o) => { const {vol} = calcOrderVolumeWeight(o); return s + parseFloat(vol); }, 0);
-  const totalWgt = prepOrders.reduce((s, o) => { const {wgt} = calcOrderVolumeWeight(o); return s + parseFloat(wgt); }, 0);
-
-  kpiEl.innerHTML = `
-    <div class="kpi-card kpi-sky"><div class="kpi-icon">مخزون</div><div class="kpi-val">${prepOrders.length}</div><div class="kpi-lbl">طلبات للتجهيز</div></div>
-    <div class="kpi-card kpi-teal"><div class="kpi-icon">📐</div><div class="kpi-val">${totalVol.toFixed(2)}</div><div class="kpi-lbl">إجمالي الحجم (م³)</div></div>
-    <div class="kpi-card kpi-mint"><div class="kpi-icon">⚖️</div><div class="kpi-val">${totalWgt.toFixed(1)}</div><div class="kpi-lbl">إجمالي الوزن (كغ)</div></div>`;
-
-  if (!prepOrders.length) {
-    listEl.innerHTML = '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)"><div style="font-size:2.5rem;margin-bottom:10px">✅</div><p>لا توجد طلبات للتجهيز حالياً</p></div>';
-    return;
-  }
-
-  listEl.innerHTML = prepOrders.map(o => {
-    const { vol, wgt } = calcOrderVolumeWeight(o);
-    const items = o.cartItemsArray || parseCartItems(o.products);
-    const statusBadge = (o.status || 'Pending') === 'Confirmed' ? '<span class="badge b-sky">✅ مؤكد</span>' : '<span class="badge b-gold">⏳ معلق</span>';
-    return `
-    <div class="prep-order-card">
-      <div class="prep-order-hd">
-        <div>
-          <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
-          <div class="prep-order-id">${o.orderId || o._id}</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          ${statusBadge}
-        </div>
-      </div>
-      <div class="prep-order-meta">
-        <span class="badge b-teal">📐 ${vol} م³</span>
-        <span class="badge b-mint">⚖️ ${wgt} كغ</span>
-        <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
-        <span class="badge b-violet">📅 ${o.date || tsToStr(o.createdAt) || '—'}</span>
-      </div>
-      ${items.length ? `
-      <div class="prep-items-list">
-        ${items.map(item => `
-          <div class="prep-item-row">
-            <span class="prep-item-name">${item.name}</span>
-            <span class="badge b-sky">${item.qty} وحدة</span>
-          </div>`).join('')}
-      </div>` : `<div style="font-size:.8rem;color:rgba(9,50,87,.4);padding:7px">${o.products || '—'}</div>`}
-
-      <!-- Vehicle Selector -->
-      <div style="margin-top:10px">
-        <div style="font-size:.74rem;font-weight:700;color:rgba(9,50,87,.5);margin-bottom:7px">🚚 نوع المركبة</div>
-        <div class="vehicle-selector" id="vehicle_${o._id}">
-          <button class="vehicle-opt ${(o.vehicle_type==='ستوتة')?'selected':''}" onclick="selectVehicle('${o._id}','ستوتة',this)">
-            <span class="v-icon">🛵</span>ستوتة
-          </button>
-          <button class="vehicle-opt ${(o.vehicle_type==='حمل صغيرة')?'selected':''}" onclick="selectVehicle('${o._id}','حمل صغيرة',this)">
-            <span class="v-icon">🚐</span>حمل صغيرة
-          </button>
-          <button class="vehicle-opt ${(o.vehicle_type==='شاحنة')?'selected':''}" onclick="selectVehicle('${o._id}','شاحنة',this)">
-            <span class="v-icon">🚛</span>شاحنة
-          </button>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="openPrepEditModal('${o._id}')">تعديل الكميات</button>
-        <button class="btn btn-mint" style="flex:1" onclick="markAsPrepared('${o._id}')">تم التجهيز</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function selectVehicle(orderId, vehicleType, btn) {
-  // Update UI
-  const wrap = document.getElementById('vehicle_' + orderId);
-  if (wrap) wrap.querySelectorAll('.vehicle-opt').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  // Save to Firebase
-  await fbUpdate('orders', orderId, { vehicle_type: vehicleType }).catch(() => {});
-  toast(`تم اختيار: ${vehicleType}`);
-}
-
-async function markAsPrepared(orderId) {
-  if (!CU) return;
-  const now = new Date().toISOString();
-  await fbUpdate('orders', orderId, {
-    status: 'Prepared',
-    prepared_by: CU.username,
-    prepared_by_name: CU.name,
-    prepared_at: now
-  }).catch(() => {});
-  toast('تم تحديد الطلب كـ "مجهز"');
-  renderPrepDashboard();
-
-  const prepOrd = orders.find(o => o._id === orderId);
-
-  // Notify drivers
-  await fbAdd('notifications', {
-    title: '🚗 طلب جاهز للتوصيل',
-    body: `طلب رقم ${orderId}${prepOrd ? ' — ' + prepOrd.shopName : ''} جاهز للتحميل`,
-    type: 'order', read: false, targetUser: 'driver',
-    orderId,
-    date: new Date().toLocaleDateString('ar-IQ')
-  }).catch(() => {});
-  browserNotif('🚗 طلب جاهز للتوصيل', 'طلب جديد جاهز للتحميل');
-
-  // Notify customer that their order is prepared and leaving warehouse
-  if (prepOrd) {
-    await notifyCustomer(prepOrd, '📦 تم تجهيز طلبك!', 'طلبك جاهز وخرج من المخزن — جارٍ تعيين السائق').catch(()=>{});
-  }
-
-  // Push للأدمن
-  sendFCMPushToAdmins('📦 طلب جاهز للتوصيل', `${prepOrd?.shopName||orderId} — جاهز للتحميل`).catch(()=>{});
-}
-
-function openPrepEditModal(orderId) {
-  // Find order
-  fbGet('orders').then(allOrds => {
-    const rawOrd = allOrds.find(o => o._id === orderId);
-    if (!rawOrd) { toast('لم يتم العثور على الطلب', false); return; }
-
-    document.getElementById('prepEditOrderId').value = orderId;
-    document.getElementById('prepEditOrderInfo').innerHTML =
-      `🏪 ${rawOrd.shopName || '—'} — 💰 ${(parseFloat(rawOrd.total)||0).toLocaleString()} د.ع`;
-
-    const items = rawOrd.cartItemsArray || parseCartItems(rawOrd.products);
-    let itemsHtml = '';
-    if (items.length) {
-      itemsHtml = items.map((item, i) => {
-        const prod = products.find(p => p.name === item.name);
-        return `
-        <div class="prep-item-row" style="flex-direction:column;align-items:flex-start;gap:7px">
-          <div style="font-weight:700;color:var(--deep)">${item.name}</div>
-          <div style="display:flex;align-items:center;gap:9px;width:100%">
-            <span style="font-size:.75rem;color:rgba(9,50,87,.45)">الكمية الأصلية: ${item.qty}</span>
-            <input type="number" class="fi prep-edit-qty" data-name="${esc(item.name)}" data-price="${prod?.price || item.price || 0}"
-              style="width:90px;padding:6px 9px;font-size:.85rem" value="${item.qty}" min="0" oninput="recalcPrepEditTotal()">
-          </div>
-        </div>`;
-      }).join('');
-    } else {
-      itemsHtml = `<div style="padding:10px;text-align:center;color:rgba(9,50,87,.4)">${rawOrd.products || '—'}</div>`;
-    }
-    document.getElementById('prepEditItemsList').innerHTML = itemsHtml;
-    recalcPrepEditTotal();
-    openModal('prepEditModal');
-  });
-}
-
-function recalcPrepEditTotal() {
-  let total = 0;
-  document.querySelectorAll('.prep-edit-qty').forEach(input => {
-    const qty   = parseInt(input.value) || 0;
-    const price = parseFloat(input.dataset.price) || 0;
-    total += qty * price;
-  });
-  const el = document.getElementById('prepEditTotal');
-  if (el) el.textContent = total.toLocaleString();
-}
-
-async function savePrepEditQuantities() {
-  const orderId = document.getElementById('prepEditOrderId').value;
-  if (!orderId) return;
-
-  const updatedItems = [];
-  document.querySelectorAll('.prep-edit-qty').forEach(input => {
-    updatedItems.push({ name: input.dataset.name, qty: parseInt(input.value) || 0, price: parseFloat(input.dataset.price) || 0 });
-  });
-
-  let newTotal = updatedItems.reduce((s, i) => s + i.qty * i.price, 0);
-  const newProducts = updatedItems.map(i => `${i.name}(${i.qty})`).join('، ');
-  const commPct = orders.find(o => o._id === orderId)?.commPct || 0;
-  const commission = Math.round(newTotal * commPct / 100);
-
-  await fbUpdate('orders', orderId, {
-    products: newProducts,
-    cartItemsArray: updatedItems,
-    total: newTotal,
-    commission,
-    net: newTotal - commission,
-    qty_edited_by: CU?.username,
-    qty_edited_at: new Date().toISOString()
-  }).catch(() => {});
-
-  closeModal('prepEditModal');
-  toast('تم تحديث الكميات والإجمالي');
-  renderPrepDashboard();
-}
-
-// ══════════════════════════════════════════════════════
-// FEATURE 4: DRIVER DASHBOARD
-// ══════════════════════════════════════════════════════
-async function renderDriverDashboard() {
-  const listEl = document.getElementById('driverOrdersList');
-  const kpiEl  = document.getElementById('driverKpi');
-  if (!listEl || !kpiEl) return;
-
-  let preparedOrders = [], inDeliveryOrders = [];
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
-    snap.docs.forEach(d => {
-      const data = d.data();
-      const st = data.status || '';
-      if (st === 'Prepared') preparedOrders.push({ _id: d.id, ...data });
-      else if ((st === 'In Delivery' || st === 'NearCustomer') && data.driver_id === CU.username) inDeliveryOrders.push({ _id: d.id, ...data });
-    });
-  } catch(e) {
-    preparedOrders = orders.filter(o => o.status === 'Prepared');
-    inDeliveryOrders = orders.filter(o => (o.status === 'In Delivery' || o.status === 'NearCustomer') && o.driver_id === CU.username);
-  }
-
-  const myDelivered = orders.filter(o => o.status === 'Delivered' && o.driver_id === CU.username);
-  const avgRating = myDelivered.filter(o => o.driver_rating).reduce((s, o, _, a) => s + o.driver_rating / a.length, 0);
-
-  kpiEl.innerHTML = `
-    <div class="kpi-card kpi-sky"><div class="kpi-icon">مخزون</div><div class="kpi-val">${preparedOrders.length}</div><div class="kpi-lbl">جاهزة للتحميل</div></div>
-    <div class="kpi-card kpi-teal"><div class="kpi-icon">🚗</div><div class="kpi-val">${inDeliveryOrders.length}</div><div class="kpi-lbl">قيد التوصيل</div></div>
-    <div class="kpi-card kpi-mint"><div class="kpi-icon">✅</div><div class="kpi-val">${myDelivered.length}</div><div class="kpi-lbl">تم تسليمها</div></div>
-    <div class="kpi-card kpi-gold"><div class="kpi-icon">⭐</div><div class="kpi-val">${avgRating ? avgRating.toFixed(1) : '—'}</div><div class="kpi-lbl">متوسط التقييم</div></div>`;
-
-  const allDriverOrders = [...preparedOrders, ...inDeliveryOrders];
-
-  if (!allDriverOrders.length && !myDelivered.length) {
-    listEl.innerHTML = '<div style="text-align:center;padding:55px;color:rgba(9,50,87,.35)"><div style="font-size:2.5rem;margin-bottom:10px">✅</div><p>لا توجد طلبات حالياً</p></div>';
-    return;
-  }
-
-  const activeHtml = allDriverOrders.map(o => {
-    const isPrepared    = o.status === 'Prepared';
-    const isInDelivery  = o.status === 'In Delivery';
-    const isNear        = o.status === 'NearCustomer';
-    const isOnRoad      = isInDelivery || isNear;
-    const statusBadge   = isPrepared ? '<span class="badge b-green">✅ جاهز للتحميل</span>'
-                        : isNear     ? '<span class="badge b-mint" style="animation:pulse 1.5s infinite">📍 قريب من الزبون</span>'
-                        :              '<span class="badge b-sky">🚗 قيد التوصيل</span>';
-    return `
-    <div class="prep-order-card">
-      <div class="prep-order-hd">
-        <div>
-          <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
-          <div class="prep-order-id">${o.orderId || o._id}</div>
-        </div>
-        <div>${statusBadge}</div>
-      </div>
-      <div class="prep-order-meta">
-        <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
-        <span class="badge b-teal">📍 ${o.shopAddress || o.shopAddr || '—'}</span>
-        ${o.vehicle_type ? `<span class="badge b-violet">🚚 ${o.vehicle_type}</span>` : ''}
-      </div>
-      <div style="font-size:.8rem;color:rgba(9,50,87,.5);margin-bottom:10px">${o.products || '—'}</div>
-      ${o.location ? `<a href="${o.location}" target="_blank" class="btn btn-ghost btn-sm" style="margin-bottom:8px;display:inline-flex">عرض الموقع</a>` : ''}
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${isPrepared ? `<button class="btn btn-sky btn-full" onclick="markAsLoaded('${o._id}')">تم التحميل</button>` : ''}
-        ${isInDelivery ? `<button class="btn btn-gold btn-sm" onclick="markAsNearCustomer('${o._id}')">أنا قريب</button>` : ''}
-        ${isOnRoad ? `<button class="btn btn-mint btn-full" onclick="openDeliveryProof('${o._id}','${o.driver_id || ''}')">تأكيد التسليم</button>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-
-  const deliveredHtml = myDelivered.length ? `
-    <div style="margin-top:${allDriverOrders.length ? '20' : '0'}px;padding-top:${allDriverOrders.length ? '16' : '0'}px;${allDriverOrders.length ? 'border-top:1px solid rgba(0,0,0,.08);' : ''}margin-bottom:10px;font-weight:800;color:var(--deep);font-size:.9rem">
-      📋 سجل التوصيلات (${myDelivered.length})
-    </div>
-    ${myDelivered.map(o => {
-      const confirmed = !!o.customer_confirmed;
-      return `
-      <div class="prep-order-card" style="border:1.5px solid ${confirmed ? 'rgba(13,148,136,.35)' : 'rgba(245,158,11,.3)'};pointer-events:none;user-select:none">
-        <div class="prep-order-hd">
-          <div>
-            <div class="prep-order-shop">🏪 ${o.shopName || '—'}</div>
-            <div class="prep-order-id">${o.orderId || o._id}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <span class="badge b-teal">📦 مُسلَّم</span>
-            ${confirmed
-              ? '<span class="badge b-mint">✅ أكد الزبون الاستلام</span>'
-              : '<span class="badge b-gold">⏳ انتظار تأكيد الزبون</span>'}
-          </div>
-        </div>
-        <div class="prep-order-meta">
-          <span class="badge b-sky">💰 ${(parseFloat(o.total)||0).toLocaleString()} د.ع</span>
-          ${o.driver_rating ? `<span class="badge b-gold">⭐ ${o.driver_rating}/5</span>` : ''}
-          ${o.delivered_at ? `<span class="badge b-teal">🕐 ${new Date(o.delivered_at).toLocaleDateString('ar-IQ')}</span>` : ''}
-        </div>
-        <div style="font-size:.8rem;color:rgba(9,50,87,.5);margin-bottom:6px">${o.products || '—'}</div>
-        ${confirmed && o.customer_notes ? `<div style="font-size:.75rem;color:rgba(9,50,87,.55);padding:6px 8px;background:rgba(13,148,136,.08);border-radius:8px;margin-bottom:6px">💬 ملاحظة الزبون: ${o.customer_notes}</div>` : ''}
-        ${o.proof_url ? `<a href="${o.proof_url}" target="_blank" class="btn btn-ghost btn-sm" style="display:inline-flex;pointer-events:auto">إثبات التسليم</a>` : ''}
-      </div>`;
-    }).join('')}
-  ` : '';
-
-  listEl.innerHTML = activeHtml + deliveredHtml;
-}
-
-async function markAsLoaded(orderId) {
-  if (!CU) return;
-  const now = new Date().toISOString();
-  await fbUpdate('orders', orderId, {
-    status: 'In Delivery',
-    driver_id: CU.username,
-    driver_name: CU.name,
-    loaded_at: now
-  }).catch(() => {});
-  toast('تم تحديد الطلب كـ "قيد التوصيل"');
-  renderDriverDashboard();
-
-  // Notify customer via FCM push + in-app
-  const ord = orders.find(o => o._id === orderId);
-  if (ord) {
-    await notifyCustomer(ord, '🚗 طلبك في الطريق إليك!', `طلبك أصبح في الطريق — السائق: ${CU.name}`).catch(()=>{});
-  }
-
-  // Push للأدمن
-  sendFCMPushToAdmins('🚗 طلب قيد التوصيل', `${ord?.shopName||orderId} — السائق: ${CU.name}`).catch(()=>{});
-}
-
-async function markAsNearCustomer(orderId) {
-  if (!CU) return;
-  await fbUpdate('orders', orderId, { status: 'NearCustomer', near_at: new Date().toISOString() }).catch(() => {});
-  toast('📍 تم إشعار الزبون بأنك قريب');
-  renderDriverDashboard();
-
-  const ord = orders.find(o => o._id === orderId);
-  if (ord) {
-    await notifyCustomer(ord, '🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق — ${CU.name} في طريقه إليك`).catch(()=>{});
-  }
-}
-
-// ══════════════════════════════════════════════════════
-// Driver Proof (Photo/Signature)
-// ══════════════════════════════════════════════════════
-let _proofPhotoDataUrl = null, _sigDrawing = false, _sigCtx = null;
-let _currentProofTab = 'photo';
-
-function openDeliveryProof(orderId, driverId) {
-  document.getElementById('proofOrderId').value = orderId;
-  const driverIdEl = document.getElementById('proofDriverId');
-  if (driverIdEl) driverIdEl.value = driverId || CU?.username || '';
-  _proofPhotoDataUrl = null;
-  // Reset photo preview
-  const preview = document.getElementById('proofPhotoPreview');
-  if (preview) { preview.src = ''; preview.style.display = 'none'; }
-  const photoInput = document.getElementById('proofPhotoInput');
-  if (photoInput) photoInput.value = '';
-  // Reset signature canvas context so it re-initializes each open
-  _sigCtx = null;
-  switchProofTab('photo');
-  openModal('driverProofModal');
-  setTimeout(initSigCanvas, 200);
-}
-
-function switchProofTab(tab) {
-  _currentProofTab = tab;
-  document.getElementById('proofPhotoPane').style.display = tab === 'photo' ? 'block' : 'none';
-  document.getElementById('proofSigPane').style.display   = tab === 'sig' ? 'block' : 'none';
-  document.getElementById('proofTabPhoto').classList.toggle('active', tab === 'photo');
-  document.getElementById('proofTabSig').classList.toggle('active', tab === 'sig');
-}
-
-function handleProofPhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    _proofPhotoDataUrl = ev.target.result;
-    const preview = document.getElementById('proofPhotoPreview');
-    preview.src = _proofPhotoDataUrl;
-    preview.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
-
-function initSigCanvas() {
-  const canvas = document.getElementById('sigCanvas');
-  if (!canvas || _sigCtx) return;
-  _sigCtx = canvas.getContext('2d');
-  _sigCtx.strokeStyle = '#093257';
-  _sigCtx.lineWidth = 2.5;
-  _sigCtx.lineCap = 'round';
-
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    if (e.touches) {
-      return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
-    }
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-  }
-
-  const start = e => { _sigDrawing = true; _sigCtx.beginPath(); const p = getPos(e); _sigCtx.moveTo(p.x, p.y); e.preventDefault(); };
-  const draw  = e => { if (!_sigDrawing) return; const p = getPos(e); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke(); e.preventDefault(); };
-  const end   = () => { _sigDrawing = false; };
-
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', draw);
-  canvas.addEventListener('mouseup', end);
-  canvas.addEventListener('touchstart', start, { passive: false });
-  canvas.addEventListener('touchmove', draw, { passive: false });
-  canvas.addEventListener('touchend', end);
-}
-
-function clearSignature() {
-  const canvas = document.getElementById('sigCanvas');
-  if (!canvas || !_sigCtx) return;
-  _sigCtx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-async function confirmDeliveryWithProof() {
-  const orderId  = document.getElementById('proofOrderId').value;
-  const statusEl = document.getElementById('proofUploadStatus');
-
-  let proofDataUrl = null;
-
-  if (_currentProofTab === 'photo') {
-    if (!_proofPhotoDataUrl) { toast('⚠️ يرجى التقاط صورة أولاً', false); return; }
-    proofDataUrl = _proofPhotoDataUrl;
-  } else {
-    const canvas = document.getElementById('sigCanvas');
-    if (!canvas) { toast('خطأ في التوقيع', false); return; }
-    const blank = document.createElement('canvas');
-    blank.width = canvas.width; blank.height = canvas.height;
-    if (canvas.toDataURL() === blank.toDataURL()) { toast('⚠️ يرجى رسم توقيعك أولاً', false); return; }
-    proofDataUrl = canvas.toDataURL('image/png');
-  }
-
-  statusEl.style.display = 'block';
-  statusEl.textContent = '⏳ جاري الرفع...';
-
-  let proofUrl = '';
-  try {
-    // Upload to ImgBB
-    const base64 = proofDataUrl.split(',')[1];
-    const fd = new FormData();
-    fd.append('image', base64);
-    fd.append('key', IMGBB_API_KEY);
-    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
-    const data = await resp.json();
-    if (data.success) proofUrl = data.data.url;
-  } catch(e) {
-    proofUrl = proofDataUrl; // Fallback: store base64 locally
-  }
-
-  const now = new Date().toISOString();
-  await fbUpdate('orders', orderId, {
-    status: 'Delivered',
-    delivered_at: now,
-    proof_url: proofUrl,
-    driver_id: CU?.username,
-    driver_name: CU?.name
-  }).catch(() => {});
-
-  statusEl.textContent = 'تم التسليم!';
-  setTimeout(() => { closeModal('driverProofModal'); statusEl.style.display = 'none'; }, 800);
-
-  toast('تم تأكيد التسليم');
-  renderDriverDashboard();
-
-  // Notify customer via FCM push + in-app
-  const delivOrd = orders.find(o => o._id === orderId);
-  if (delivOrd) {
-    await notifyCustomer(delivOrd, '✅ تم توصيل طلبك!', 'طلبك وصل بنجاح — شكراً لاختيارك برجمان').catch(()=>{});
-  }
-
-  // Push للأدمن
-  sendFCMPushToAdmins('✅ طلب مُسلَّم', `${delivOrd?.shopName||orderId} — تم التسليم`).catch(()=>{});
-}
+// (preparer dashboard → preparer.js | driver dashboard → driver.js)
 
 // ══════════════════════════════════════════════════════
 // FEATURE 5: Customer Tracking & Rating
@@ -6511,11 +5800,7 @@ async function renderDriverPerfTable() {
   const bodyEl = document.getElementById('driverPerfBody');
   if (!bodyEl) return;
 
-  let allOrders = [];
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
-    allOrders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-  } catch(e) { allOrders = orders; }
+  const allOrders = orders;
 
   const deliveredOrds = allOrders.filter(o => o.status === 'Delivered' && o.driver_id);
   const driverMap = {};
@@ -6551,11 +5836,7 @@ async function renderPrepPerfTable() {
   const bodyEl = document.getElementById('prepPerfBody');
   if (!bodyEl) return;
 
-  let allOrders = [];
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'orders'));
-    allOrders = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-  } catch(e) { allOrders = orders; }
+  const allOrders = orders;
 
   const preparedOrds = allOrders.filter(o => o.prepared_by);
   const prepMap = {};

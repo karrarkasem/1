@@ -1545,7 +1545,7 @@ body.sidebar-open{overflow:hidden}
 @media(max-width:768px){
   #pageStore{padding:0 0 110px !important;}
   .cats-wrap{
-    top:54px;
+    top:25px;
     margin:8px 10px 12px;
     border-radius:14px;
     padding:8px 10px;

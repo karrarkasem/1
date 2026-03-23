@@ -46,29 +46,13 @@ async function sendOrderEmail({shop, addr, note, prodList, total, commission, co
 
 
 // ═══════════════════════════════════════════════════════
-// PREPARER SETTINGS
+// ALL SETTINGS — قراءة واحدة فقط لجميع إعدادات الشركة
 // ═══════════════════════════════════════════════════════
 let preparerWhatsApp = '';
 let preparerTelegram = '';
-
-async function loadPreparerSettings() {
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'settings'));
-    snap.docs.forEach(d => {
-      const data = d.data();
-      if (data.key === 'preparer_whatsapp') preparerWhatsApp = data.value;
-      if (data.key === 'preparer_telegram') preparerTelegram = data.value;
-    });
-  } catch (e) {
-    console.error('loadPreparerSettings:', e);
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// COMPANY SETTINGS — تحميل إعدادات الشركة من Firestore
-// ═══════════════════════════════════════════════════════
 window.COMPANY = {};
-async function loadCompanySettings() {
+
+async function loadAllSettings() {
   try {
     const snap = await fb().getDocs(fb().collection(db(), 'settings'));
     const s = {};
@@ -76,45 +60,54 @@ async function loadCompanySettings() {
     window.COMPANY = s;
     _cacheSet('bj_company', s);
 
+    // إعدادات المجهز
+    preparerWhatsApp = s.preparer_whatsapp || '';
+    preparerTelegram = s.preparer_telegram || '';
+
+    // عتبة النقاط — تُحدَّث إن وُجد العنصر في الصفحة
+    if (s.pointsThreshold) {
+      currentThreshold = parseInt(s.pointsThreshold) || 100000;
+      const thEl   = document.getElementById('newThresholdVal');
+      const thDisp = document.getElementById('currentThresholdDisp');
+      if (thEl)   thEl.value = currentThreshold;
+      if (thDisp) thDisp.textContent = currentThreshold.toLocaleString() + ' د.ع';
+    }
+
     const nameAr = s.company_name_ar;
     const nameEn = s.company_name_en;
     const logo   = s.company_logo;
 
-    // تحديث الشريط الجانبي
     if (nameAr) {
       document.querySelectorAll('.sb-logo-text h2').forEach(el => el.textContent = nameAr);
       document.querySelectorAll('.login-hd h2').forEach(el => el.textContent = nameAr);
       document.querySelectorAll('.loading-txt').forEach(el => el.textContent = nameAr);
-      // تحديث شاشة اختيار الوضع
       const btTxt = document.getElementById('btBrandName');
       if (btTxt) btTxt.textContent = nameAr;
+      document.title = nameAr + ' — نظام إدارة متكامل';
     }
     if (nameEn) {
       document.querySelectorAll('.sb-logo-text span').forEach(el => el.textContent = nameEn);
       document.querySelectorAll('.ls-brand-en').forEach(el => el.textContent = nameEn);
     }
-    if (nameAr) {
-      document.title = nameAr + ' — نظام إدارة متكامل';
-    }
     if (logo) {
-      // استبدال الإيموجي بصورة الشعار
       document.querySelectorAll('.sb-logo-gem').forEach(el => {
         el.innerHTML = `<img src="${logo}" style="width:36px;height:36px;object-fit:cover;border-radius:8px">`;
       });
       document.querySelectorAll('.login-logo').forEach(el => {
         el.innerHTML = `<img src="${logo}" style="width:64px;height:64px;object-fit:cover;border-radius:14px">`;
       });
-      // تحديث لوغو شاشة الاختيار
       const btGem = document.querySelector('.bt-logo-gem');
       if (btGem) btGem.innerHTML = `<img src="${logo}" style="width:50px;height:50px;object-fit:cover;border-radius:14px">`;
     }
-    // ─── تطبيق الثيم المحفوظ من setup ───
     if (s.theme_color && typeof applyTheme === 'function') applyTheme(s.theme_color);
     if (s.theme_mode  && typeof applyMode  === 'function') applyMode(s.theme_mode);
   } catch (e) {
-    console.error('loadCompanySettings:', e);
+    console.error('loadAllSettings:', e);
   }
 }
+// الدوال القديمة أصبحت no-ops لتجنب أخطاء الاستدعاء من الكود الآخر
+async function loadPreparerSettings() {}
+async function loadCompanySettings() {}
 
 // ═══════════════════════════════════════════════════════
 // PUSH NOTIFICATIONS (FCM + Service Worker)
@@ -431,8 +424,7 @@ async function init() {
   if (_cachedComp) { window.COMPANY = _cachedComp; }
 
   try {
-    await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadPreparerSettings(), loadCompanySettings()]);
-    await loadThreshold();
+    await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadAllSettings()]);
   } catch(e) { console.warn('data load error:', e); }
   try {
     const saved = localStorage.getItem('bjUser');
@@ -467,88 +459,117 @@ async function init() {
 // ═══════════════════════════════════════════════════════
 // REALTIME LISTENERS
 // ═══════════════════════════════════════════════════════
-let _ordersRenderTimer=null, _productsRenderTimer=null;
+let _ordersRenderTimer=null;
 function startRealtimeListeners() {
   if (!fbReady) return;
-  fb().onSnapshot(fb().collection(db(), 'orders'), snap => {
-    orders = snap.docs.map(d => parseOrder({_id:d.id,...d.data()}));
-    clearTimeout(_ordersRenderTimer);
-    _ordersRenderTimer = setTimeout(() => {
-      buildDashboard(); renderOrders(); renderSalesList(); renderReports();
-    }, 120);
-  });
-  fb().onSnapshot(fb().collection(db(), 'products'), snap => {
-    const updated = snap.docs.map(d=>({_id:d.id,...d.data()}));
-    if (updated.length) {
-      products = updated.map((p,i)=>({
-        idx:i, _id:p._id,
-        name:p.name||'', cat:p.category||'عام',
-        price:parseFloat(p.price)||0,
-        wholesalePrice:parseFloat(p.wholesalePrice)||0,
-        retailUnit:p.retailUnit||'قطعة',
-        img:fixDrive(p.image||''),
-        stock:p.stock===undefined?999:parseInt(p.stock)||0,
-        minStock:parseInt(p.minStock)||10,
-        status:p.status||'active', detail:p.detail||'',
-        packaging:p.packaging||{}, packagingFractions:p.packagingFractions||{},
-        carton_l:parseFloat(p.carton_l)||0, carton_w:parseFloat(p.carton_w)||0,
-        carton_h:parseFloat(p.carton_h)||0, carton_volume:parseFloat(p.carton_volume)||0,
-        carton_weight:parseFloat(p.carton_weight)||0
-      })).filter(p=>p.name&&p.price>0);
-      clearTimeout(_productsRenderTimer);
-      _productsRenderTimer = setTimeout(() => {
-        renderStore('الكل'); renderCats(); renderInventory(); renderManageProds();
+
+  // ── الطلبات: آخر 500 طلب فقط + منطق إشعارات تغيير الحالة ──
+  fb().onSnapshot(
+    fb().query(fb().collection(db(), 'orders'),
+      fb().orderBy('createdAt', 'desc'),
+      fb().limit(500)),
+    snap => {
+      orders = snap.docs.map(d => parseOrder({_id:d.id,...d.data()}));
+      clearTimeout(_ordersRenderTimer);
+      _ordersRenderTimer = setTimeout(() => {
+        buildDashboard(); renderOrders(); renderSalesList(); renderReports();
       }, 120);
+
+      // تنبيه العميل بتغيير حالة طلبه
+      snap.docChanges().forEach(change => {
+        if (change.type !== 'modified') return;
+        const o = change.doc.data();
+        const st = o.status || '';
+        const isMyOrder = CU && (CU.username === o.repUsername || CU.name === o.shopName);
+        const isGuestOrder = (() => {
+          try { const g = JSON.parse(localStorage.getItem('bj_guest_order') || '{}'); return g.fbId === change.doc.id; } catch(e) { return false; }
+        })();
+        if (st === 'Prepared' && (isMyOrder || isGuestOrder)) {
+          browserNotif('🚛 تم تجهيز طلبك!', 'طلبك جاهز وخارج من المخزن');
+        } else if (st === 'In Delivery' && (isMyOrder || isGuestOrder)) {
+          browserNotif('🚗 طلبك في الطريق إليك!', `طلبك من ${o.shopName || ''} خرج للتوصيل`);
+        } else if (st === 'NearCustomer' && (isMyOrder || isGuestOrder)) {
+          browserNotif('🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق`);
+          const ex = document.getElementById('nearCustFlash');
+          if (!ex) {
+            const div = document.createElement('div');
+            div.id = 'nearCustFlash';
+            div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,var(--teal),var(--teal2));color:white;padding:14px 28px;border-radius:20px;box-shadow:0 8px 32px rgba(13,148,136,.4);font-weight:700;font-size:.95rem;text-align:center;cursor:pointer';
+            div.innerHTML = '🚚 السائق قريب منك!<br><span style="font-size:.75rem;opacity:.85">اضغط لتتبع الطلب</span>';
+            div.onclick = () => {
+              const g = (() => { try { return JSON.parse(localStorage.getItem('bj_guest_order')||'{}'); } catch(e){return {};} })();
+              const ord = orders.find(x => x._id === change.doc.id);
+              const trackId = ord?.orderId || g.orderId || '';
+              if (trackId) window.open(`https://brjman.com/track.html?order=${trackId}`, '_blank');
+              div.remove();
+            };
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 10000);
+          }
+        } else if (st === 'Delivered' && (isMyOrder || isGuestOrder)) {
+          browserNotif('تم توصيل طلبك!', 'يمكنك تقييم السائق الآن');
+        }
+      });
     }
-  });
-  fb().onSnapshot(fb().collection(db(), 'notifications'), snap => {
-  const prevUnreadIds = new Set(
-    notifications.filter(n=>!n.read&&(n.target==='all'||n.target===CU?.username||n.target===CU?.type)).map(n=>n._id)
   );
 
-  const fromServer = snap.docs.map(d => {
-    const data = d.data();
-    const rawTs = data.date || data.createdAt;
-    const ts = rawTs?.toMillis ? rawTs.toMillis() : (rawTs?.seconds ? rawTs.seconds*1000 : 0);
-    return {
-      _id:    d.id,
-      _ts:    ts,
-      title:  data.title  || '',
-      body:   data.body   || data.message || '',
-      type:   data.type   || 'info',
-      read:   data.read   || false,
-      date:   tsToStr(rawTs),
-      target: data.targetUser || 'all'
-    };
-  });
-
-  const serverIds = new Set(fromServer.map(n=>n._id));
-  const localOnly = notifications.filter(n=>!serverIds.has(n._id));
-  notifications = [...fromServer, ...localOnly].sort((a,b)=>(b._ts||0)-(a._ts||0));
-
-  // صوت للإشعارات الجديدة
-  const newUnread = fromServer.filter(n =>
-    !n.read && !prevUnreadIds.has(n._id) &&
-    (n.target==='all' || n.target===CU?.username || n.target===CU?.type)
-  );
-  if (newUnread.length > 0) playNotifSound();
-
-  renderNotifBadge();
-  renderNotifications();
-});
-  fb().onSnapshot(fb().collection(db(), 'offers'), snap => {
-    const prev = new Set(_bmShownOfferIds);
-    offers = snap.docs.map(d=>({_id:d.id, ...d.data()}));
-    const activeOffers = offers.filter(o => o.status==='active' && !isOfferExpired(o));
-    const newOnes = activeOffers.filter(o => !prev.has(o._id));
-    renderOffersBanner();
-    renderOffers();
-    // Show modal: first load (prev empty) OR new banner added
-    if (activeOffers.length && (prev.size === 0 || newOnes.length > 0)) {
-      setTimeout(() => showBannerModal(activeOffers), prev.size === 0 ? 1200 : 600);
+  // ── الإشعارات: آخر 50 فقط ──
+  fb().onSnapshot(
+    fb().query(fb().collection(db(), 'notifications'),
+      fb().orderBy('createdAt', 'desc'),
+      fb().limit(50)),
+    snap => {
+      const prevUnreadIds = new Set(
+        notifications.filter(n=>!n.read&&(n.target==='all'||n.target===CU?.username||n.target===CU?.type)).map(n=>n._id)
+      );
+      const fromServer = snap.docs.map(d => {
+        const data = d.data();
+        const rawTs = data.date || data.createdAt;
+        const ts = rawTs?.toMillis ? rawTs.toMillis() : (rawTs?.seconds ? rawTs.seconds*1000 : 0);
+        return {
+          _id: d.id, _ts: ts,
+          title: data.title || '',
+          body:  data.body  || data.message || '',
+          type:  data.type  || 'info',
+          read:  data.read  || false,
+          date:  tsToStr(rawTs),
+          target: data.targetUser || 'all'
+        };
+      });
+      const serverIds = new Set(fromServer.map(n=>n._id));
+      const localOnly = notifications.filter(n=>!serverIds.has(n._id));
+      notifications = [...fromServer, ...localOnly].sort((a,b)=>(b._ts||0)-(a._ts||0));
+      const newUnread = fromServer.filter(n =>
+        !n.read && !prevUnreadIds.has(n._id) &&
+        (n.target==='all' || n.target===CU?.username || n.target===CU?.type)
+      );
+      if (newUnread.length > 0) playNotifSound();
+      renderNotifBadge();
+      renderNotifications();
     }
-    activeOffers.forEach(o => _bmShownOfferIds.add(o._id));
-  });
+  );
+
+  // ── العروض: آخر 30 فقط ──
+  fb().onSnapshot(
+    fb().query(fb().collection(db(), 'offers'),
+      fb().orderBy('createdAt', 'desc'),
+      fb().limit(30)),
+    snap => {
+      const prev = new Set(_bmShownOfferIds);
+      offers = snap.docs.map(d=>({_id:d.id, ...d.data()}));
+      const activeOffers = offers.filter(o => o.status==='active' && !isOfferExpired(o));
+      const newOnes = activeOffers.filter(o => !prev.has(o._id));
+      renderOffersBanner();
+      renderOffers();
+      if (activeOffers.length && (prev.size === 0 || newOnes.length > 0)) {
+        setTimeout(() => showBannerModal(activeOffers), prev.size === 0 ? 1200 : 600);
+      }
+      activeOffers.forEach(o => _bmShownOfferIds.add(o._id));
+    }
+  );
+
+  // ── مستمعات الأدوار (مجهز/سائق) ──
+  startNewRoleListeners();
 }
 
 function parseOrder(o) {
@@ -641,9 +662,16 @@ async function loadProducts() {
 }
 
 async function loadOrders() {
-  const raw = await fbGet('orders');
-  // ✅ FIX: إزالة filter بالتاريخ — نحتفظ بكل الطلبات
-  orders = raw.map(o => parseOrder(o));
+  if (!window._fbReady) { orders = []; return; }
+  try {
+    const q = fb().query(
+      fb().collection(db(), 'orders'),
+      fb().orderBy('createdAt', 'desc'),
+      fb().limit(500)
+    );
+    const snap = await fb().getDocs(q);
+    orders = snap.docs.map(d => parseOrder({_id: d.id, ...d.data()}));
+  } catch(e) { console.warn('loadOrders:', e); orders = []; }
 }
 
 async function loadOffers() {
@@ -658,13 +686,24 @@ async function loadOffers() {
 }
 
 async function loadNotifications() {
-  const raw = await fbGet('notifications');
-  notifications = raw.map(n => ({
-    _id:n._id, title:n.title||'', body:n.body||n.message||'',
-    type:n.type||'info', read:n.read||false,
-    date:tsToStr(n.date || n.createdAt), target:n.targetUser||'all'
-  }));
-  renderNotifBadge();
+  if (!window._fbReady) { notifications = []; return; }
+  try {
+    const q = fb().query(
+      fb().collection(db(), 'notifications'),
+      fb().orderBy('createdAt', 'desc'),
+      fb().limit(100)
+    );
+    const snap = await fb().getDocs(q);
+    notifications = snap.docs.map(d => {
+      const n = {_id: d.id, ...d.data()};
+      return {
+        _id: n._id, title: n.title||'', body: n.body||n.message||'',
+        type: n.type||'info', read: n.read||false,
+        date: tsToStr(n.date || n.createdAt), target: n.targetUser||'all'
+      };
+    });
+    renderNotifBadge();
+  } catch(e) { console.warn('loadNotifications:', e); notifications = []; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1389,6 +1428,10 @@ const trackingLink = `https://brjman.com/track.html?order=${orderId}`;
       carton_volume: p?.carton_volume || 0, carton_weight: p?.carton_weight || 0,
     };
   });
+
+  // ✅ FIX: Calculate totalVolume to avoid ReferenceError
+  const totalVolume = cartItemsArray.reduce((acc, item) => acc + ((item.carton_volume || 0) * (item.qty || 0)), 0);
+
   const orderData = {
     orderId, date:nowStr,
     repUsername:CU?.username||'guest', repName:CU?.name||'زائر',
@@ -4214,15 +4257,7 @@ function downloadTemplate() {
 let currentThreshold = 100000;
 
 async function loadThreshold() {
-  try {
-    const snap = await fbGet('settings');
-    const s = snap.find(x => x._id === 'pointsThreshold' || x.key === 'pointsThreshold');
-    if(s) {
-      currentThreshold = parseInt(s.value) || 100000;
-      document.getElementById('newThresholdVal').value = currentThreshold;
-      document.getElementById('currentThresholdDisp').textContent = currentThreshold.toLocaleString() + ' د.ع';
-    }
-  } catch(e) {}
+  // تم دمجها في loadAllSettings — لا قراءة إضافية من Firebase
 }
 
 async function saveThreshold() {
@@ -6554,54 +6589,8 @@ async function renderPrepPerfTable() {
 // ══════════════════════════════════════════════════════
 // FEATURE 7: Real-time updates + notifications
 // ══════════════════════════════════════════════════════
-
-// Extend startRealtimeListeners to handle order status changes
-const _origStartRealtime = startRealtimeListeners;
-startRealtimeListeners = function() {
-  _origStartRealtime();
-  startNewRoleListeners();
-
-  // Listen for order status changes to notify customers
-  fb().onSnapshot(fb().collection(db(), 'orders'), snap => {
-    snap.docChanges().forEach(change => {
-      if (change.type !== 'modified') return;
-      const o = change.doc.data();
-      const st = o.status || '';
-      const isMyOrder = CU && (CU.username === o.repUsername || CU.name === o.shopName);
-      const isGuestOrder = (() => {
-        try { const g = JSON.parse(localStorage.getItem('bj_guest_order') || '{}'); return g.fbId === change.doc.id; } catch(e) { return false; }
-      })();
-
-      if (st === 'Prepared' && (isMyOrder || isGuestOrder)) {
-        browserNotif('🚛 تم تجهيز طلبك!', 'طلبك جاهز وخارج من المخزن');
-      } else if (st === 'In Delivery' && (isMyOrder || isGuestOrder)) {
-        browserNotif('🚗 طلبك في الطريق إليك!', `طلبك من ${o.shopName || ''} خرج للتوصيل`);
-      } else if (st === 'NearCustomer' && (isMyOrder || isGuestOrder)) {
-        browserNotif('🚚 السائق قريب منك!', `طلبك سيصل خلال دقائق`);
-        // If tracking modal is open, it auto-updates via its own listener
-        // Show flash even if modal is closed
-        const ex = document.getElementById('nearCustFlash');
-        if (!ex) {
-          const div = document.createElement('div');
-          div.id = 'nearCustFlash';
-          div.style.cssText = 'position:fixed;top:72px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,var(--teal),var(--teal2));color:white;padding:14px 28px;border-radius:20px;box-shadow:0 8px 32px rgba(13,148,136,.4);font-weight:700;font-size:.95rem;text-align:center;cursor:pointer';
-          div.innerHTML = '🚚 السائق قريب منك!<br><span style="font-size:.75rem;opacity:.85">اضغط لتتبع الطلب</span>';
-          div.onclick = () => {
-            const g = (() => { try { return JSON.parse(localStorage.getItem('bj_guest_order')||'{}'); } catch(e){return {};} })();
-            const ord = orders.find(x => x._id === change.doc.id);
-            const trackId = ord?.orderId || g.orderId || '';
-            if (trackId) window.open(`https://brjman.com/track.html?order=${trackId}`, '_blank');
-            div.remove();
-          };
-          document.body.appendChild(div);
-          setTimeout(() => div.remove(), 10000);
-        }
-      } else if (st === 'Delivered' && (isMyOrder || isGuestOrder)) {
-        browserNotif('تم توصيل طلبك!', 'يمكنك تقييم السائق الآن');
-      }
-    });
-  });
-};
+// تم دمج منطق الإشعارات ومستمع الطلبات داخل startRealtimeListeners مباشرة
+// لتجنب مستمع مكرر كان يضاعف تكلفة القراءة من Firebase
 
 // Extend showPage to handle new pages
 const _origShowPage = showPage;
@@ -6879,4 +6868,3 @@ function updateModeBadge() {
   }
 }
 window.addEventListener('resize', () => { if (buyerMode) updateModeBadge(); });
-

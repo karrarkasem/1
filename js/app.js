@@ -3559,6 +3559,7 @@ function isThisMonth(dateStr){
 
 function fixDrive(u){
   if(!u) return NO_IMG;
+  if(u.includes('placeholder.com') || u.includes('via.placeholder')) return NO_IMG;
   if(u.includes('drive.google.com')){const m=u.match(/[-\w]{25,}/);if(m) return `https://drive.google.com/uc?export=view&id=${m[0]}`;}
   return u;
 }

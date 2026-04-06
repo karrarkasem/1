@@ -2651,13 +2651,11 @@ async function confirmApproveOrder() {
   if (TG_TOKEN && preparerTelegram) {
     const _o = orders.find(x => (x._id||x.id) === id);
     const _prepLink = `${SITE_URL}/prepare.html?order=${_o?.orderId||id}`;
-    let _prepCredsBlock = '';
-    if (_approvePreparers.length) {
-      _prepCredsBlock = `\n━━━━━━━━━━━━━━━━━━\n🔐 *بيانات الدخول:*\n`;
-      _approvePreparers.forEach(p => {
-        _prepCredsBlock += `👤 ${p.name||p.username}: \`${p.username}\` / \`${p.password||'—'}\`\n`;
-      });
-    }
+    // ملاحظة: بيانات الدخول لا تُرسل عبر Telegram لأسباب أمنية —
+    // المجهز يفتح الرابط ويدخل ببياناته الخاصة من صفحة الدخول
+    const _prepNames = _approvePreparers.length
+      ? `👥 المجهزون: ${_approvePreparers.map(p => p.name||p.username).join('، ')}\n`
+      : '';
     const _groupMsg =
       `📦 *طلب جديد معتمد للتجهيز*\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
@@ -2665,8 +2663,8 @@ async function confirmApproveOrder() {
       `🆔 رقم الطلب: ${_o?.orderId||id}\n` +
       `💰 الإجمالي: ${(parseFloat(_o?.total)||0).toLocaleString()} د.ع\n` +
       `━━━━━━━━━━━━━━━━━━\n` +
-      `🔗 رابط التجهيز:\n${_prepLink}` +
-      _prepCredsBlock;
+      _prepNames +
+      `🔗 رابط التجهيز:\n${_prepLink}`;
     fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ chat_id: preparerTelegram, text: _groupMsg, parse_mode: 'Markdown' })

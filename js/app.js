@@ -4357,6 +4357,7 @@ function openModal(id){
   if (id === 'packagingUnitsModal') renderPackagingUnitsList();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openSuggestModal(){ openModal('suggestModal'); }
 document.addEventListener('click',e=>{
   if(e.target.classList.contains('modal')) e.target.classList.remove('open');
 });

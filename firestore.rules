@@ -142,7 +142,7 @@ service cloud.firestore {
     // ── وحدات التعبئة ──
     match /packagingUnits/{docId} {
       allow read: if true;
-      allow create, update: if true;
+      allow create, update: if request.resource.data.keys().hasAny(['name','fill','price','unit']);
       allow delete: if false;
     }
 
@@ -164,10 +164,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── زوار الموقع ──
+    // ── زوار الموقع (analytics) ──
     match /visitors/{docId} {
-      allow read: if true;
-      allow create, update: if true;
+      allow read: if false;
+      allow create: if request.resource.data.keys().hasAny(['page','timestamp','ua']);
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['lastSeen','pageViews','updatedAt']);
       allow delete: if false;
     }
 

@@ -50,24 +50,13 @@ async function pageInit() {
 
 // ─── Login ────────────────────────────────
 async function doLogin() {
-  const un = document.getElementById('lUser').value.trim();
-  const pw = document.getElementById('lPass').value.trim();
-  document.getElementById('loginErr').textContent = '';
-  if (!un || !pw) { document.getElementById('loginErr').textContent = '❌ أدخل بيانات الدخول'; return; }
-  if (!_users.length) _users = await fbGet('users');
-  const found = _users.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === pw);
-  if (!found) { document.getElementById('loginErr').textContent = '❌ بيانات خاطئة'; return; }
-  CU = { ...found };
-  localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, loginTime: Date.now() }));
-  fbUpdate('users', found._id, { lastLogin: new Date().toLocaleDateString('ar-IQ') }).catch(() => {});
-  hideLoginBox();
-  updateSidebarUser();
-  if (CU.type === 'admin' || CU.type === 'sales_manager') {
-    renderPointsMgmt();
-  } else {
-    toast('🔒 هذه الصفحة للأدمن فقط', false);
-  }
-  toast('✅ مرحباً ' + CU.name);
+  await doLoginCore(
+    async () => { if (!_users.length) _users = await fbGet('users'); return _users; },
+    async () => {
+      if (CU.type === 'admin' || CU.type === 'sales_manager') renderPointsMgmt();
+      else toast('🔒 هذه الصفحة للأدمن فقط', false);
+    }
+  );
 }
 
 // ─── Points Management ────────────────────

@@ -115,6 +115,50 @@ function hideLoginBox() {
   if (el) el.style.display = 'none';
 }
 
+// ─── تشفير كلمة المرور (SHA-256) ─────────
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function isHashed(pw) { return /^[a-f0-9]{64}$/.test(pw); }
+
+// ─── دالة دخول مشتركة لجميع الصفحات ─────
+// getUsersFn: دالة تُعيد قائمة المستخدمين
+// onSuccess:  دالة تُشغَّل بعد نجاح الدخول
+async function doLoginCore(getUsersFn, onSuccess) {
+  const un    = document.getElementById('lUser').value.trim();
+  const pw    = document.getElementById('lPass').value.trim();
+  const errEl = document.getElementById('loginErr');
+  if (errEl) errEl.textContent = '';
+  if (!un || !pw) { if (errEl) errEl.textContent = '❌ أدخل بيانات الدخول'; return; }
+
+  const list   = await getUsersFn();
+  const hashed = await hashPassword(pw);
+
+  // ابحث بكلمة المرور المشفرة أولاً ثم النص الواضح (هجرة تلقائية)
+  let found = list.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === hashed);
+  let needsUpgrade = false;
+  if (!found) {
+    found = list.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === pw);
+    if (found) needsUpgrade = true;
+  }
+
+  if (!found) { if (errEl) errEl.textContent = '❌ بيانات دخول خاطئة'; return; }
+
+  CU = { ...found };
+  localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, loginTime: Date.now() }));
+
+  // حفظ آخر دخول + ترقية كلمة المرور إلى مشفرة عند الحاجة
+  const updateData = { lastLogin: new Date().toLocaleDateString('ar-IQ') };
+  if (needsUpgrade) updateData.password = hashed;
+  if (found._id) fbUpdate('users', found._id, updateData).catch(() => {});
+
+  hideLoginBox();
+  updateSidebarUser();
+  toast('✅ مرحباً ' + CU.name);
+  if (onSuccess) await onSuccess();
+}
+
 // ─── Firebase status dot ─────────────────
 function setFbStatus(ok) {
   const dot = document.getElementById('fbDot');

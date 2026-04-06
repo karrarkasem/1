@@ -1147,25 +1147,37 @@ function showLogin(){document.getElementById('loginOverlay').style.display='flex
 function hideLogin(){document.getElementById('loginOverlay').style.display='none';}
 
 async function doLogin() {
-  const un=document.getElementById('lUser').value.trim();
-  const pw=document.getElementById('lPass').value.trim();
-  document.getElementById('loginErr').textContent='';
-  if(fbReady) await loadUsers();
-  const found=users.find(u=>u.username.toLowerCase()===un.toLowerCase()&&u.password===pw);
-  if(!found){document.getElementById('loginErr').textContent='❌ بيانات دخول خاطئة';return;}
-  CU={...found};
+  const un = document.getElementById('lUser').value.trim();
+  const pw = document.getElementById('lPass').value.trim();
+  document.getElementById('loginErr').textContent = '';
+  if (fbReady) await loadUsers();
+
+  const hashed = await hashPassword(pw);
+  let found = users.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === hashed);
+  let needsUpgrade = false;
+  if (!found) {
+    found = users.find(u => u.username.toLowerCase() === un.toLowerCase() && u.password === pw);
+    if (found) needsUpgrade = true;
+  }
+  if (!found) { document.getElementById('loginErr').textContent = '❌ بيانات دخول خاطئة'; return; }
+
+  CU = { ...found };
   const _remMe = document.getElementById('remMe')?.checked !== false;
-  localStorage.setItem('bjUser', JSON.stringify({username: CU.username, type: CU.type, name: CU.name, loginTime: Date.now(), rememberMe: _remMe}));
-  if(found._id) fbUpdate('users',found._id,{lastLogin:new Date().toLocaleDateString('ar-IQ')}).catch(()=>{});
+  localStorage.setItem('bjUser', JSON.stringify({ username: CU.username, type: CU.type, name: CU.name, loginTime: Date.now(), rememberMe: _remMe }));
+
+  const updateData = { lastLogin: new Date().toLocaleDateString('ar-IQ') };
+  if (needsUpgrade) updateData.password = hashed;
+  if (found._id) fbUpdate('users', found._id, updateData).catch(() => {});
+
   hideLogin(); buildUI();
   loadProtectedKeys();
   setTimeout(() => registerPush(), 1500);
-  toast('✅ مرحباً '+CU.name);
+  toast('✅ مرحباً ' + CU.name);
   if (CU.type === 'admin' || CU.type === 'sales_manager') {
     setTimeout(() => { window.location.href = 'dashboard.html'; }, 400);
     return;
   }
-  const _loginTarget = (CU.type==='preparer') ? 'pagePrep' : (CU.type==='driver') ? 'pageDriver' : 'pageStore';
+  const _loginTarget = (CU.type === 'preparer') ? 'pagePrep' : (CU.type === 'driver') ? 'pageDriver' : 'pageStore';
   showPage(_loginTarget);
 }
 
@@ -3146,7 +3158,9 @@ async function saveUser(){
   const idx=document.getElementById('um_idx').value;
   const fbid=document.getElementById('um_fbid').value;
   if(!name||!username||!password){toast('الاسم واليوزر وكلمة المرور مطلوبة',false);return;}
-  const userData={name,username,password,accountType:type,phone,commPct,status:'active',balance,totalBuys:0};
+  // شفّر كلمة المرور — إذا كانت مشفرة مسبقاً (64 حرف hex) لا تعيد تشفيرها
+  const hashedPw = isHashed(password) ? password : await hashPassword(password);
+  const userData={name,username,password:hashedPw,accountType:type,phone,commPct,status:'active',balance,totalBuys:0};
   if(idx!==''){
     users[parseInt(idx)]={...users[parseInt(idx)],...userData,type,_id:fbid};
     if(fbid) await fbUpdate('users',fbid,userData).catch(()=>{});

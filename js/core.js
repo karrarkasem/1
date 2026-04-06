@@ -8,8 +8,22 @@ let CU = null;
 function db()  { return window._db; }
 function fb()  { return window._fb; }
 
-async function fbGet(colName) {
+async function fbGet(colName, ttl) {
   if (!window._fbReady) return [];
+  // كاش اختياري — إذا مُرر ttl نستخدم localStorage
+  if (ttl) {
+    const ck = 'bj_fg_' + colName;
+    try {
+      const c = JSON.parse(localStorage.getItem(ck) || 'null');
+      if (c && (Date.now() - c.t) < ttl) return c.d;
+    } catch(e) {}
+    try {
+      const snap = await fb().getDocs(fb().collection(db(), colName));
+      const data = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      try { localStorage.setItem(ck, JSON.stringify({ t: Date.now(), d: data })); } catch(e) {}
+      return data;
+    } catch(e) { console.warn('fbGet', colName, e); return []; }
+  }
   try {
     const snap = await fb().getDocs(fb().collection(db(), colName));
     return snap.docs.map(d => ({ _id: d.id, ...d.data() }));

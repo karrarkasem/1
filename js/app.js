@@ -439,37 +439,41 @@ let _ordersRenderTimer=null;
 function startRealtimeListeners() {
   if (!fbReady) return;
 
-  // ── المستخدمون: مستمع لحظي ──
-  fb().onSnapshot(fb().collection(db(), 'users'), snap => {
-    users = snap.docs.map(d => {
-      const u = {_id: d.id, ...d.data()};
-      return {
-        _id:      u._id,
-        name:     u.name||'',
-        username: u.username||u.email||'',
-        password: u.password||'',
-        type:     u.accountType||u.type||'rep',
-        phone:    u.phone||'',
-        email:    u.email||'',
-        telegram: u.telegram||'',
-        photoURL: u.photoURL||'',
-        commPct:  parseFloat(u.commPct)||0,
-        status:   u.status||'active',
-        balance:  parseFloat(u.balance)||0,
-        totalBuys:parseFloat(u.totalBuys)||0,
-        totalOrdersAmount: parseFloat(u.totalOrdersAmount)||0,
-        earnedPoints: parseInt(u.earnedPoints)||0,
-        transactions: u.transactions||[]
-      };
-    }).filter(u=>u._id);
-    renderUsersList(); renderPointsMgmt(); buildWalletPage();
-  }, () => {});
+  // ── المستخدمون: مستمع لحظي — مع حد 300 لتقليل الـ reads ──
+  fb().onSnapshot(
+    fb().query(fb().collection(db(), 'users'), fb().limit(300)),
+    snap => {
+      const fresh = snap.docs.map(d => {
+        const u = {_id: d.id, ...d.data()};
+        return {
+          _id:      u._id,
+          name:     u.name||'',
+          username: u.username||u.email||'',
+          password: u.password||'',
+          type:     u.accountType||u.type||'rep',
+          phone:    u.phone||'',
+          email:    u.email||'',
+          telegram: u.telegram||'',
+          photoURL: u.photoURL||'',
+          commPct:  parseFloat(u.commPct)||0,
+          status:   u.status||'active',
+          balance:  parseFloat(u.balance)||0,
+          totalBuys:parseFloat(u.totalBuys)||0,
+          totalOrdersAmount: parseFloat(u.totalOrdersAmount)||0,
+          earnedPoints: parseInt(u.earnedPoints)||0,
+          transactions: u.transactions||[]
+        };
+      }).filter(u=>u._id);
+      users = fresh;
+      _cacheSet('bj_users', fresh);
+      renderUsersList(); renderPointsMgmt(); buildWalletPage();
+    }, () => {});
 
-  // ── الطلبات: آخر 500 طلب فقط + منطق إشعارات تغيير الحالة ──
+  // ── الطلبات: آخر 150 طلب فقط + منطق إشعارات تغيير الحالة ──
   fb().onSnapshot(
     fb().query(fb().collection(db(), 'orders'),
       fb().orderBy('createdAt', 'desc'),
-      fb().limit(500)),
+      fb().limit(150)),
     snap => {
       orders = snap.docs.map(d => parseOrder({_id:d.id,...d.data()}));
       clearTimeout(_ordersRenderTimer);
@@ -604,8 +608,13 @@ function parseOrder(o) {
 // DATA LOADING
 // ═══════════════════════════════════════════════════════
 async function loadUsers() {
+  // عرض الكاش فوراً (TTL: 3 دقائق)
+  const _cu = _cacheGet('bj_users', 3 * 60 * 1000);
+  if (_cu && _cu.length) { users = _cu; }
+
   const raw = await fbGet('users');
-  users = raw.map(u => ({
+  if (!raw.length) return;
+  const fresh = raw.map(u => ({
     _id:      u._id,
     name:     u.name||'',
     username: u.username||u.email||'',
@@ -623,6 +632,8 @@ async function loadUsers() {
     earnedPoints: parseInt(u.earnedPoints)||0,
     transactions: u.transactions||[]
   })).filter(u=>u._id);
+  users = fresh;
+  _cacheSet('bj_users', fresh);
 }
 
 // ── Cache helpers ──
@@ -701,7 +712,7 @@ async function loadOrders() {
     const q = fb().query(
       fb().collection(db(), 'orders'),
       fb().orderBy('createdAt', 'desc'),
-      fb().limit(500)
+      fb().limit(100)   // خُفِّض من 500 إلى 100 لتقليل الـ reads
     );
     const snap = await fb().getDocs(q);
     orders = snap.docs.map(d => parseOrder({_id: d.id, ...d.data()}));
@@ -711,7 +722,8 @@ async function loadOrders() {
 }
 
 async function loadOffers() {
-  const raw = await fbGet('offers');
+  // كاش 5 دقائق — العروض لا تتغير كثيراً
+  const raw = await fbGet('offers', 5 * 60 * 1000);
   offers = raw.map(o => ({
     _id:o._id, title:o.title||'', desc:o.description||'',
     type:o.discountType||'percent', value:parseFloat(o.value)||0,

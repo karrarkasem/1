@@ -15,12 +15,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
-  authDomain: "burjuman-6cb83.firebaseapp.com",
-  projectId: "burjuman-6cb83",
-  storageBucket: "burjuman-6cb83.firebasestorage.app",
-  messagingSenderId: "177984721378",
-  appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+  apiKey:            "%%FIREBASE_API_KEY%%",
+  authDomain:        "%%FIREBASE_AUTH_DOMAIN%%",
+  projectId:         "%%FIREBASE_PROJECT_ID%%",
+  storageBucket:     "%%FIREBASE_STORAGE_BUCKET%%",
+  messagingSenderId: "%%FIREBASE_MESSAGING_SENDER_ID%%",
+  appId:             "%%FIREBASE_APP_ID%%"
 };
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);

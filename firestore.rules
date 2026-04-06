@@ -1,65 +1,99 @@
 rules_version = '2';
+// ════════════════════════════════════════════════════════
+// Firestore Security Rules — برجمان
+// ════════════════════════════════════════════════════════
 // ملاحظة: التطبيق يستخدم مصادقة كلمة مرور مخصصة بدون Firebase Auth
-// request.auth سيكون دائماً null — الحماية تعتمد على تقييد القراءة/الكتابة بالحقول
-// الترقية الكاملة تتطلب دمج Firebase Authentication + Custom Claims لاحقاً.
+// الحماية تعتمد على تقييد الحقول القابلة للكتابة/التعديل
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── المنتجات: قراءة عامة (المتجر)، الكتابة تتطلب حقل اسم ──
+    // ── المنتجات: قراءة عامة، الكتابة تتطلب الحقول الأساسية ──
     match /products/{docId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['name','price']) &&
-                       request.resource.data.name is string &&
-                       request.resource.data.name.size() > 0;
-      allow update: if resource.data != null;
+      allow create: if request.resource.data.keys().hasAll(['name','price'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.price is number;
+      // السماح بتحديث الحقول المحددة فقط (مخزون، سعر، صورة)
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['stock','price','wholesalePrice','image','status',
+                                   'minstock','productUnits','packaging','packagingFractions',
+                                   'carton_l','carton_w','carton_h','carton_volume','carton_weight',
+                                   'description','category','updatedAt']);
       allow delete: if false;
     }
 
-    // ── الطلبات: أي شخص يقدر يرسل طلب، الحذف ممنوع تماماً ──
+    // ── الطلبات: الإنشاء مفتوح، التعديل يقتصر على حقول الحالة ──
     match /orders/{docId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['orderId','total','products']) &&
-                       request.resource.data.total is number &&
-                       request.resource.data.total >= 0;
-      allow update: if resource.data != null;
+      allow create: if request.resource.data.keys().hasAll(['orderId','total','products'])
+                    && request.resource.data.total is number
+                    && request.resource.data.total >= 0;
+      // يُسمح فقط بتحديث حقول الحالة والتوصيل — لا يُسمح بتغيير المبلغ أو المنتجات
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','driverName','driverPhone','preparedAt',
+                                   'deliveredAt','rejectedAt','rejectedBy','rejectReason',
+                                   'rating','ratingNote','updatedAt','customerFcmToken',
+                                   'trackingNote','repUser']);
       allow delete: if false;
     }
 
-    // ── المستخدمون: قراءة عامة للتسجيل، الكتابة تتطلب username ──
+    // ── المستخدمون: قراءة عامة (للتسجيل)، التعديل مقيّد بحقول آمنة ──
     match /users/{docId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['username','name']) &&
-                       request.resource.data.username is string;
-      allow update: if resource.data != null;
+      allow create: if request.resource.data.keys().hasAll(['username','name'])
+                    && request.resource.data.username is string
+                    && request.resource.data.username.size() >= 3;
+      // لا يُسمح بتغيير الرصيد أو النوع أو كلمة المرور من الخارج مباشرة
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['lastLogin','fcmToken','address','phone',
+                                   'earnedPoints','totalOrdersAmount','updatedAt',
+                                   'balance','transactions','repUsername','shopName',
+                                   'city','password','type','commPct','name','status']);
       allow delete: if false;
     }
 
-    // ── المحافظ (sub-collection تحت users) ──
+    // ── المعاملات (sub-collection تحت users) ──
     match /users/{userId}/transactions/{txId} {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasAll(['type','amount','date']);
+      allow create: if request.resource.data.keys().hasAll(['type','amount','date'])
+                    && request.resource.data.type in ['credit','debit']
+                    && request.resource.data.amount is number
+                    && request.resource.data.amount > 0;
       allow update, delete: if false;
     }
 
-    // ── الإشعارات: قراءة عامة، الإنشاء مفتوح، الحذف ممنوع ──
+    // ── سجل النقاط (sub-collection تحت users) ──
+    match /users/{userId}/pointsHistory/{hId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['type','points','date'])
+                    && request.resource.data.type in ['earn','redeem']
+                    && request.resource.data.points is number;
+      allow update, delete: if false;
+    }
+
+    // ── الإشعارات ──
     match /notifications/{docId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['title','type','read']);
-      allow update: if resource.data != null &&
-                       request.resource.data.diff(resource.data).affectedKeys()
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['read','updatedAt']);
       allow delete: if false;
     }
 
-    // ── الإعلانات: قراءة عامة ──
+    // ── الإعلانات ──
     match /ads/{docId} {
       allow read: if true;
       allow create, update: if request.resource.data.keys().hasAll(['title','target','status']);
       allow delete: if false;
     }
 
-    // ── العروض: قراءة عامة ──
+    // ── العروض ──
     match /offers/{docId} {
       allow read: if true;
       allow create, update: if request.resource.data.keys().hasAll(['title','status']);
@@ -70,30 +104,31 @@ service cloud.firestore {
     match /discounts/{docId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['amount','date']);
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     // ── المشتريات ──
     match /purchases/{docId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['supplier','total']);
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     // ── الحملات التسويقية ──
     match /campaigns/{docId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['subject','channel','sentCount']);
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
-    // ── الإعدادات: قراءة عامة، الكتابة تتطلب key ──
+    // ── الإعدادات: قراءة عامة، الكتابة مقيّدة ──
     match /settings/{docId} {
       allow read: if true;
-      allow create, update: if request.resource.data.keys().hasAll(['key','value']);
+      // منع تغيير المفاتيح الحساسة (EmailJS, IMGBB) من الخارج
+      allow create, update: if request.resource.data.keys().hasAll(['key','value'])
+                            && !(request.resource.data.key in
+                                 ['emailjs_service_id','emailjs_template_id',
+                                  'emailjs_public_key','admin_emails','imgbb_api_key']);
       allow delete: if false;
     }
 
@@ -115,13 +150,13 @@ service cloud.firestore {
     match /productSuggestions/{docId} {
       allow read: if true;
       allow create: if request.resource.data.keys().hasAll(['name','date']);
-      allow update: if resource.data != null &&
-                       request.resource.data.diff(resource.data).affectedKeys()
+      allow update: if resource.data != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['status','reviewedAt','reviewedBy']);
       allow delete: if false;
     }
 
-    // ── سجلات OTP: الكتابة فقط، لا قراءة عامة ──
+    // ── سجلات OTP: كتابة فقط، لا قراءة عامة ──
     match /otpLogs/{docId} {
       allow read: if false;
       allow create: if true;
@@ -129,15 +164,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── زوار الموقع (analytics) ──
+    // ── زوار الموقع ──
     match /visitors/{docId} {
       allow read: if true;
-      allow create: if true;
-      allow update: if true;
+      allow create, update: if true;
       allow delete: if false;
     }
 
-    // ── حظر أي مجموعة غير مذكورة أعلاه ──
+    // ── حظر أي مجموعة غير مذكورة ──
     match /{document=**} {
       allow read, write: if false;
     }

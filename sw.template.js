@@ -53,7 +53,6 @@ async function flushQueuedOrders() {
     const resp = await cache.match(req);
     const data = await resp.json().catch(() => null);
     if (data) {
-      // إبلاغ الصفحة بإعادة إرسال الطلب المعلق
       const clients = await self.clients.matchAll({ type: 'window' });
       clients.forEach(c => c.postMessage({ type: 'FLUSH_ORDER', data }));
     }
@@ -67,7 +66,6 @@ self.addEventListener('sync', event => {
   }
 });
 
-// ── إشعار الصفحة بعودة الاتصال ──
 self.addEventListener('message', event => {
   if (event.data?.type === 'QUEUE_ORDER') {
     queueOrder(event.data.payload);
@@ -78,7 +76,6 @@ self.addEventListener('fetch', event => {
   const url = event.request.url;
   if (!url.startsWith('http://') && !url.startsWith('https://')) return;
   if (event.request.method !== 'GET') return;
-  // تجاهل طلبات Firebase Firestore المباشرة
   if (url.includes('firestore.googleapis.com') || url.includes('identitytoolkit')) return;
 
   const isImg = /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(url)
@@ -86,7 +83,6 @@ self.addEventListener('fetch', event => {
     || url.includes('drive.google.com/uc')
     || url.includes('i.ibb.co');
 
-  // ── الملفات الثابتة: كاش أولاً ──
   const isStatic = url.includes('/css/') || url.includes('/js/') || url.includes('/lib/') || url.endsWith('.html') || url.endsWith('manifest.json');
   if (isStatic && !isImg) {
     event.respondWith(
@@ -127,17 +123,16 @@ self.addEventListener('fetch', event => {
   );
 });
 
-
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
-  authDomain: "burjuman-6cb83.firebaseapp.com",
-  projectId: "burjuman-6cb83",
-  storageBucket: "burjuman-6cb83.firebasestorage.app",
-  messagingSenderId: "177984721378",
-  appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+  apiKey:            "%%FIREBASE_API_KEY%%",
+  authDomain:        "%%FIREBASE_AUTH_DOMAIN%%",
+  projectId:         "%%FIREBASE_PROJECT_ID%%",
+  storageBucket:     "%%FIREBASE_STORAGE_BUCKET%%",
+  messagingSenderId: "%%FIREBASE_MESSAGING_SENDER_ID%%",
+  appId:             "%%FIREBASE_APP_ID%%"
 });
 
 const messaging = firebase.messaging();
@@ -147,32 +142,5 @@ messaging.onBackgroundMessage(payload => {
   const title = payload.notification?.title || 'برجمان';
   const body  = payload.notification?.body  || '';
   const icon  = payload.notification?.icon  || '/icon.png';
-  const url   = payload.data?.url || '/';
-
-  self.registration.showNotification(title, {
-    body,
-    icon,
-    badge: icon,
-    dir: 'rtl',
-    tag: payload.data?.tag || 'burjuman',
-    data: { url }
-  });
-});
-
-// عند الضغط على الإشعار يفتح الصفحة المناسبة
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  const url = event.notification.data?.url || '/';
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const c of list) {
-        if (c.url.includes(self.location.origin) && 'focus' in c) {
-          c.focus();
-          c.postMessage({ type: 'NAVIGATE', url });
-          return;
-        }
-      }
-      return clients.openWindow(url);
-    })
-  );
+  self.registration.showNotification(title, { body, icon, badge: '/icon.png' });
 });

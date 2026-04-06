@@ -47,13 +47,13 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasAll(['username','name'])
                     && request.resource.data.username is string
                     && request.resource.data.username.size() >= 3;
-      // لا يُسمح بتغيير الرصيد أو النوع أو كلمة المرور من الخارج مباشرة
+      // الحقول الآمنة فقط — كلمة المرور والرصيد والنوع لا تُعدَّل من الـ client مباشرة
       allow update: if resource.data != null
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['lastLogin','fcmToken','address','phone',
                                    'earnedPoints','totalOrdersAmount','updatedAt',
-                                   'balance','transactions','repUsername','shopName',
-                                   'city','password','type','commPct','name','status']);
+                                   'repUsername','shopName','city','name','status',
+                                   'transactions']);
       allow delete: if false;
     }
 

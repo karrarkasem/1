@@ -3,7 +3,7 @@
 // يعتمد على المتغيرات العامة: orders, CU
 // والدوال: fbUpdate, fbAdd, toast, openModal, closeModal,
 //          browserNotif, notifyCustomer, sendFCMPushToAdmins,
-//          tsToStr, IMGBB_API_KEY_USER
+//          tsToStr, IMGBB_API_KEY
 // ════════════════════════════════════════════════════════
 
 // ─── عرض لوحة السائق ──────────────────────────────────
@@ -315,7 +315,7 @@ async function confirmDeliveryWithProof() {
     const base64 = proofDataUrl.split(',')[1];
     const fd = new FormData();
     fd.append('image', base64);
-    fd.append('key', IMGBB_API_KEY_USER);
+    fd.append('key', IMGBB_API_KEY);
     const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: fd });
     const data = await resp.json();
     if (data.success) proofUrl = data.data.url;

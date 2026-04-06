@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تجهيز الطلب - برجمان</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+    <style>
+        :root {
+            --teal:#0d9488; --teal2:#0f766e; --teal3:rgba(13,148,136,0.12);
+            --mint:#10b981; --mint2:#059669;
+            --gold:#f59e0b; --gold2:#d97706;
+            --deep:#0f172a; --mid:#475569;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo',sans-serif; }
+        body {
+            background: linear-gradient(160deg, #0f2027 0%, #134e4a 50%, #0d9488 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 16px;
+        }
+        /* ── Card ── */
+        .prepare-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 28px;
+            padding: 28px 20px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.32), 0 0 0 1px rgba(13,148,136,0.12);
+            animation: slideUp 0.4s ease;
+            margin: 10px 0;
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateY(28px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        /* ── Header ── */
+        .header { text-align:center; margin-bottom:22px; }
+        .logo {
+            width:68px; height:68px;
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            border-radius:20px; display:flex; align-items:center; justify-content:center;
+            font-size:2rem; margin:0 auto 10px; color:white;
+            box-shadow:0 10px 24px rgba(13,148,136,0.4);
+        }
+        h1 { color:var(--deep); font-size:1.4rem; font-weight:800; margin-bottom:4px; }
+        .order-id {
+            color:#666; font-size:.85rem; background:#f1f5f9;
+            padding:5px 12px; border-radius:20px; display:inline-block;
+        }
+        /* ── Login ── */
+        .login-section {
+            margin:16px 0; padding:18px;
+            background:linear-gradient(135deg,#f8fafc,#f1f5f9);
+            border-radius:18px; border:1px solid rgba(13,148,136,0.15);
+        }
+        .input-field {
+            width:100%; padding:12px 14px; border:2px solid #e2e8f0;
+            border-radius:12px; font-size:1rem; margin-bottom:13px;
+            font-family:'Cairo',sans-serif; transition:border-color .2s;
+        }
+        .input-field:focus { border-color:var(--teal); outline:none; box-shadow:0 0 0 3px rgba(13,148,136,0.10); }
+        /* ── Buttons ── */
+        .btn {
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            color:white; border:none; padding:13px 20px; border-radius:14px;
+            font-weight:700; font-size:1rem; cursor:pointer; width:100%;
+            transition:all .2s; font-family:'Cairo',sans-serif; margin-bottom:8px;
+            box-shadow:0 4px 14px rgba(13,148,136,0.30);
+        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(13,148,136,.4); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+        .btn-success  { background:linear-gradient(135deg,var(--mint),var(--mint2)); box-shadow:0 4px 14px rgba(16,185,129,.30); }
+        .btn-success:hover { box-shadow:0 8px 20px rgba(16,185,129,.40); }
+        .btn-warning  { background:linear-gradient(135deg,var(--gold),var(--gold2)); box-shadow:0 4px 14px rgba(245,158,11,.28); }
+        .btn-warning:hover { box-shadow:0 8px 20px rgba(245,158,11,.38); }
+        .btn-danger   { background:linear-gradient(135deg,#ef4444,#dc2626); }
+        .btn-outline  { background:white; color:var(--teal2); border:2px solid var(--teal); box-shadow:none; }
+        .btn-outline:hover { background:var(--teal3); box-shadow:none; }
+        .btn-sm { padding:9px 16px; font-size:.88rem; border-radius:10px; width:auto; display:inline-flex; align-items:center; gap:6px; margin-bottom:0; }
+        /* ── Products ── */
+        .product-item {
+            background:white; border:1.5px solid #e8e8e8; border-radius:14px;
+            padding:14px; margin-bottom:10px; transition:border-color .2s;
+        }
+        .product-item:hover { border-color:rgba(13,148,136,0.3); }
+        .product-name { font-weight:800; color:var(--deep); font-size:1.05rem; margin-bottom:4px; }
+        .product-detail {
+            display:flex; justify-content:space-between; align-items:center;
+            color:#666; font-size:.85rem; margin-bottom:4px; flex-wrap:wrap; gap:4px;
+        }
+        .volume-badge {
+            background:rgba(13,148,136,0.10); color:var(--teal2);
+            padding:2px 8px; border-radius:12px; font-weight:700; font-size:.78rem;
+        }
+        .weight-badge {
+            background:rgba(16,185,129,0.10); color:var(--mint2);
+            padding:2px 8px; border-radius:12px; font-weight:700; font-size:.78rem;
+        }
+        /* ── Total volume box ── */
+        .total-volume {
+            background:linear-gradient(135deg,rgba(13,148,136,0.08),rgba(13,148,136,0.04));
+            border-radius:16px; padding:16px; margin:14px 0; text-align:center;
+            border:1.5px solid rgba(13,148,136,0.20);
+        }
+        .total-volume-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+        .total-stat {
+            background:white; border-radius:12px; padding:10px;
+            border:1px solid rgba(13,148,136,0.15);
+        }
+        .total-stat-label { font-size:.72rem; color:#888; margin-bottom:4px; }
+        .total-stat-value { font-size:1.3rem; font-weight:900; color:var(--teal2); }
+        .total-stat-unit  { font-size:.72rem; color:#888; }
+        /* ── Vehicle selector ── */
+        .vehicle-selector { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin:12px 0; }
+        .vehicle-option {
+            border:2px solid #e2e8f0; border-radius:14px; padding:13px 5px;
+            text-align:center; cursor:pointer; transition:all .25s; position:relative;
+            background:white;
+        }
+        .vehicle-option:hover { border-color:var(--teal); background:var(--teal3); transform:translateY(-2px); }
+        .vehicle-option.selected { border-color:var(--teal); background:var(--teal3); box-shadow:0 4px 14px rgba(13,148,136,0.25); }
+        .vehicle-option.recommended {
+            border-color:var(--teal);
+            animation: vehicleFlash 1s ease-in-out infinite alternate;
+        }
+        .vehicle-option.recommended.selected { animation:none; }
+        @keyframes vehicleFlash {
+            0%   { box-shadow: 0 0 6px 2px rgba(13,148,136,0.25); border-color: var(--teal); }
+            100% { box-shadow: 0 0 18px 6px rgba(13,148,136,0.60); border-color: var(--teal2); background:rgba(13,148,136,0.09); }
+        }
+        .vehicle-rec-badge {
+            position:absolute; top:-8px; right:50%; transform:translateX(50%);
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            color:white; font-size:.58rem; font-weight:800; padding:2px 7px; border-radius:99px;
+            white-space:nowrap; box-shadow:0 2px 6px rgba(13,148,136,0.4);
+        }
+        .vehicle-icon { font-size:1.8rem; margin-bottom:4px; }
+        .vehicle-name { font-weight:700; color:var(--deep); font-size:.9rem; }
+        .vehicle-capacity { font-size:.68rem; color:#888; margin-top:1px; }
+        /* ── Capacity bar ── */
+        .capacity-bar { height:9px; background:#e8f5f3; border-radius:10px; margin:10px 0; overflow:hidden; }
+        .capacity-fill { height:100%; background:linear-gradient(90deg,var(--teal),var(--mint)); border-radius:10px; transition:width .4s; }
+        .capacity-text { text-align:center; font-weight:700; color:var(--teal2); font-size:.88rem; margin:8px 0; }
+        /* ── Phase badge ── */
+        .phase-badge {
+            display:inline-flex; align-items:center; gap:6px;
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            color:white; padding:5px 14px; border-radius:20px;
+            font-weight:800; font-size:.82rem; margin-bottom:16px;
+        }
+        .phase-badge.phase-2 { background:linear-gradient(135deg,var(--gold),var(--gold2)); }
+        .phase-badge.phase-done { background:linear-gradient(135deg,var(--mint),var(--mint2)); }
+        /* ── Misc ── */
+        .loader { text-align:center; padding:36px; }
+        .loader span {
+            display:inline-block; width:8px; height:8px; border-radius:50%;
+            background:var(--teal); margin:0 3px;
+            animation:bounce 1.4s infinite ease-in-out both;
+        }
+        .loader span:nth-child(2){ animation-delay:.16s; }
+        .loader span:nth-child(3){ animation-delay:.32s; }
+        @keyframes bounce {
+            0%,80%,100%{ transform:scale(0); }
+            40%{ transform:scale(1); }
+        }
+        .msg-error   { color:#dc2626; text-align:center; padding:14px; font-weight:700; }
+        .msg-success { color:var(--mint2); text-align:center; padding:14px; font-weight:700; }
+        .msg-warning {
+            background:#fef3c7; border:2px solid var(--gold);
+            border-radius:12px; padding:11px; color:#92400e;
+            text-align:center; margin:10px 0; font-weight:600; font-size:.85rem;
+        }
+        .driver-link-box {
+            background:linear-gradient(135deg,#f0fdf4,#d1fae5);
+            border:2px solid var(--mint); border-radius:16px;
+            padding:18px; margin-top:14px;
+        }
+        .driver-link-box h3 { color:#065f46; font-size:1rem; margin-bottom:10px; }
+        .link-text {
+            background:white; border:1px solid #a7f3d0; border-radius:10px;
+            padding:10px 12px; font-size:.78rem; color:#064e3b;
+            word-break:break-all; margin-bottom:10px; direction:ltr; text-align:left;
+        }
+        .copy-btn {
+            background:linear-gradient(135deg,var(--mint),var(--mint2)); color:white;
+            border:none; padding:10px 18px; border-radius:10px;
+            font-weight:700; font-size:.9rem; cursor:pointer;
+            font-family:'Cairo',sans-serif; width:100%; margin-bottom:6px;
+        }
+        .section-title { font-weight:800; color:var(--deep); margin-bottom:10px; font-size:1rem; display:flex; align-items:center; gap:6px; }
+        hr { border:none; border-top:1px solid #e8e8e8; margin:16px 0; }
+        .info-box {
+            background:#f8fafc; border-radius:12px; padding:12px; font-size:.9rem;
+            border:1px solid #e2e8f0;
+        }
+        .info-row { display:flex; justify-content:space-between; margin-bottom:6px; }
+        .info-row:last-child { margin-bottom:0; }
+        /* ── Timer ── */
+        .timer-display {
+            text-align:center; font-size:1.6rem; font-weight:900; color:var(--teal2);
+            margin:10px 0; background:rgba(13,148,136,0.06); border-radius:12px;
+            padding:12px 0; border:2px solid rgba(13,148,136,0.18);
+        }
+        /* ── Modal ── */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:1000;
+            display:flex; align-items:flex-end; justify-content:center;
+            animation:fadeIn .2s ease;
+        }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .modal-box {
+            background:white; border-radius:24px 24px 0 0;
+            width:100%; max-width:520px; max-height:88vh; overflow-y:auto;
+            padding:22px 18px 32px; box-shadow:0 -12px 40px rgba(0,0,0,0.20);
+            animation:slideUpModal .3s ease;
+        }
+        @keyframes slideUpModal {
+            from { transform:translateY(60px); opacity:0; }
+            to   { transform:translateY(0); opacity:1; }
+        }
+        .modal-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:18px; padding-bottom:14px;
+            border-bottom:1.5px solid #e8e8e8;
+        }
+        .modal-title { font-size:1.1rem; font-weight:800; color:var(--deep); }
+        .modal-close {
+            background:#f1f5f9; border:none; border-radius:50%; width:34px; height:34px;
+            font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close:hover { background:#e2e8f0; }
+        /* ── Edit items table ── */
+        .edit-item-row {
+            display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;
+            padding:11px 12px; border-radius:12px; margin-bottom:8px;
+            background:#f8fafc; border:1.5px solid #e2e8f0; transition:border-color .2s;
+        }
+        .edit-item-row:focus-within { border-color:var(--teal); background:rgba(13,148,136,0.04); }
+        .edit-item-name { font-weight:700; color:var(--deep); font-size:.9rem; margin-bottom:3px; }
+        .edit-item-dims { font-size:.72rem; color:#888; }
+        .qty-input {
+            width:70px; padding:9px 8px; text-align:center;
+            border:2px solid #e2e8f0; border-radius:10px;
+            font-size:1rem; font-weight:800; color:var(--teal2);
+            font-family:'Cairo',sans-serif;
+        }
+        .qty-input:focus { border-color:var(--teal); outline:none; box-shadow:0 0 0 3px rgba(13,148,136,0.10); }
+        .qty-input.changed { border-color:var(--gold); background:#fffbeb; color:var(--gold2); }
+        .edit-footer {
+            position:sticky; bottom:0; background:white; padding-top:14px;
+            border-top:1.5px solid #e8e8e8; margin-top:14px;
+            display:flex; gap:10px;
+        }
+        .edit-footer .btn { margin-bottom:0; flex:1; }
+    </style>
+</head>
+<body>
+    <div class="prepare-card" id="prepareCard">
+        <div class="header">
+            <div class="logo">📦</div>
+            <h1>تجهيز الطلب</h1>
+            <div class="order-id" id="orderId">...</div>
+        </div>
+
+        <div id="loginSection" class="login-section">
+            <h2 style="margin-bottom:14px;color:var(--deep);">🔐 تسجيل دخول المجهز</h2>
+            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
+            <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+            <button class="btn" onclick="login()">دخول</button>
+            <div id="loginError" style="color:#dc2626;margin-top:8px;text-align:center;font-size:.9rem;"></div>
+        </div>
+
+        <div id="orderSection" style="display:none;"></div>
+    </div>
+
+    <!-- Edit Quantities Modal -->
+    <div id="editModal" style="display:none;">
+        <div class="modal-overlay" onclick="closeEditModal(event)">
+            <div class="modal-box" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title">📦 عرض وتعديل الكميات</div>
+                    <button class="modal-close" onclick="closeEditModal()">✕</button>
+                </div>
+                <div id="editItemsList"></div>
+                <div class="edit-footer">
+                    <button class="btn btn-outline" onclick="closeEditModal()">إلغاء</button>
+                    <button class="btn btn-success" id="saveQtyBtn" onclick="saveQuantities()">💾 حفظ التعديلات</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+            authDomain: "burjuman-6cb83.firebaseapp.com",
+            projectId: "burjuman-6cb83",
+            storageBucket: "burjuman-6cb83.firebasestorage.app",
+            messagingSenderId: "177984721378",
+            appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db      = firebase.firestore();
+        const storage = firebase.storage();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId   = urlParams.get('order');
+        document.getElementById('orderId').textContent = orderId || 'غير موجود';
+
+        // Vehicle defaults (overridden by Firebase settings if available)
+        let VEHICLES = {
+            'scooter': { name:'ستوتة',   icon:'🛵', capacity:0.4,  maxWeight:20,  color:'#f59e0b' },
+            'pickup':  { name:'بيك اب',  icon:'🚐', capacity:6,    maxWeight:500, color:'#0d9488' },
+            'truck':   { name:'شاحنة',   icon:'🚛', capacity:30,   maxWeight:3000,color:'#8b5cf6' }
+        };
+
+        let selectedVehicle  = null;
+        let orderData        = null;
+        let totalVolume      = 0;
+        let totalWeight      = 0;
+        let currentUsername  = '';
+        let currentUserName  = '';
+        let preparerPhase    = 0;
+        let timerInterval    = null;
+        let prepStartTime    = null;
+        let productDataMap   = {};
+        let editedItems      = [];    // current items array (may be edited)
+        let tgToken          = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+        let tgChat           = '-5246620507';
+
+        // ── Load TG settings from Firestore ──
+        async function loadTelegramSettings() {
+            try {
+                const snap = await db.collection('settings')
+                    .where('key', 'in', ['telegram_token', 'telegram_chat']).get();
+                snap.docs.forEach(doc => {
+                    const d = doc.data();
+                    if (d.key === 'telegram_token' && d.value) tgToken = d.value;
+                    if (d.key === 'telegram_chat'  && d.value) tgChat  = d.value;
+                });
+            } catch(e) { /* keep hardcoded fallback */ }
+        }
+
+        // ── Load delivery vehicles from Firebase settings ──
+        async function loadDeliveryVehicles() {
+            try {
+                const snap = await db.collection('settings').where('key','==','delivery_vehicles').get();
+                if (!snap.empty) {
+                    const data = snap.docs[0].data();
+                    if (data.value && typeof data.value === 'object') VEHICLES = data.value;
+                }
+            } catch(e) { /* use defaults */ }
+        }
+
+        // ── Load real product dimensions from Firestore ──
+        async function loadProductDimensions() {
+            try {
+                const snap = await db.collection('products').get();
+                snap.docs.forEach(doc => {
+                    const p = doc.data();
+                    if (p.name) {
+                        productDataMap[p.name] = {
+                            carton_volume: parseFloat(p.carton_volume) || 0,
+                            carton_weight: parseFloat(p.carton_weight) || 0,
+                            carton_l: parseFloat(p.carton_l) || 0,
+                            carton_w: parseFloat(p.carton_w) || 0,
+                            carton_h: parseFloat(p.carton_h) || 0,
+                        };
+                    }
+                });
+            } catch(e) { console.warn('Could not load product dimensions', e); }
+        }
+
+        // ── Login ──
+        window.login = async function() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const errorEl  = document.getElementById('loginError');
+            if (!username || !password) { errorEl.textContent='⚠️ أدخل بيانات الدخول'; return; }
+            errorEl.textContent='⏳ جاري التحقق...';
+            try {
+                const snap = await db.collection('users').where('username','==',username).get();
+                if (snap.empty) { errorEl.textContent='❌ اسم المستخدم غير صحيح'; return; }
+                const user = snap.docs[0].data();
+                if ((user.password || '').trim() !== password) { errorEl.textContent='❌ كلمة المرور خاطئة'; return; }
+                const allowedTypes = ['preparer', 'admin', 'supervisor', 'sales_manager'];
+                if (!allowedTypes.includes(user.accountType)) { errorEl.textContent='❌ ليس لديك صلاحية الوصول لهذه الصفحة'; return; }
+                currentUsername = username;
+                currentUserName = user.name || username;
+                localStorage.setItem('preparer_session', JSON.stringify({
+                    username, name: user.name || username, loginTime: Date.now()
+                }));
+                document.getElementById('loginSection').style.display='none';
+                errorEl.textContent='';
+                await Promise.all([loadDeliveryVehicles(), loadProductDimensions(), loadTelegramSettings()]);
+                await loadOrder();
+            } catch(e) {
+                console.error(e);
+                errorEl.textContent='❌ حدث خطأ، حاول مجدداً';
+            }
+        };
+
+        // ── Load Order ──
+        async function loadOrder() {
+            const sec = document.getElementById('orderSection');
+            if (!orderId) {
+                sec.innerHTML='<div class="msg-error">❌ رقم الطلب غير موجود</div>';
+                sec.style.display='block'; return;
+            }
+            sec.innerHTML=`<div class="loader"><span></span><span></span><span></span><p style="margin-top:14px;color:#666;">جاري تحميل الطلب...</p></div>`;
+            sec.style.display='block';
+            try {
+                const snap = await db.collection('orders').where('orderId','==',orderId).get();
+                let orderDoc;
+                if (!snap.empty) { orderDoc = snap.docs[0]; }
+                else {
+                    orderDoc = await db.collection('orders').doc(orderId).get();
+                    if (!orderDoc.exists) { sec.innerHTML='<div class="msg-error">❌ الطلب غير موجود</div>'; return; }
+                }
+                orderData = { id:orderDoc.id, ...orderDoc.data() };
+
+                if (orderData.status === 'Prepared' || orderData.status === 'In Delivery' ||
+                    orderData.status === 'NearCustomer' || orderData.status === 'Delivered') {
+                    preparerPhase = 2;
+                } else if (orderData.status === 'Preparing') {
+                    preparerPhase = 1;
+                } else {
+                    preparerPhase = 0;
+                }
+
+                displayOrderDetails();
+
+                db.collection('orders').doc(orderData.id).onSnapshot(snap => {
+                    if (!snap.exists) return;
+                    const d = snap.data();
+                    if (d.status === 'Preparing' && preparerPhase < 1) {
+                        preparerPhase = 1; displayOrderDetails();
+                    }
+                });
+            } catch(e) {
+                console.error(e);
+                sec.innerHTML='<div class="msg-error">❌ حدث خطأ في التحميل</div>';
+            }
+        }
+
+        // ── Parse & calc items ──
+        function parseItems(productsList) {
+            const items = [];
+            let vol = 0, wgt = 0;
+
+            // ── أولاً: استخدم cartItemsArray إذا متوفر (يحتوي أبعاد مباشرة) ──
+            const cartArr = orderData?.cartItemsArray;
+            if (Array.isArray(cartArr) && cartArr.length > 0) {
+                cartArr.forEach(item => {
+                    const name = item.name || '';
+                    const qty  = parseInt(item.qty) || 1;
+                    // حجم من cartItemsArray أولاً، وإلا من productDataMap
+                    const pVol = parseFloat(item.carton_volume) || productDataMap[name]?.carton_volume || 0;
+                    const pWgt = parseFloat(item.carton_weight) || productDataMap[name]?.carton_weight || 0;
+                    const pL   = parseFloat(item.carton_l)      || productDataMap[name]?.carton_l      || 0;
+                    const pW   = parseFloat(item.carton_w)      || productDataMap[name]?.carton_w      || 0;
+                    const pH   = parseFloat(item.carton_h)      || productDataMap[name]?.carton_h      || 0;
+                    const dims = (pL && pW && pH) ? `${pL}×${pW}×${pH} سم` : null;
+                    vol += pVol * qty;
+                    wgt += pWgt * qty;
+                    items.push({ name, qty, originalQty: qty, vol: pVol, wgt: pWgt,
+                        totalVol: pVol*qty, totalWgt: pWgt*qty, dims,
+                        hasDimensions: pVol > 0 || pWgt > 0 });
+                });
+                return { items, vol, wgt };
+            }
+
+            // ── ثانياً: fallback — تحليل نص المنتجات (يدعم "منتج(5)" و"منتج(5 كرتون)") ──
+            // الصيغة: اسم(عدد) أو اسم(عدد وحدة)
+            const matches = (productsList || '').match(/([^،,\n()]+)\((\d+)[^)]*\)/g) || [];
+            matches.forEach(m => {
+                const mm = m.match(/(.+)\((\d+)/);   // يأخذ الاسم والعدد (يتجاهل الوحدة)
+                if (!mm) return;
+                const name = mm[1].trim();
+                const qty  = parseInt(mm[2]) || 1;
+                const prodData = productDataMap[name];
+                const pVol = prodData?.carton_volume || 0;
+                const pWgt = prodData?.carton_weight || 0;
+                const dims = (prodData?.carton_l && prodData?.carton_w && prodData?.carton_h)
+                    ? `${prodData.carton_l}×${prodData.carton_w}×${prodData.carton_h} سم`
+                    : null;
+                vol += pVol * qty;
+                wgt += pWgt * qty;
+                items.push({ name, qty, originalQty: qty, vol: pVol, wgt: pWgt,
+                    totalVol: pVol*qty, totalWgt: pWgt*qty, dims,
+                    hasDimensions: pVol > 0 || pWgt > 0 });
+            });
+            return { items, vol, wgt };
+        }
+
+        // ── Recommend vehicle based on volume ──
+        function getRecommendedVehicle(vol) {
+            const sorted = Object.entries(VEHICLES)
+                .filter(([,v]) => v.capacity >= vol)
+                .sort(([,a],[,b]) => a.capacity - b.capacity);
+            if (sorted.length > 0) return sorted[0][0];
+            // all too small → pick largest
+            return Object.entries(VEHICLES).sort(([,a],[,b]) => b.capacity - a.capacity)[0]?.[0];
+        }
+
+        // ── Display order details ──
+        function displayOrderDetails() {
+            const sec = document.getElementById('orderSection');
+
+            const { items, vol, wgt } = parseItems(orderData.products);
+            totalVolume = vol; totalWeight = wgt;
+            editedItems = items;   // keep reference for edit modal
+
+            const missingDimensions = items.filter(i => !i.hasDimensions).map(i => i.name);
+            const recVehicleKey     = getRecommendedVehicle(totalVolume);
+
+            // ── missing warning ──
+            const missingWarning = missingDimensions.length > 0 ? `
+                <div class="msg-warning">
+                    ⚠️ المنتجات التالية بدون أبعاد في قاعدة البيانات، أضفها من لوحة الأدمن:<br>
+                    <strong>${missingDimensions.join(' — ')}</strong>
+                </div>` : '';
+
+            // ── products HTML ──
+            const productsHtml = items.length ? items.map((item,idx) =>`
+                <div class="product-item" style="${!item.hasDimensions ? 'border-color:#f59e0b;background:#fffbeb;' : ''}">
+                    <div class="product-name">
+                        ${idx+1}. ${item.name}
+                        ${!item.hasDimensions ? '<span style="color:#d97706;font-size:.75rem;"> ⚠️ بدون أبعاد</span>' : ''}
+                    </div>
+                    <div class="product-detail">
+                        <span>الكمية: <strong>${item.qty} كرتون</strong></span>
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        ${item.hasDimensions
+                            ? `<span class="volume-badge">📐 ${item.totalVol.toFixed(4)} م³</span>
+                               <span class="weight-badge">⚖️ ${item.totalWgt.toFixed(2)} كغ</span>`
+                            : `<span style="color:#d97706;font-size:.75rem;">الأبعاد غير محددة</span>`}
+                        </div>
+                    </div>
+                    ${item.dims ? `<div style="font-size:.72rem;color:#999;margin-top:3px;">📦 حجم الكرتونة: ${item.dims} | ${item.vol.toFixed(4)} م³</div>` : ''}
+                </div>`).join('')
+                : '<p style="color:#999;text-align:center;padding:10px">لا توجد منتجات مفصّلة</p>';
+
+            // ── vehicles HTML ──
+            const vehicleLocked = preparerPhase >= 1;
+            const vehiclesHtml = Object.entries(VEHICLES).map(([key,v]) => {
+                const isRec = key === recVehicleKey && totalVolume > 0;
+                return `
+                <div class="vehicle-option${isRec ? ' recommended' : ''}" id="vehicle-${key}"
+                    ${vehicleLocked ? 'style="pointer-events:none;opacity:0.65;cursor:default;"' : `onclick="selectVehicle('${key}')"`}>
+                    ${isRec ? '<span class="vehicle-rec-badge">⭐ مقترح</span>' : ''}
+                    <div class="vehicle-icon">${v.icon}</div>
+                    <div class="vehicle-name">${v.name}</div>
+                    <div class="vehicle-capacity">📐 ${v.capacity} م³</div>
+                    <div class="vehicle-capacity">⚖️ ${v.maxWeight||'—'} كغ</div>
+                </div>`;
+            }).join('');
+
+            // ── phase badge ──
+            const phaseBadgeHtml = preparerPhase === 0
+                ? `<div id="phaseBadge" class="phase-badge">🔵 بانتظار البدء</div>`
+                : preparerPhase === 1
+                    ? `<div id="phaseBadge" class="phase-badge phase-2">🟡 جاري التجهيز</div>`
+                    : `<div id="phaseBadge" class="phase-badge phase-done">✅ تم التجهيز</div>`;
+
+            // ── driver link ──
+            const driverLink   = `https://brjman.com/driver.html?order=${orderId}`;
+            const driverLinkHtml = preparerPhase >= 2 ? `
+                <div class="driver-link-box">
+                    <h3>🚗 رابط السائق جاهز</h3>
+                    <div class="link-text" id="driverLinkText">${driverLink}</div>
+                    <button class="copy-btn" onclick="copyDriverLink()">📋 نسخ الرابط</button>
+                    <a href="${driverLink}" target="_blank" style="display:block;text-align:center;color:#065f46;font-weight:700;font-size:.88rem;margin-top:4px;">🔗 فتح لوحة السائق</a>
+                </div>` : '';
+
+            // ── timer ──
+            const timerHtml = preparerPhase === 1 ? `
+                <div class="timer-display">⏱️ <span id="timerValue">00:00</span></div>` : '';
+
+            // ── main button ──
+            const mainBtnHtml = preparerPhase === 0
+                ? `<button class="btn btn-warning" id="mainPrepBtn" onclick="startPreparing()">🚀 بدء تجهيز القائمة</button>`
+                : preparerPhase === 1
+                    ? `<button class="btn btn-success" id="mainPrepBtn" onclick="finishPreparing()">✅ تم التجهيز</button>`
+                    : `<button class="btn btn-success" id="mainPrepBtn" disabled>✅ تم التجهيز</button>`;
+
+            sec.innerHTML = `
+                ${phaseBadgeHtml}
+
+                <div class="section-title">🏪 معلومات الطلب</div>
+                <div class="info-box" style="margin-bottom:18px">
+                    <div class="info-row">
+                        <span style="color:#888">المحل</span>
+                        <span style="font-weight:700">${orderData.shopName||'—'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span style="color:#888">العنوان</span>
+                        <span style="font-weight:700">${orderData.shopAddress||'—'}</span>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                    <div class="section-title" style="margin-bottom:0;">📋 المنتجات (${items.length})</div>
+                    ${preparerPhase < 2
+                        ? `<button class="btn btn-outline btn-sm" onclick="openEditModal()">✏️ تعديل الكميات</button>`
+                        : ''}
+                </div>
+                ${missingWarning}
+                ${productsHtml}
+
+                <div class="total-volume">
+                    <div style="font-size:.82rem;color:#888;margin-bottom:8px;font-weight:600;">📊 إجمالي الطلب</div>
+                    <div class="total-volume-grid">
+                        <div class="total-stat">
+                            <div class="total-stat-label">الحجم الكلي</div>
+                            <div class="total-stat-value">${totalVolume > 0 ? totalVolume.toFixed(4) : '—'}</div>
+                            <div class="total-stat-unit">متر مكعب (م³)</div>
+                        </div>
+                        <div class="total-stat">
+                            <div class="total-stat-label">الوزن الكلي</div>
+                            <div class="total-stat-value">${totalWeight > 0 ? totalWeight.toFixed(2) : '—'}</div>
+                            <div class="total-stat-unit">كيلوغرام (كغ)</div>
+                        </div>
+                    </div>
+                    ${missingDimensions.length > 0
+                        ? `<div style="font-size:.75rem;color:#d97706;margin-top:8px;">⚠️ الأرقام غير دقيقة — ${missingDimensions.length} منتج بدون أبعاد</div>`
+                        : `<div style="font-size:.75rem;color:var(--teal2);margin-top:8px;">✅ الأبعاد مكتملة</div>`}
+                </div>
+
+                <hr>
+                <div class="section-title">🚚 اختر المركبة المناسبة</div>
+                ${totalVolume > 0 && recVehicleKey
+                    ? `<div style="background:rgba(13,148,136,0.07);border:1px solid rgba(13,148,136,0.2);border-radius:10px;padding:8px 12px;font-size:.82rem;color:var(--teal2);font-weight:700;margin-bottom:10px;">
+                        ⭐ المقترح لهذا الطلب (${totalVolume.toFixed(4)} م³): <strong>${VEHICLES[recVehicleKey]?.name || ''} ${VEHICLES[recVehicleKey]?.icon || ''}</strong>
+                       </div>`
+                    : ''}
+                <div class="vehicle-selector">${vehiclesHtml}</div>
+                <div id="capacityInfo" style="display:none">
+                    <div class="capacity-bar"><div class="capacity-fill" id="capacityFill" style="width:0%"></div></div>
+                    <div class="capacity-text" id="capacityText"></div>
+                </div>
+
+                <hr>
+                ${timerHtml}
+                ${mainBtnHtml}
+                <div id="prepareMessage" style="margin-top:12px">${driverLinkHtml}</div>
+            `;
+
+            // restore vehicle
+            if (orderData.vehicle_type) {
+                const vKey = Object.keys(VEHICLES).find(k => VEHICLES[k].name === orderData.vehicle_type);
+                if (vKey) selectVehicle(vKey);
+            }
+
+            if (preparerPhase === 1) {
+                if (!prepStartTime) {
+                    prepStartTime = orderData.preparing_at ? new Date(orderData.preparing_at) : new Date();
+                }
+                startTimer();
+            }
+        }
+
+        // ── Select vehicle ──
+        window.selectVehicle = function(vehicleKey) {
+            selectedVehicle = vehicleKey;
+            Object.keys(VEHICLES).forEach(k => {
+                const el = document.getElementById(`vehicle-${k}`);
+                if (el) el.classList.toggle('selected', k === vehicleKey);
+            });
+            const v = VEHICLES[vehicleKey];
+            const volPct = Math.min(100, (totalVolume / v.capacity) * 100);
+            const wgtPct = v.maxWeight ? Math.min(100, (totalWeight / v.maxWeight) * 100) : 0;
+            document.getElementById('capacityInfo').style.display = 'block';
+            document.getElementById('capacityFill').style.width   = `${volPct}%`;
+            let status = '';
+            if (totalVolume > v.capacity) {
+                status = `⚠️ الطلب أكبر من سعة ${v.name} بـ ${(totalVolume - v.capacity).toFixed(3)} م³`;
+                document.getElementById('capacityFill').style.background = 'linear-gradient(90deg,#ef4444,#dc2626)';
+            } else {
+                status = `${v.name}: حجم ${volPct.toFixed(0)}% من السعة`;
+                if (v.maxWeight) status += ` | وزن ${wgtPct.toFixed(0)}% من الحمولة`;
+                document.getElementById('capacityFill').style.background = 'linear-gradient(90deg,var(--teal),var(--mint))';
+            }
+            document.getElementById('capacityText').textContent = status;
+        };
+
+        // ── Phase 1: Start Preparing ──
+        window.startPreparing = async function() {
+            const btn = document.getElementById('mainPrepBtn');
+            btn.disabled = true; btn.textContent = '⏳ جاري...';
+            try {
+                const now = new Date();
+                await db.collection('orders').doc(orderData.id).update({
+                    status: 'Preparing',
+                    preparing_by: currentUsername,
+                    preparing_by_name: currentUserName,
+                    preparing_at: now.toISOString()
+                });
+                orderData.status      = 'Preparing';
+                orderData.preparing_at = now.toISOString();
+                prepStartTime          = now;
+                preparerPhase          = 1;
+                displayOrderDetails();
+                showToast('✅ تم بدء التجهيز');
+            } catch(e) {
+                console.error(e);
+                btn.disabled = false; btn.textContent = '🚀 بدء تجهيز القائمة';
+                showToast('❌ حدث خطأ', false);
+            }
+        };
+
+        // ── Phase 2: Finish Preparing ──
+        window.finishPreparing = async function() {
+            if (!selectedVehicle) { showToast('⚠️ اختر المركبة أولاً', false); return; }
+            const btn = document.getElementById('mainPrepBtn');
+            btn.disabled = true; btn.textContent = '⏳ جاري التأكيد...';
+            try {
+                const driverLink       = `https://brjman.com/driver.html?order=${orderId}`;
+                const prepDurationSec  = prepStartTime ? Math.floor((Date.now() - prepStartTime.getTime()) / 1000) : null;
+                if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+                await db.collection('orders').doc(orderData.id).update({
+                    status: 'Prepared',
+                    prepared_by: currentUsername,
+                    prepared_by_name: currentUserName,
+                    prepared_at: new Date().toISOString(),
+                    vehicle_type: VEHICLES[selectedVehicle].name,
+                    driver_link: driverLink,
+                    total_volume: parseFloat(totalVolume.toFixed(4)),
+                    total_weight: parseFloat(totalWeight.toFixed(3)),
+                    ...(prepDurationSec !== null ? { prep_duration_sec: prepDurationSec } : {})
+                });
+                orderData.status       = 'Prepared';
+                orderData.vehicle_type = VEHICLES[selectedVehicle].name;
+                preparerPhase          = 2;
+
+                // Telegram notification
+                const itemsLine = editedItems.map(i => `• ${i.name} (${i.qty})`).join('\n');
+                fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        chat_id: tgChat,
+                        parse_mode: 'Markdown',
+                        text: `🚗 *طلب جاهز للتوصيل*\n━━━━━━━━━━━━━━━━━━\n🏪 ${orderData.shopName||'—'}\n🆔 ${orderId}\n🚚 ${VEHICLES[selectedVehicle].name}\n📐 ${totalVolume.toFixed(4)} م³\n⚖️ ${totalWeight.toFixed(2)} كغ\n\n📋 *المواد:*\n${itemsLine}\n\n🔗 ${driverLink}`
+                    })
+                }).catch(() => {});
+
+                displayOrderDetails();
+                showToast('✅ تم التجهيز! الرابط جاهز للسائق');
+            } catch(e) {
+                console.error(e);
+                btn.disabled = false; btn.textContent = '✅ تم التجهيز';
+                showToast('❌ حدث خطأ', false);
+            }
+        };
+
+        // ── Edit Quantities Modal ──
+        window.openEditModal = function() {
+            const listEl = document.getElementById('editItemsList');
+            if (!editedItems.length) { showToast('⚠️ لا توجد مواد', false); return; }
+
+            listEl.innerHTML = editedItems.map((item, idx) => `
+                <div class="edit-item-row">
+                    <div>
+                        <div class="edit-item-name">${idx+1}. ${item.name}</div>
+                        <div class="edit-item-dims">
+                            ${item.hasDimensions
+                                ? `📐 ${item.vol.toFixed(4)} م³/كرتون | ⚖️ ${item.wgt.toFixed(2)} كغ/كرتون`
+                                : '⚠️ بدون أبعاد محددة'}
+                            ${item.dims ? ` | 📦 ${item.dims}` : ''}
+                        </div>
+                    </div>
+                    <input type="number" class="qty-input" id="editQty_${idx}"
+                        value="${item.qty}" min="0" max="9999"
+                        onchange="onQtyChange(this, ${idx}, ${item.originalQty})"
+                        oninput="onQtyChange(this, ${idx}, ${item.originalQty})">
+                </div>`).join('');
+
+            document.getElementById('editModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.onQtyChange = function(input, idx, origQty) {
+            const v = parseInt(input.value);
+            input.classList.toggle('changed', !isNaN(v) && v !== origQty);
+        };
+
+        window.closeEditModal = function(e) {
+            if (e && e.target !== document.querySelector('.modal-overlay')) return;
+            document.getElementById('editModal').style.display = 'none';
+            document.body.style.overflow = '';
+        };
+
+        window.saveQuantities = async function() {
+            const btn = document.getElementById('saveQtyBtn');
+            btn.disabled = true; btn.textContent = '⏳ جاري الحفظ...';
+
+            const changes = [];
+            editedItems.forEach((item, idx) => {
+                const input = document.getElementById(`editQty_${idx}`);
+                const newQty = parseInt(input?.value);
+                if (!isNaN(newQty) && newQty !== item.originalQty) {
+                    changes.push({ name: item.name, oldQty: item.originalQty, newQty });
+                    item.qty = newQty;
+                    item.totalVol = item.vol * newQty;
+                    item.totalWgt = item.wgt * newQty;
+                }
+            });
+
+            if (!changes.length) {
+                showToast('ℹ️ لا يوجد تغيير في الكميات');
+                btn.disabled = false; btn.textContent = '💾 حفظ التعديلات';
+                document.getElementById('editModal').style.display = 'none';
+                document.body.style.overflow = '';
+                return;
+            }
+
+            // Rebuild products string
+            const newProductsStr = editedItems
+                .filter(i => i.qty > 0)
+                .map(i => `${i.name}(${i.qty})`)
+                .join('، ');
+
+            // Recalc totals
+            totalVolume = editedItems.reduce((s, i) => s + i.totalVol, 0);
+            totalWeight = editedItems.reduce((s, i) => s + i.totalWgt, 0);
+
+            try {
+                await db.collection('orders').doc(orderData.id).update({
+                    products: newProductsStr,
+                    total_volume: parseFloat(totalVolume.toFixed(4)),
+                    total_weight: parseFloat(totalWeight.toFixed(3)),
+                    qty_edited_by: currentUserName,
+                    qty_edited_at: new Date().toISOString()
+                });
+                orderData.products = newProductsStr;
+
+                // Telegram notification
+                const changesLine = changes.map(c => `• ${c.name}: ${c.oldQty} ← ${c.newQty}`).join('\n');
+                fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({
+                        chat_id: tgChat,
+                        parse_mode: 'Markdown',
+                        text: `✏️ *تم تعديل كميات الطلب من قِبَل المجهز*\n━━━━━━━━━━━━━━━━━━\n🏪 ${orderData.shopName||'—'}\n🆔 ${orderId}\n👤 المجهز: ${currentUserName}\n\n📦 *التغييرات:*\n${changesLine}\n\n📐 الحجم الجديد: ${totalVolume.toFixed(4)} م³\n⚖️ الوزن الجديد: ${totalWeight.toFixed(2)} كغ`
+                    })
+                }).catch(() => {});
+
+                // Update editedItems originalQty
+                editedItems.forEach(i => { i.originalQty = i.qty; });
+
+                document.getElementById('editModal').style.display = 'none';
+                document.body.style.overflow = '';
+                displayOrderDetails();
+                showToast(`✅ تم حفظ التعديلات (${changes.length} تغيير)`);
+            } catch(e) {
+                console.error(e);
+                showToast('❌ حدث خطأ في الحفظ', false);
+                btn.disabled = false; btn.textContent = '💾 حفظ التعديلات';
+            }
+        };
+
+        // ── Copy driver link ──
+        window.copyDriverLink = function() {
+            const link = document.getElementById('driverLinkText')?.textContent;
+            if (!link) return;
+            navigator.clipboard.writeText(link).then(() => showToast('✅ تم نسخ الرابط')).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = link; document.body.appendChild(ta);
+                ta.select(); document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('✅ تم نسخ الرابط');
+            });
+        };
+
+        // ── Prep stopwatch ──
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const el = document.getElementById('timerValue');
+                if (!el) { clearInterval(timerInterval); timerInterval = null; return; }
+                const elapsed = Math.floor((Date.now() - prepStartTime.getTime()) / 1000);
+                const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const s = (elapsed % 60).toString().padStart(2, '0');
+                el.textContent = `${m}:${s}`;
+            }, 1000);
+        }
+
+        // ── Toast ──
+        function showToast(msg, ok=true) {
+            const t = document.createElement('div');
+            t.textContent = msg;
+            t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${ok?'#0d9488':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 18px rgba(0,0,0,.25);font-family:'Cairo',sans-serif;font-size:.92rem;white-space:nowrap;`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
+        }
+
+        // ── Auto-restore 12-hour session ──
+        (function() {
+            const SESSION_12H = 12 * 60 * 60 * 1000;
+            try {
+                const raw = localStorage.getItem('preparer_session');
+                if (!raw) return;
+                const s = JSON.parse(raw);
+                if (!s.username || !s.loginTime || (Date.now() - s.loginTime) > SESSION_12H) {
+                    localStorage.removeItem('preparer_session'); return;
+                }
+                currentUsername = s.username;
+                currentUserName = s.name || s.username;
+                document.getElementById('loginSection').style.display = 'none';
+                Promise.all([loadDeliveryVehicles(), loadProductDimensions(), loadTelegramSettings()])
+                    .then(() => loadOrder());
+            } catch(e) { localStorage.removeItem('preparer_session'); }
+        })();
+
+        // ── No orderId ──
+        if (!orderId) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('orderSection').style.display = 'block';
+            document.getElementById('orderSection').innerHTML = '<div class="msg-error">❌ رابط غير صحيح</div>';
+        }
+    </script>
+</body>
+</html>

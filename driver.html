@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة السائق - برجمان</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    <script src="lib/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --teal:#0d9488; --teal2:#0f766e; --teal3:rgba(13,148,136,0.12);
+            --mint:#10b981; --mint2:#059669;
+            --gold:#f59e0b; --gold2:#d97706;
+            --sky:#0ea5e9; --sky2:#0284c7;
+            --violet:#8b5cf6; --violet2:#7c3aed;
+            --rose:#ef4444;
+            --deep:#0f172a;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo',sans-serif; }
+        body {
+            background: linear-gradient(160deg, #0f2027 0%, #134e4a 50%, #0d9488 100%);
+            min-height: 100vh; padding: 16px;
+        }
+        .container { max-width: 640px; margin: 0 auto; }
+
+        /* ── Login ── */
+        .login-card {
+            background: rgba(255,255,255,0.97); border-radius: 28px;
+            padding: 32px 24px; max-width: 400px; margin: 40px auto;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.32), 0 0 0 1px rgba(13,148,136,0.12);
+            animation: slideUp .4s ease;
+        }
+        .login-logo {
+            width:68px; height:68px;
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            border-radius:20px; display:flex; align-items:center; justify-content:center;
+            font-size:2rem; margin:0 auto 14px; color:white;
+            box-shadow:0 10px 24px rgba(13,148,136,0.4);
+        }
+        .login-card h2 { text-align:center; color:var(--deep); font-size:1.3rem; font-weight:800; margin-bottom:20px; }
+        .input-field {
+            width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:12px;
+            font-size:1rem; margin-bottom:13px; font-family:'Cairo',sans-serif; transition:border-color .2s;
+        }
+        .input-field:focus { border-color:var(--teal); outline:none; box-shadow:0 0 0 3px rgba(13,148,136,0.10); }
+        .checkbox-label { display:flex; align-items:center; gap:8px; margin-bottom:14px; cursor:pointer; color:#666; font-size:.88rem; }
+        .checkbox-label input { accent-color:var(--teal); width:16px; height:16px; }
+
+        /* ── Buttons ── */
+        .btn {
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            color:white; border:none; padding:13px 20px; border-radius:14px;
+            font-weight:700; font-size:1rem; cursor:pointer; width:100%;
+            transition:all .2s; font-family:'Cairo',sans-serif; margin-bottom:8px;
+            box-shadow:0 4px 14px rgba(13,148,136,0.30);
+        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(13,148,136,.4); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+        .btn-success { background:linear-gradient(135deg,var(--mint),var(--mint2)); box-shadow:0 4px 14px rgba(16,185,129,.28); }
+        .btn-gold    { background:linear-gradient(135deg,var(--gold),var(--gold2)); box-shadow:0 4px 14px rgba(245,158,11,.28); }
+        .btn-sky     { background:linear-gradient(135deg,var(--sky),var(--sky2));  box-shadow:0 4px 14px rgba(14,165,233,.28); }
+        .btn-violet  { background:linear-gradient(135deg,var(--violet),var(--violet2)); box-shadow:0 4px 14px rgba(139,92,246,.28); }
+        .btn-danger  { background:linear-gradient(135deg,var(--rose),#dc2626); box-shadow:0 4px 14px rgba(239,68,68,.28); }
+        .btn-ghost   { background:white; color:var(--teal2); border:2px solid var(--teal); box-shadow:none; }
+        .btn-sm      { padding:9px 16px; font-size:.85rem; border-radius:10px; width:auto; display:inline-flex; align-items:center; gap:5px; margin-bottom:0; }
+        .btn-full    { width:100%; }
+        .btn-row     { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+        .btn-row .btn { flex:1; min-width:0; font-size:.82rem; padding:10px 8px; margin-bottom:0; }
+
+        /* ── Header ── */
+        .driver-header {
+            background: rgba(255,255,255,0.97);
+            border-radius:24px; padding:16px 18px; margin-bottom:16px;
+            display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.18), 0 0 0 1px rgba(13,148,136,0.10);
+        }
+        .dh-logo {
+            width:46px; height:46px; border-radius:14px; flex-shrink:0;
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+            box-shadow:0 6px 16px rgba(13,148,136,0.35);
+        }
+        .dh-info h1 { font-size:1rem; font-weight:800; color:var(--deep); margin-bottom:1px; }
+        .dh-info p  { font-size:.72rem; color:#888; }
+        .dh-user {
+            display:flex; align-items:center; gap:10px;
+            background:#f8fafc; border-radius:50px; padding:7px 14px;
+            border:1px solid #e2e8f0;
+        }
+        .dh-avatar {
+            width:32px; height:32px; border-radius:50%;
+            background:linear-gradient(135deg,var(--teal),var(--teal2));
+            display:flex; align-items:center; justify-content:center; font-size:1rem; color:white;
+        }
+        .dh-name { font-weight:700; color:var(--deep); font-size:.85rem; }
+        .logout-btn {
+            background:#fef2f2; color:var(--rose); border:1px solid #fecaca;
+            padding:6px 12px; border-radius:8px; cursor:pointer;
+            font-weight:700; font-size:.78rem; font-family:'Cairo',sans-serif;
+        }
+        .logout-btn:hover { background:#fee2e2; }
+
+        /* ── KPI ── */
+        .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+        .kpi-card {
+            background:rgba(255,255,255,0.97); border-radius:16px; padding:14px 10px;
+            text-align:center; box-shadow:0 4px 14px rgba(0,0,0,0.10);
+            border:1px solid rgba(13,148,136,0.08);
+        }
+        .kpi-icon { font-size:1.5rem; margin-bottom:5px; }
+        .kpi-val  { font-size:1.5rem; font-weight:900; color:var(--teal2); line-height:1; }
+        .kpi-lbl  { color:#888; font-size:.68rem; margin-top:4px; }
+
+        /* ── Section title ── */
+        .sec-title {
+            color:white; font-size:.88rem; font-weight:800; margin:16px 0 10px;
+            display:flex; align-items:center; gap:7px;
+        }
+        .sec-badge {
+            background:rgba(255,255,255,0.22); color:white; border-radius:99px;
+            padding:2px 8px; font-size:.72rem; font-weight:700;
+        }
+
+        /* ── Order Card ── */
+        .order-card {
+            background:rgba(255,255,255,0.97); border-radius:20px;
+            padding:18px; margin-bottom:12px;
+            box-shadow:0 6px 20px rgba(0,0,0,0.12), 0 0 0 1px rgba(13,148,136,0.06);
+            transition:transform .2s;
+        }
+        .order-card:hover { transform:translateY(-2px); }
+        .order-card.highlighted {
+            border:2px solid var(--teal);
+            box-shadow:0 8px 28px rgba(13,148,136,0.30), 0 0 0 4px rgba(13,148,136,0.12);
+        }
+        .order-card-header {
+            display:flex; justify-content:space-between; align-items:flex-start;
+            margin-bottom:12px; padding-bottom:11px;
+            border-bottom:1.5px solid #f1f5f9;
+        }
+        .order-shop { font-weight:800; color:var(--deep); font-size:1.05rem; margin-bottom:2px; }
+        .order-oid  { color:#aaa; font-size:.7rem; background:#f8fafc; padding:2px 8px; border-radius:99px; display:inline-block; }
+        .status-badge {
+            padding:4px 10px; border-radius:99px; font-size:.72rem; font-weight:800; white-space:nowrap;
+        }
+        .s-ready    { background:rgba(16,185,129,0.12); color:var(--mint2); }
+        .s-delivery { background:rgba(14,165,233,0.12); color:var(--sky2); }
+        .s-near     { background:rgba(245,158,11,0.12); color:var(--gold2); }
+        .s-done     { background:rgba(13,148,136,0.12); color:var(--teal2); }
+
+        /* ── Order details ── */
+        .info-grid  { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+        .info-item  { background:#f8fafc; border-radius:10px; padding:8px 10px; border:1px solid #e2e8f0; }
+        .info-lbl   { font-size:.68rem; color:#aaa; margin-bottom:2px; }
+        .info-val   { font-size:.85rem; font-weight:700; color:var(--deep); }
+        .info-item.full { grid-column:1/-1; }
+
+        /* ── Products ── */
+        .products-box {
+            background:#f8fafc; border-radius:10px; padding:9px 11px;
+            margin-bottom:10px; border:1px solid #e2e8f0;
+            max-height:100px; overflow-y:auto;
+        }
+        .prod-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #e8e8e8; font-size:.82rem; }
+        .prod-row:last-child { border-bottom:none; }
+        .prod-name { font-weight:600; color:var(--deep); }
+        .prod-qty  { background:var(--teal); color:white; border-radius:99px; padding:2px 8px; font-size:.68rem; font-weight:700; }
+
+        /* ── Map ── */
+        .map-wrap   { border-radius:12px; overflow:hidden; border:2px solid rgba(13,148,136,0.25); margin:10px 0; display:none; }
+        .map-wrap .leaflet-container { height:220px; }
+
+        /* ── Proof modal ── */
+        .modal-overlay {
+            position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:1000;
+            display:flex; align-items:flex-end; justify-content:center;
+            animation:fadeIn .2s ease;
+        }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .modal-box {
+            background:white; border-radius:24px 24px 0 0;
+            width:100%; max-width:520px; max-height:90vh; overflow-y:auto;
+            padding:22px 18px 36px;
+            box-shadow:0 -12px 40px rgba(0,0,0,0.22);
+            animation:slideUpModal .3s ease;
+        }
+        @keyframes slideUpModal { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
+        .modal-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:16px; padding-bottom:12px; border-bottom:1.5px solid #e8e8e8;
+        }
+        .modal-title { font-size:1.05rem; font-weight:800; color:var(--deep); }
+        .modal-close { background:#f1f5f9; border:none; border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:1rem; }
+        .proof-tabs { display:flex; gap:8px; margin-bottom:16px; }
+        .proof-tab  { flex:1; padding:10px; border:2px solid #e2e8f0; border-radius:10px; background:white; cursor:pointer; font-weight:700; font-size:.85rem; font-family:'Cairo',sans-serif; transition:all .2s; }
+        .proof-tab.active { background:var(--teal); border-color:var(--teal); color:white; }
+        .photo-zone { border:2px dashed rgba(13,148,136,.3); border-radius:12px; padding:28px; text-align:center; cursor:pointer; background:rgba(13,148,136,.03); }
+        .photo-zone:hover { background:rgba(13,148,136,.07); }
+        .sig-canvas { border:2px solid #e2e8f0; border-radius:10px; width:100%; height:150px; background:white; touch-action:none; }
+
+        /* ── Misc ── */
+        .loader { text-align:center; padding:40px; }
+        .loader span { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--teal); margin:0 3px; animation:bounce 1.4s infinite ease-in-out both; }
+        .loader span:nth-child(2){ animation-delay:.16s; }
+        .loader span:nth-child(3){ animation-delay:.32s; }
+        @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
+        .empty-msg { background:rgba(255,255,255,0.5); border-radius:14px; padding:18px; text-align:center; color:rgba(255,255,255,.7); font-size:.88rem; }
+        .single-order-banner {
+            background:rgba(255,255,255,0.15); border:1.5px solid rgba(255,255,255,0.3);
+            border-radius:14px; padding:10px 14px; margin-bottom:16px;
+            display:flex; align-items:center; gap:9px; color:white; font-size:.82rem; font-weight:700;
+        }
+
+        @media(max-width:480px) {
+            .kpi-grid { grid-template-columns:repeat(2,1fr); }
+            .driver-header { flex-direction:column; align-items:flex-start; }
+            .dh-user { width:100%; justify-content:space-between; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Login -->
+    <div id="loginSection">
+        <div class="login-card">
+            <div class="login-logo">🚗</div>
+            <h2>تسجيل دخول السائق</h2>
+            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم" autocomplete="off">
+            <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
+            <label class="checkbox-label">
+                <input type="checkbox" id="rememberMe" checked>
+                <span>🔓 تذكرني لمدة 12 ساعة</span>
+            </label>
+            <button class="btn" onclick="doLogin()" id="loginBtn">دخول</button>
+            <div id="loginError" style="color:#dc2626;text-align:center;font-size:.88rem;margin-top:4px;"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashSection" style="display:none;">
+
+        <!-- Header -->
+        <div class="driver-header">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div class="dh-logo">🚗</div>
+                <div class="dh-info">
+                    <h1>لوحة السائق</h1>
+                    <p id="currentTime"></p>
+                </div>
+            </div>
+            <div class="dh-user">
+                <div class="dh-avatar">🚗</div>
+                <div class="dh-name" id="driverName"></div>
+                <button class="logout-btn" onclick="doLogout()">خروج</button>
+            </div>
+        </div>
+
+        <!-- KPI (hidden in single-order mode) -->
+        <div class="kpi-grid" id="kpiSection">
+            <div class="kpi-card">
+                <div class="kpi-icon">📦</div>
+                <div class="kpi-val" id="kpiReady">0</div>
+                <div class="kpi-lbl">جاهزة</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🚗</div>
+                <div class="kpi-val" id="kpiDelivery">0</div>
+                <div class="kpi-lbl">في الطريق</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">✅</div>
+                <div class="kpi-val" id="kpiDone">0</div>
+                <div class="kpi-lbl">مسلّمة</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">⭐</div>
+                <div class="kpi-val" id="kpiRating">—</div>
+                <div class="kpi-lbl">تقييم</div>
+            </div>
+        </div>
+
+        <div id="ordersContent"></div>
+    </div>
+</div>
+
+<!-- Proof Modal -->
+<div id="proofModal" style="display:none;">
+    <div class="modal-overlay" onclick="closeProofModal(event)">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title">📸 إثبات التسليم</div>
+                <button class="modal-close" onclick="closeProofModal()">✕</button>
+            </div>
+            <div class="proof-tabs">
+                <button class="proof-tab active" id="tabPhoto" onclick="switchProofTab('photo')">📷 صورة</button>
+                <button class="proof-tab" id="tabSig" onclick="switchProofTab('sig')">✍️ توقيع</button>
+            </div>
+            <div id="photoPane">
+                <div class="photo-zone" onclick="document.getElementById('proofPhotoInput').click()">
+                    <div style="font-size:2.2rem;margin-bottom:8px">📷</div>
+                    <div style="font-weight:700;color:var(--teal2)">اضغط لالتقاط صورة</div>
+                    <div style="font-size:.75rem;color:#aaa;margin-top:4px">أو اختر من المعرض</div>
+                    <input type="file" id="proofPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(event)">
+                </div>
+                <img id="photoPreview" src="" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:10px;margin-top:10px;border:2px solid rgba(13,148,136,0.2)">
+            </div>
+            <div id="sigPane" style="display:none;">
+                <div style="font-size:.78rem;color:#aaa;text-align:center;margin-bottom:8px">ارسم توقيعك بالإصبع أو الماوس</div>
+                <canvas id="sigCanvas" class="sig-canvas" width="400" height="150"></canvas>
+                <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px" onclick="clearSig()">🔄 مسح</button>
+            </div>
+            <input type="hidden" id="proofOrderDocId">
+            <div id="proofStatusMsg" style="display:none;background:rgba(13,148,136,.07);border-radius:10px;padding:10px;text-align:center;font-size:.82rem;font-weight:700;color:var(--teal2);margin-top:10px;">⏳ جاري الرفع...</div>
+            <div style="display:flex;gap:9px;margin-top:14px;">
+                <button class="btn btn-ghost" style="flex:1;margin-bottom:0" onclick="closeProofModal()">إلغاء</button>
+                <button class="btn btn-success" style="flex:2;margin-bottom:0" id="confirmDelivBtn" onclick="confirmDelivery()">✅ تأكيد التسليم</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+        authDomain: "burjuman-6cb83.firebaseapp.com",
+        projectId: "burjuman-6cb83",
+        storageBucket: "burjuman-6cb83.firebasestorage.app",
+        messagingSenderId: "177984721378",
+        appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ── URL param ──
+    const urlParams   = new URLSearchParams(window.location.search);
+    const urlOrderId  = urlParams.get('order'); // e.g. ORD1234...
+    const SINGLE_MODE = !!urlOrderId;           // true = show only this order
+
+    // ── State ──
+    let currentUser   = null;
+    let allOrders     = [];
+    let proofOrderId  = null;
+    let proofPhotoB64 = null;
+    let proofTab      = 'photo';
+    let sigCtx        = null;
+    let sigDrawing    = false;
+    const IMGBB_KEY   = '92f06ee9808916de0fb6416877b7f42a';
+    const SESSION_KEY = 'driver_session';
+
+    // ── Time ──
+    setInterval(() => {
+        const el = document.getElementById('currentTime');
+        if (el) el.textContent = new Date().toLocaleString('ar-IQ');
+    }, 1000);
+
+    // ── Auto-restore session ──
+    (function() {
+        try {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (!raw) return;
+            const s = JSON.parse(raw);
+            if (!s.username || (Date.now() - s.loginTime) > 12*60*60*1000) {
+                localStorage.removeItem(SESSION_KEY); return;
+            }
+            currentUser = { username: s.username, name: s.name };
+            showDash();
+            loadOrders();
+        } catch(e) { localStorage.removeItem(SESSION_KEY); }
+    })();
+
+    // ── Login ──
+    window.doLogin = async function() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errEl    = document.getElementById('loginError');
+        const btn      = document.getElementById('loginBtn');
+        if (!username || !password) { errEl.textContent = '⚠️ أدخل بيانات الدخول'; return; }
+        errEl.textContent = ''; btn.disabled = true; btn.textContent = '⏳ جاري التحقق...';
+        try {
+            const snap = await db.collection('users').where('username','==',username).get();
+            if (snap.empty) { errEl.textContent = '❌ اسم المستخدم غير صحيح'; return; }
+            const u = snap.docs[0].data();
+            if ((u.password||'').trim() !== password) { errEl.textContent = '❌ كلمة المرور خاطئة'; return; }
+            if (u.accountType !== 'driver') { errEl.textContent = '❌ هذا الحساب ليس لسائق'; return; }
+            currentUser = { username: u.username, name: u.name || u.username };
+            if (document.getElementById('rememberMe').checked) {
+                localStorage.setItem(SESSION_KEY, JSON.stringify({ ...currentUser, loginTime: Date.now() }));
+            }
+            showDash();
+            loadOrders();
+        } catch(e) {
+            errEl.textContent = '❌ حدث خطأ، حاول مجدداً';
+        } finally {
+            btn.disabled = false; btn.textContent = 'دخول';
+        }
+    };
+
+    window.doLogout = function() {
+        currentUser = null;
+        localStorage.removeItem(SESSION_KEY);
+        document.getElementById('dashSection').style.display = 'none';
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+    };
+
+    function showDash() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('dashSection').style.display  = 'block';
+        document.getElementById('driverName').textContent = currentUser.name;
+        // في وضع الطلب المحدد نخفي KPI
+        if (SINGLE_MODE) document.getElementById('kpiSection').style.display = 'none';
+    }
+
+    // ── Load Orders ──
+    async function loadOrders() {
+        const content = document.getElementById('ordersContent');
+        content.innerHTML = `<div class="loader"><span></span><span></span><span></span></div>`;
+        try {
+            const snap = await db.collection('orders').get();
+            allOrders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+            renderOrders();
+            // real-time listener
+            db.collection('orders').onSnapshot(() => {
+                db.collection('orders').get().then(s => {
+                    allOrders = s.docs.map(d => ({ _docId: d.id, ...d.data() }));
+                    renderOrders();
+                });
+            });
+        } catch(e) {
+            content.innerHTML = `<div class="empty-msg">❌ تعذّر تحميل الطلبات</div>`;
+        }
+    }
+
+    function renderOrders() {
+        // ── فلترة حسب الوضع ──
+        let displayOrders;
+        if (SINGLE_MODE) {
+            // وضع الطلب المحدد: أظهر الطلب المحدد فقط
+            displayOrders = allOrders.filter(o =>
+                o.orderId === urlOrderId || o._docId === urlOrderId
+            );
+        } else {
+            // وضع كامل: أظهر الطلبات الجاهزة + طلبات السائق الحالي
+            displayOrders = allOrders.filter(o =>
+                o.status === 'Prepared' ||
+                (['In Delivery','NearCustomer','Delivered'].includes(o.status) && o.driver_id === currentUser.username)
+            );
+        }
+
+        // ── KPI (وضع كامل فقط) ──
+        if (!SINGLE_MODE) {
+            const ready    = allOrders.filter(o => o.status === 'Prepared').length;
+            const delivery = allOrders.filter(o => ['In Delivery','NearCustomer'].includes(o.status) && o.driver_id === currentUser.username).length;
+            const done     = allOrders.filter(o => o.status === 'Delivered' && o.driver_id === currentUser.username).length;
+            const ratedArr = allOrders.filter(o => o.status === 'Delivered' && o.driver_id === currentUser.username && o.driver_rating);
+            const avgRating = ratedArr.length ? (ratedArr.reduce((s,o) => s + (o.driver_rating||0), 0) / ratedArr.length).toFixed(1) : '—';
+            document.getElementById('kpiReady').textContent   = ready;
+            document.getElementById('kpiDelivery').textContent = delivery;
+            document.getElementById('kpiDone').textContent    = done;
+            document.getElementById('kpiRating').textContent  = avgRating;
+        }
+
+        const content = document.getElementById('ordersContent');
+
+        if (!displayOrders.length) {
+            content.innerHTML = `<div class="empty-msg">📭 لا توجد طلبات متاحة</div>`;
+            return;
+        }
+
+        // ── تقسيم حسب الحالة ──
+        const ready    = displayOrders.filter(o => o.status === 'Prepared');
+        const active   = displayOrders.filter(o => ['In Delivery','NearCustomer'].includes(o.status));
+        const done     = displayOrders.filter(o => o.status === 'Delivered');
+
+        let html = '';
+
+        if (SINGLE_MODE) {
+            html += `<div class="single-order-banner">📌 عرض الطلب المحدد فقط — ${urlOrderId}</div>`;
+        }
+
+        if (ready.length) {
+            html += sectionTitle('📦 جاهزة للتوصيل', ready.length);
+            html += ready.map(o => orderCard(o, 'ready')).join('');
+        }
+        if (active.length) {
+            html += sectionTitle('🚗 قيد التوصيل', active.length);
+            html += active.map(o => orderCard(o, 'active')).join('');
+        }
+        if (done.length) {
+            html += sectionTitle('✅ مسلّمة', done.length);
+            html += done.map(o => orderCard(o, 'done')).join('');
+        }
+
+        content.innerHTML = html;
+    }
+
+    function sectionTitle(label, count) {
+        return `<div class="sec-title">${label} <span class="sec-badge">${count}</span></div>`;
+    }
+
+    // ── بناء بطاقة الطلب ──
+    function orderCard(o, type) {
+        const products   = parseProducts(o.products || o.cartItemsArray);
+        const coords     = parseCoords(o.location);
+        const isHighlighted = SINGLE_MODE && (o.orderId === urlOrderId || o._docId === urlOrderId);
+
+        // badge
+        const statusMap = {
+            'Prepared':   `<span class="status-badge s-ready">✅ جاهز</span>`,
+            'In Delivery':`<span class="status-badge s-delivery">🚗 في الطريق</span>`,
+            'NearCustomer':`<span class="status-badge s-near">📍 قرب الزبون</span>`,
+            'Delivered':  `<span class="status-badge s-done">✅ تم التسليم</span>`,
+        };
+        const badge = statusMap[o.status] || '';
+
+        // products list
+        const prodsHtml = products.length
+            ? products.map(p => `<div class="prod-row"><span class="prod-name">${p.name}</span><span class="prod-qty">${p.qty}</span></div>`).join('')
+            : '<div style="color:#aaa;font-size:.8rem;text-align:center;padding:4px">لا توجد تفاصيل مواد</div>';
+
+        // action buttons
+        let actions = '';
+        if (type === 'ready') {
+            actions = `
+                <div class="btn-row">
+                    <button class="btn btn-gold" onclick="startDelivery('${o._docId}')">🚛 تحميل الطلب</button>
+                    ${coords ? `<button class="btn btn-violet btn-sm" onclick="toggleMap('map-${o._docId}','${coords.lat}','${coords.lng}')">🗺️ الخريطة</button>` :
+                      o.location ? `<a href="${o.location}" target="_blank" class="btn btn-violet btn-sm">🗺️ فتح الرابط</a>` : ''}
+                </div>`;
+        } else if (type === 'active') {
+            actions = `
+                <div class="btn-row">
+                    <button class="btn btn-gold" onclick="markNear('${o._docId}')">📍 أنا قريب</button>
+                    <button class="btn btn-success" onclick="openProofModal('${o._docId}')">✅ تسليم</button>
+                    ${coords ? `<button class="btn btn-violet btn-sm" onclick="toggleMap('map-${o._docId}','${coords.lat}','${coords.lng}')">🗺️</button>` :
+                      o.location ? `<a href="${o.location}" target="_blank" class="btn btn-violet btn-sm">🗺️</a>` : ''}
+                </div>`;
+        } else {
+            actions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                ${o.proof_url ? `<a href="${o.proof_url}" target="_blank" class="btn btn-ghost btn-sm">📸 إثبات التسليم</a>` : ''}
+                ${o.driver_rating ? `<span style="color:var(--gold);font-size:.95rem;font-weight:800;">⭐ ${o.driver_rating}/5</span>` : ''}
+            </div>`;
+        }
+
+        return `
+        <div class="order-card${isHighlighted ? ' highlighted' : ''}" id="card-${o._docId}">
+            <div class="order-card-header">
+                <div>
+                    <div class="order-shop">🏪 ${o.shopName||'—'}</div>
+                    <div class="order-oid">${o.orderId||o._docId}</div>
+                </div>
+                ${badge}
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-lbl">📍 العنوان</div>
+                    <div class="info-val">${o.shopAddress||'—'}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-lbl">💰 المبلغ</div>
+                    <div class="info-val">${(o.total||0).toLocaleString()} د.ع</div>
+                </div>
+                ${o.vehicle_type ? `
+                <div class="info-item">
+                    <div class="info-lbl">🚚 المركبة</div>
+                    <div class="info-val">${o.vehicle_type}</div>
+                </div>` : ''}
+                ${o.total_volume ? `
+                <div class="info-item">
+                    <div class="info-lbl">📐 الحجم</div>
+                    <div class="info-val">${parseFloat(o.total_volume).toFixed(4)} م³</div>
+                </div>` : ''}
+            </div>
+            <div class="products-box">${prodsHtml}</div>
+            ${actions}
+            <div class="map-wrap" id="map-${o._docId}"></div>
+        </div>`;
+    }
+
+    // ── Start Delivery ──
+    window.startDelivery = async function(docId) {
+        try {
+            await db.collection('orders').doc(docId).update({
+                status: 'In Delivery',
+                driver_id:   currentUser.username,
+                driver_name: currentUser.name,
+                loaded_at:   new Date().toISOString()
+            });
+            showToast('✅ تم تحميل الطلب');
+        } catch(e) { showToast('❌ حدث خطأ', false); }
+    };
+
+    // ── Mark Near ──
+    window.markNear = async function(docId) {
+        try {
+            const now = new Date().toISOString();
+            await db.collection('orders').doc(docId).update({
+                status: 'NearCustomer',
+                near_at: now,
+                near_notification: {
+                    message: '🚗 السائق على بعد 500 متر منك، يرجى الاستعداد!',
+                    driver_name: currentUser.name,
+                    timestamp: now
+                }
+            });
+            showToast('📍 تم إشعار الزبون بأنك قريب');
+        } catch(e) { showToast('❌ حدث خطأ', false); }
+    };
+
+    // ── Map ──
+    window.toggleMap = function(mapId, lat, lng) {
+        const el = document.getElementById(mapId);
+        if (!el) return;
+        if (el.style.display === 'block') {
+            el.style.display = 'none';
+            if (el._watchId) { navigator.geolocation.clearWatch(el._watchId); el._watchId = null; }
+            if (el._mapsLink) { el._mapsLink.remove(); el._mapsLink = null; el._mapInst = null; }
+            return;
+        }
+        el.style.display = 'block';
+        if (el._mapInst) { el._mapInst.invalidateSize(); return; }
+        setTimeout(() => {
+            const map = L.map(el).setView([parseFloat(lat), parseFloat(lng)], 15);
+            el._mapInst = map;
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'©OSM'}).addTo(map);
+            const custIcon = L.divIcon({html:'🏠',className:'',iconSize:[30,30],iconAnchor:[15,15]});
+            L.marker([parseFloat(lat),parseFloat(lng)],{icon:custIcon}).addTo(map).bindPopup('📍 موقع الزبون').openPopup();
+            const drvIcon = L.divIcon({html:'🚗',className:'',iconSize:[30,30],iconAnchor:[15,15]});
+            let dMarker = null;
+            if (navigator.geolocation) {
+                el._watchId = navigator.geolocation.watchPosition(pos => {
+                    const dLat = pos.coords.latitude, dLng = pos.coords.longitude;
+                    if (!dMarker) {
+                        dMarker = L.marker([dLat,dLng],{icon:drvIcon}).addTo(map).bindPopup('🚗 موقعك');
+                        map.fitBounds([[parseFloat(lat),parseFloat(lng)],[dLat,dLng]],{padding:[40,40]});
+                    } else { dMarker.setLatLng([dLat,dLng]); }
+                    db.collection('orders').doc(mapId.replace('map-','')).update({
+                        driver_lat: dLat, driver_lng: dLng, driver_location_at: new Date().toISOString()
+                    }).catch(()=>{});
+                }, null, {enableHighAccuracy:true,maximumAge:5000});
+            }
+            const gLink = document.createElement('a');
+            gLink.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+            gLink.target = '_blank';
+            gLink.style.cssText = 'display:block;text-align:center;padding:8px;color:var(--teal2);font-weight:700;font-size:.82rem;background:#f0fdf9;border-radius:0 0 10px 10px;';
+            gLink.textContent = '🗺️ فتح في خرائط جوجل';
+            el.after(gLink); el._mapsLink = gLink;
+        }, 100);
+    };
+
+    // ── Proof Modal ──
+    window.openProofModal = function(docId) {
+        proofOrderId  = docId;
+        proofPhotoB64 = null;
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('proofPhotoInput').value = '';
+        document.getElementById('proofOrderDocId').value = docId;
+        switchProofTab('photo');
+        document.getElementById('proofModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        initSig();
+    };
+
+    window.closeProofModal = function(e) {
+        if (e && e.target.classList.contains('modal-overlay') === false && e.target !== e.currentTarget) return;
+        if (e && !e.target.classList.contains('modal-overlay')) return;
+        document.getElementById('proofModal').style.display = 'none';
+        document.body.style.overflow = '';
+    };
+
+    window.switchProofTab = function(tab) {
+        proofTab = tab;
+        document.getElementById('tabPhoto').classList.toggle('active', tab === 'photo');
+        document.getElementById('tabSig').classList.toggle('active', tab === 'sig');
+        document.getElementById('photoPane').style.display = tab === 'photo' ? 'block' : 'none';
+        document.getElementById('sigPane').style.display   = tab === 'sig'   ? 'block' : 'none';
+        if (tab === 'sig') setTimeout(initSig, 100);
+    };
+
+    window.onPhotoSelected = function(e) {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            proofPhotoB64 = ev.target.result;
+            const img = document.getElementById('photoPreview');
+            img.src = ev.target.result; img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    function initSig() {
+        const c = document.getElementById('sigCanvas'); if (!c) return;
+        sigCtx = c.getContext('2d');
+        sigCtx.strokeStyle = '#0f172a'; sigCtx.lineWidth = 2.5; sigCtx.lineCap = 'round';
+        const getPos = e => {
+            const r = c.getBoundingClientRect(), sx = c.width/r.width, sy = c.height/r.height;
+            if (e.touches) return {x:(e.touches[0].clientX-r.left)*sx, y:(e.touches[0].clientY-r.top)*sy};
+            return {x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy};
+        };
+        const start = e => { e.preventDefault(); sigDrawing=true; sigCtx.beginPath(); const p=getPos(e); sigCtx.moveTo(p.x,p.y); };
+        const draw  = e => { e.preventDefault(); if(!sigDrawing) return; const p=getPos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); };
+        const stop  = () => sigDrawing = false;
+        ['mousedown','touchstart'].forEach(ev => c.addEventListener(ev, start, {passive:false}));
+        ['mousemove','touchmove'].forEach(ev => c.addEventListener(ev, draw, {passive:false}));
+        ['mouseup','touchend'].forEach(ev => c.addEventListener(ev, stop));
+    }
+
+    window.clearSig = function() {
+        const c = document.getElementById('sigCanvas');
+        if (sigCtx) sigCtx.clearRect(0, 0, c.width, c.height);
+    };
+
+    async function uploadToImgBB(b64) {
+        const base64 = b64.split(',')[1];
+        const form = new FormData();
+        form.append('key', IMGBB_KEY); form.append('image', base64);
+        const res  = await fetch('https://api.imgbb.com/1/upload', {method:'POST', body:form});
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error?.message || 'ImgBB failed');
+        return data.data.url;
+    }
+
+    window.confirmDelivery = async function() {
+        let b64 = null;
+        if (proofTab === 'photo') {
+            if (!proofPhotoB64) { showToast('⚠️ التقط صورة أولاً', false); return; }
+            b64 = proofPhotoB64;
+        } else {
+            const c = document.getElementById('sigCanvas');
+            const blank = document.createElement('canvas');
+            blank.width = c.width; blank.height = c.height;
+            if (c.toDataURL() === blank.toDataURL()) { showToast('⚠️ ارسم توقيعك أولاً', false); return; }
+            b64 = c.toDataURL('image/png');
+        }
+        const btn = document.getElementById('confirmDelivBtn');
+        const msg = document.getElementById('proofStatusMsg');
+        btn.disabled = true; btn.textContent = '⏳ جاري الرفع...';
+        msg.style.display = 'block';
+        try {
+            const url = await uploadToImgBB(b64);
+            await db.collection('orders').doc(proofOrderId).update({
+                status:       'Delivered',
+                delivered_at: new Date().toISOString(),
+                proof_url:    url,
+                proof_type:   proofTab === 'photo' ? 'photo' : 'signature',
+                driver_id:    currentUser.username,
+                driver_name:  currentUser.name
+            });
+            document.getElementById('proofModal').style.display = 'none';
+            document.body.style.overflow = '';
+            showToast('✅ تم تأكيد التسليم بنجاح');
+        } catch(e) {
+            showToast('❌ فشل الرفع: ' + e.message, false);
+        } finally {
+            btn.disabled = false; btn.textContent = '✅ تأكيد التسليم';
+            msg.style.display = 'none';
+        }
+    };
+
+    // ── Parse helpers ──
+    function parseProducts(src) {
+        if (Array.isArray(src)) return src.map(i => ({name:i.name||'',qty:i.qty||1}));
+        if (!src) return [];
+        return (src.match(/([^،,\n()]+)\((\d+)[^)]*\)/g)||[]).map(m => {
+            const mm = m.match(/(.+)\((\d+)/);
+            return mm ? {name:mm[1].trim(), qty:parseInt(mm[2])||1} : null;
+        }).filter(Boolean);
+    }
+
+    function parseCoords(loc) {
+        if (!loc) return null;
+        const m = (loc+'').match(/[?&]q=([-\d.]+),([-\d.]+)/);
+        return m ? {lat:parseFloat(m[1]), lng:parseFloat(m[2])} : null;
+    }
+
+    // ── Toast ──
+    function showToast(msg, ok=true) {
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${ok?'#0d9488':'#ef4444'};color:white;padding:12px 24px;border-radius:50px;font-weight:700;z-index:9999;box-shadow:0 5px 18px rgba(0,0,0,.25);font-family:'Cairo',sans-serif;font-size:.9rem;white-space:nowrap;`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2800);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعدادات النظام</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="js/theme.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.12);
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --accent:var(--teal,#0d9488);--accent2:var(--teal2,#0f766e);
+  --accent3:var(--teal3,rgba(13,148,136,.10));
+  --radius:14px;--shadow:0 4px 20px rgba(0,0,0,.08);
+  --green:#10b981;--red:#ef4444;--amber:#f59e0b;
+}
+[data-mode="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#0f172a;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.13);
+  --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s;}
+
+/* ── Layout ── */
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 80px;}
+
+/* ── Header ── */
+.page-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;}
+.page-logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(13,148,136,.3);}
+.page-header h1{font-size:1.4rem;font-weight:900;}
+.page-header p{color:var(--muted);font-size:.82rem;margin-top:2px;}
+.header-back{margin-right:auto;display:flex;gap:8px;}
+.btn-back{padding:8px 16px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text);font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:5px;}
+.btn-back:hover{background:var(--surface2);}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:6px;overflow-x:auto;}
+.tab{padding:9px 18px;border-radius:10px;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:all .2s;}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(13,148,136,.3);}
+.tab:not(.active):hover{background:var(--surface2);color:var(--text);}
+
+/* ── Section card ── */
+.section{display:none;}
+.section.active{display:block;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card-title{font-size:1rem;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.card-sub{color:var(--muted);font-size:.8rem;margin-bottom:18px;}
+.sep{font-size:.72rem;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+
+/* ── Form ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:.78rem;font-weight:700;color:var(--muted);}
+.field input,.field select,.field textarea{
+  padding:10px 12px;background:var(--surface2);
+  border:1.5px solid var(--border2);border-radius:10px;
+  color:var(--text);font-family:Cairo,sans-serif;font-size:.85rem;
+  outline:none;transition:border .2s;width:100%;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:70px;}
+.hint{font-size:.72rem;color:var(--muted2);}
+
+/* ── Logo row ── */
+.logo-row{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.logo-thumb{width:72px;height:72px;border-radius:14px;background:var(--surface2);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;overflow:hidden;flex-shrink:0;}
+.logo-thumb img{width:100%;height:100%;object-fit:cover;}
+.logo-thumb.set{border-style:solid;border-color:var(--accent);}
+.logo-actions{display:flex;flex-direction:column;gap:7px;flex:1;}
+
+/* ── Theme ── */
+.theme-swatches{display:flex;flex-wrap:wrap;gap:10px;}
+.ts-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.ts-circle{width:36px;height:36px;border-radius:50%;transition:transform .2s;border:3px solid transparent;}
+.ts-item.active .ts-circle{border-color:var(--text);transform:scale(1.12);}
+.ts-label{font-size:.68rem;font-weight:700;color:var(--muted2);}
+.mode-row{display:flex;gap:10px;margin-top:12px;}
+.mode-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border2);background:var(--surface2);cursor:pointer;text-align:center;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;transition:all .2s;}
+.mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ── Toggle row ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+.toggle-label{font-size:.85rem;font-weight:700;}
+.toggle-sub{font-size:.75rem;color:var(--muted);margin-top:2px;}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border2);border-radius:50px;cursor:pointer;transition:.25s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s;}
+.toggle input:checked+.toggle-slider{background:var(--accent);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(18px);}
+.notif-block{margin-top:10px;padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+
+/* ── API key field ── */
+.api-row{display:flex;gap:8px;align-items:flex-end;}
+.api-row .field{flex:1;}
+.eye-btn{padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;cursor:pointer;font-size:.85rem;flex-shrink:0;height:40px;}
+.copy-btn{padding:10px 12px;background:var(--accent3);border:1.5px solid var(--accent);border-radius:10px;cursor:pointer;font-size:.82rem;color:var(--accent);font-weight:700;font-family:Cairo,sans-serif;flex-shrink:0;height:40px;}
+.copy-btn:hover{background:var(--accent);color:#fff;}
+
+/* ── Save bar ── */
+.save-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 0;margin-top:20px;display:flex;align-items:center;gap:12px;z-index:50;}
+.btn-save{padding:11px 28px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;transition:background .2s;}
+.btn-save:hover{background:var(--accent2);}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;}
+.save-status{font-size:.82rem;color:var(--muted);}
+.save-status.ok{color:var(--green);}
+.save-status.err{color:var(--red);}
+
+/* ── Mobile API section ── */
+.code-block{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;font-family:monospace;font-size:.78rem;line-height:1.7;overflow-x:auto;color:var(--text);}
+.code-copy{display:flex;justify-content:flex-end;margin-top:6px;}
+
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:700;}
+.badge-green{background:rgba(16,185,129,.12);color:#059669;}
+.badge-amber{background:rgba(245,158,11,.12);color:#b45309;}
+.badge-red{background:rgba(239,68,68,.12);color:#dc2626;}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:11px 22px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── Rules Modal ── */
+.modal-back{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;}
+.modal-back.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:var(--radius);padding:22px;max-width:620px;width:90%;max-height:80vh;overflow-y:auto;}
+.modal-box h3{font-size:1rem;font-weight:800;margin-bottom:8px;}
+.modal-box pre{background:var(--surface2);border-radius:8px;padding:12px;font-size:.72rem;overflow-x:auto;line-height:1.6;border:1px solid var(--border);}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+
+/* ── Buttons ── */
+.btn{padding:9px 18px;border-radius:10px;border:none;font-family:Cairo,sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-outline{background:var(--surface2);color:var(--text);border:1.5px solid var(--border2);}
+.btn-outline:hover{background:var(--border);}
+.btn-sm{padding:6px 14px;font-size:.78rem;}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--red);border:1.5px solid rgba(239,68,68,.2);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+
+@media(max-width:560px){
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid .full{grid-column:1;}
+  .tabs{gap:4px;}
+  .tab{padding:8px 12px;font-size:.78rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- شاشة التحقق من الصلاحية -->
+<div id="authGate" style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Cairo',sans-serif;background:var(--bg,#f1f5f9)">
+  <div style="text-align:center;color:var(--muted,#64748b)">
+    <div style="font-size:2rem;margin-bottom:10px">🔐</div>
+    <div style="font-weight:700;font-size:.95rem">جاري التحقق من الصلاحية...</div>
+  </div>
+</div>
+
+<div id="mainWrap" style="display:none">
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-logo">⚙️</div>
+    <div>
+      <h1>إعدادات النظام</h1>
+      <p>تعديل معلومات المتجر، الإشعارات، ومفاتيح API</p>
+    </div>
+    <div class="header-back">
+      <a href="dashboard.html" class="btn-back">🏠 الداشبورد</a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('info')">🏢 معلومات المتجر</button>
+    <button class="tab" onclick="switchTab('design')">🎨 التصميم</button>
+    <a href="notif-settings.html" class="tab" style="text-decoration:none">🔔 الإشعارات</a>
+    <button class="tab" onclick="switchTab('api')">🔑 مفاتيح API</button>
+    <button class="tab" onclick="switchTab('mobile')">📱 ربط التطبيق</button>
+    <button class="tab" onclick="switchTab('system')">⚙️ النظام</button>
+  </div>
+
+  <!-- ═══ TAB 1: معلومات المتجر ═══ -->
+  <div class="section active" id="sec-info">
+    <div class="card">
+      <div class="card-title">🏢 معلومات الشركة</div>
+      <div class="card-sub">تظهر للعملاء وفي الفواتير والإشعارات</div>
+
+      <div class="sep">الشعار</div>
+      <div class="logo-row">
+        <div class="logo-thumb" id="logoThumb" onclick="document.getElementById('logoFile').click()">🏬</div>
+        <div class="logo-actions">
+          <input type="file" id="logoFile" accept="image/*" style="display:none">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('logoFile').click()">📁 رفع صورة</button>
+          <input type="text" id="logoUrl" placeholder="أو رابط الصورة مباشراً..."
+            style="padding:8px 10px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:8px;color:var(--text);font-family:Cairo,sans-serif;font-size:.8rem;outline:none;width:100%">
+          <small class="hint">PNG أو JPG — إذا أدخلت رابطاً سيُستخدم بدلاً من الصورة المرفوعة</small>
+        </div>
+      </div>
+
+      <div class="sep">البيانات الأساسية</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>الاسم بالعربي *</label>
+          <input type="text" id="nameAr" placeholder="مثال: برجمان">
+        </div>
+        <div class="field">
+          <label>الاسم بالإنجليزي</label>
+          <input type="text" id="nameEn" placeholder="e.g. Burjuman">
+        </div>
+        <div class="field">
+          <label>رقم الهاتف *</label>
+          <input type="text" id="phone" placeholder="07700000000">
+        </div>
+        <div class="field">
+          <label>واتساب (مع رمز الدولة)</label>
+          <input type="text" id="whatsapp" placeholder="9647700000000">
+        </div>
+        <div class="field full">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="compEmail" placeholder="info@company.com">
+        </div>
+        <div class="field full">
+          <label>إيميل الأدمن للإشعارات</label>
+          <input type="email" id="adminNotifEmail" placeholder="admin@company.com">
+          <span class="hint">يصله إشعار بكل طلب جديد</span>
+        </div>
+        <div class="field full">
+          <label>العنوان</label>
+          <input type="text" id="address" placeholder="المحافظة، الحي، الشارع...">
+        </div>
+        <div class="field full">
+          <label>وصف النشاط</label>
+          <textarea id="bizDesc" placeholder="وصف مختصر عن نشاطك التجاري..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('info')">💾 حفظ المعلومات</button>
+      <span class="save-status" id="st-info"></span>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: التصميم ═══ -->
+  <div class="section" id="sec-design">
+    <div class="card">
+      <div class="card-title">🎨 هوية الموقع البصرية</div>
+      <div class="card-sub">الألوان والمظهر تُطبَّق على كامل المنصة</div>
+
+      <div class="sep">لون الثيم الرئيسي</div>
+      <div class="theme-swatches" id="themeSwatches"></div>
+
+      <div class="sep" style="margin-top:18px">مظهر الواجهة</div>
+      <div class="mode-row">
+        <div class="mode-btn active" id="modeLight" onclick="setMode('light')">☀️ فاتح</div>
+        <div class="mode-btn" id="modeDark" onclick="setMode('dark')">🌙 داكن</div>
+      </div>
+
+      <div class="sep" style="margin-top:18px">نوع النشاط</div>
+      <div class="form-grid">
+        <div class="field full">
+          <label>نوع النشاط التجاري</label>
+          <select id="bizType">
+            <option value="store">🛒 متجر عام</option>
+            <option value="restaurant">🍽️ مطعم / كافيه</option>
+            <option value="clothing">👗 أزياء وملابس</option>
+            <option value="pharmacy">💊 صيدلية / طب</option>
+            <option value="company">🏢 شركة تجارية</option>
+            <option value="warehouse">📦 مستودع</option>
+            <option value="services">🔧 خدمات وصيانة</option>
+            <option value="other">✨ أخرى</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('design')">💾 حفظ التصميم</button>
+      <span class="save-status" id="st-design"></span>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3: الإشعارات — صفحة مستقلة ═══ -->
+  <div class="section" id="sec-notif" style="display:none">
+
+    <!-- واتساب -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="card-title">📱 واتساب</div>
+        <label class="toggle"><input type="checkbox" id="waEnabled" onchange="toggleBlock('wa')"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="card-sub">رسائل فورية على هاتفك بكل طلب جديد</div>
+      <div class="notif-block" id="block-wa" style="display:none">
+        <div class="field">
+          <label>رقم الواتساب (مع رمز الدولة)</label>
+          <input type="text" id="notifWa" placeholder="9647700000000">
+        </div>
+      </div>
+    </div>
+
+    <!-- تيليغرام -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="card-title">✈️ تيليغرام</div>
+        <label class="toggle"><input type="checkbox" id="teleEnabled" onchange="toggleBlock('tele')"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="card-sub">بوت تيليغرام يرسل تفاصيل الطلبات والحملات التسويقية</div>
+      <div class="notif-block" id="block-tele" style="display:none">
+        <div class="form-grid">
+          <div class="field">
+            <label>Bot Token</label>
+            <div class="api-row">
+              <input type="password" id="teleToken" placeholder="123456789:AAF-xxxxx">
+              <button class="eye-btn" onclick="toggleEye('teleToken', this)">👁</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Chat ID (مجموعة الإدارة)</label>
+            <input type="text" id="teleChat" placeholder="-100xxxxxxxxxx">
+          </div>
+          <div class="field">
+            <label>Chat ID مجموعة المجهزين</label>
+            <input type="text" id="telePrepChat" placeholder="-100xxxxxxxxxx">
+          </div>
+          <div class="field">
+            <label>Chat ID مجموعة السائقين</label>
+            <input type="text" id="teleDriverChat" placeholder="-100xxxxxxxxxx">
+          </div>
+        </div>
+        <p style="font-size:.72rem;color:var(--muted2);margin-top:10px">
+          أنشئ بوتاً عبر <strong>@BotFather</strong> في تيليغرام ← أضفه لمجموعتك ← ادخل على
+          <code style="background:var(--surface);padding:1px 5px;border-radius:4px;">api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+          للحصول على الـ Chat ID
+        </p>
+      </div>
+    </div>
+
+    <!-- إيميل -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="card-title">📧 البريد الإلكتروني (EmailJS)</div>
+        <label class="toggle"><input type="checkbox" id="emailEnabled" onchange="toggleBlock('email')"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="card-sub">إيميل مفصّل بكل طلب جديد عبر خدمة EmailJS</div>
+      <div class="notif-block" id="block-email" style="display:none">
+        <div class="form-grid">
+          <div class="field">
+            <label>Service ID</label>
+            <input type="text" id="ejService" placeholder="service_xxxxxxx">
+          </div>
+          <div class="field">
+            <label>Template ID</label>
+            <input type="text" id="ejTemplate" placeholder="template_xxxxxxx">
+          </div>
+          <div class="field full">
+            <label>Public Key</label>
+            <div class="api-row">
+              <input type="password" id="ejKey" placeholder="xxxxxxxxxxxxxxxxxxxx">
+              <button class="eye-btn" onclick="toggleEye('ejKey', this)">👁</button>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:.72rem;color:var(--muted2);margin-top:8px">سجّل مجاناً في <strong>emailjs.com</strong> للحصول على المفاتيح</p>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('notif')">💾 حفظ الإشعارات</button>
+      <span class="save-status" id="st-notif"></span>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 4: مفاتيح API ═══ -->
+  <div class="section" id="sec-api">
+
+    <!-- Firebase -->
+    <div class="card">
+      <div class="card-title">🔥 Firebase</div>
+      <div class="card-sub">إعدادات مشروع Firebase — قاعدة البيانات والتخزين والمصادقة</div>
+      <div class="form-grid">
+        <div class="field full">
+          <label>API Key</label>
+          <div class="api-row">
+            <input type="password" id="fbApiKey" placeholder="AIzaSy...">
+            <button class="eye-btn" onclick="toggleEye('fbApiKey', this)">👁</button>
+            <button class="copy-btn" onclick="copyField('fbApiKey')">نسخ</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Auth Domain</label>
+          <input type="text" id="fbAuthDomain" placeholder="project.firebaseapp.com">
+        </div>
+        <div class="field">
+          <label>Project ID</label>
+          <input type="text" id="fbProjectId" placeholder="my-project-id">
+        </div>
+        <div class="field">
+          <label>Storage Bucket</label>
+          <input type="text" id="fbStorageBucket" placeholder="project.firebasestorage.app">
+        </div>
+        <div class="field">
+          <label>Messaging Sender ID</label>
+          <input type="text" id="fbSenderId" placeholder="123456789012">
+        </div>
+        <div class="field full">
+          <label>App ID</label>
+          <input type="text" id="fbAppId" placeholder="1:123456789012:web:abcdef">
+        </div>
+        <div class="field full">
+          <label>FCM Server Key (لإشعارات التطبيق)</label>
+          <div class="api-row">
+            <input type="password" id="fcmKey" placeholder="AAAAxxxxxxx:APA91b...">
+            <button class="eye-btn" onclick="toggleEye('fcmKey', this)">👁</button>
+          </div>
+          <span class="hint">من Firebase Console → Project Settings → Cloud Messaging</span>
+        </div>
+        <div class="field full">
+          <label>VAPID Key (Web Push)</label>
+          <div class="api-row">
+            <input type="password" id="vapidKey" placeholder="BNxxx...">
+            <button class="eye-btn" onclick="toggleEye('vapidKey', this)">👁</button>
+          </div>
+          <span class="hint">من Firebase Console → Project Settings → Cloud Messaging → Web Push</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-outline btn-sm" onclick="openRulesModal()">📋 قواعد Firestore</button>
+      </div>
+    </div>
+
+    <!-- ImgBB -->
+    <div class="card">
+      <div class="card-title">🖼️ ImgBB — رفع الصور</div>
+      <div class="card-sub">يُستخدم لرفع صور المنتجات والشعار</div>
+      <div class="field">
+        <label>ImgBB API Key</label>
+        <div class="api-row">
+          <input type="password" id="imgbbKey" placeholder="سجّل مجاناً في imgbb.com">
+          <button class="eye-btn" onclick="toggleEye('imgbbKey', this)">👁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Google Maps -->
+    <div class="card">
+      <div class="card-title">🗺️ Google Maps API</div>
+      <div class="card-sub">لعرض خريطة الموقع وتتبع التوصيل</div>
+      <div class="field">
+        <label>Google Maps API Key</label>
+        <div class="api-row">
+          <input type="password" id="mapsKey" placeholder="AIzaSy...">
+          <button class="eye-btn" onclick="toggleEye('mapsKey', this)">👁</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مفتاح مخصص -->
+    <div class="card">
+      <div class="card-title">🔑 مفاتيح إضافية</div>
+      <div class="card-sub">أي مفاتيح API أخرى يحتاجها النظام</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>API Key مخصص 1 — الاسم</label>
+          <input type="text" id="custom1Name" placeholder="مثال: SMS Gateway">
+        </div>
+        <div class="field">
+          <label>القيمة</label>
+          <div class="api-row">
+            <input type="password" id="custom1Val" placeholder="المفتاح...">
+            <button class="eye-btn" onclick="toggleEye('custom1Val', this)">👁</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>API Key مخصص 2 — الاسم</label>
+          <input type="text" id="custom2Name" placeholder="مثال: Payment Gateway">
+        </div>
+        <div class="field">
+          <label>القيمة</label>
+          <div class="api-row">
+            <input type="password" id="custom2Val" placeholder="المفتاح...">
+            <button class="eye-btn" onclick="toggleEye('custom2Val', this)">👁</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('api')">💾 حفظ المفاتيح</button>
+      <span class="save-status" id="st-api"></span>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 5: ربط التطبيق ═══ -->
+  <div class="section" id="sec-mobile">
+    <div class="card">
+      <div class="card-title">📱 إعدادات تطبيق الهاتف</div>
+      <div class="card-sub">تفعيل وربط تطبيق الجوال بالمنصة</div>
+
+      <div class="form-grid">
+        <div class="field full">
+          <label>رابط API الخاص بالتطبيق (Base URL)</label>
+          <input type="text" id="appApiUrl" placeholder="https://api.yourapp.com/v1">
+          <span class="hint">الرابط الأساسي الذي يتواصل معه التطبيق</span>
+        </div>
+        <div class="field full">
+          <label>App Secret Key (مفتاح التحقق)</label>
+          <div class="api-row">
+            <input type="password" id="appSecret" placeholder="مفتاح سري طويل وعشوائي">
+            <button class="eye-btn" onclick="toggleEye('appSecret', this)">👁</button>
+            <button class="btn btn-outline btn-sm" onclick="genSecret()">توليد</button>
+          </div>
+          <span class="hint">يُستخدم للتحقق من طلبات التطبيق</span>
+        </div>
+        <div class="field">
+          <label>Android Package Name</label>
+          <input type="text" id="androidPkg" placeholder="com.company.appname">
+        </div>
+        <div class="field">
+          <label>iOS Bundle ID</label>
+          <input type="text" id="iosBundleId" placeholder="com.company.appname">
+        </div>
+        <div class="field">
+          <label>رابط تطبيق Google Play</label>
+          <input type="text" id="playStoreUrl" placeholder="https://play.google.com/store/apps/details?id=...">
+        </div>
+        <div class="field">
+          <label>رابط تطبيق App Store</label>
+          <input type="text" id="appStoreUrl" placeholder="https://apps.apple.com/app/...">
+        </div>
+        <div class="field full">
+          <label>رابط Universal / App Link</label>
+          <input type="text" id="appUniversalUrl" placeholder="https://app.yourcompany.com">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 إعدادات Firebase للتطبيق</div>
+      <div class="card-sub">نفس Firebase المستخدم في الويب — هذه قيمه لاستخدامها في التطبيق</div>
+      <div id="firebaseConfigBlock" class="code-block">جاري التحميل...</div>
+      <div class="code-copy">
+        <button class="btn btn-outline btn-sm" onclick="copyFirebaseConfig()">📋 نسخ الكونفيج</button>
+      </div>
+      <p style="font-size:.75rem;color:var(--muted);margin-top:10px">
+        ⚠️ لا تشارك هذه القيم علناً — ضعها في ملف <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">.env</code> في مشروع التطبيق
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔔 إشعارات Push للتطبيق</div>
+      <div class="card-sub">FCM — Firebase Cloud Messaging</div>
+      <div class="form-grid">
+        <div class="field full">
+          <label>FCM Server Key</label>
+          <div class="api-row">
+            <input type="password" id="fcmKeyMobile" placeholder="AAAAxxxxxxx:APA91b...">
+            <button class="eye-btn" onclick="toggleEye('fcmKeyMobile', this)">👁</button>
+          </div>
+          <span class="hint">من Firebase Console → Project Settings → Cloud Messaging → Server Key</span>
+        </div>
+        <div class="field full">
+          <label>موضوع الإشعارات (Topic)</label>
+          <input type="text" id="fcmTopic" placeholder="all_users">
+          <span class="hint">اسم الموضوع الذي يشترك فيه المستخدمون لاستقبال الإشعارات الجماعية</span>
+        </div>
+      </div>
+
+      <div class="sep" style="margin-top:16px">اختبار الإشعارات</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>FCM Token للاختبار</label>
+          <input type="text" id="testFcmToken" placeholder="الصق توكن جهاز هنا للاختبار">
+        </div>
+        <div class="field">
+          <label>عنوان الإشعار</label>
+          <input type="text" id="testTitle" placeholder="إشعار تجريبي">
+        </div>
+        <div class="field full">
+          <label>نص الإشعار</label>
+          <input type="text" id="testBody" placeholder="هذا إشعار تجريبي من لوحة التحكم">
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="sendTestPush()">🚀 إرسال إشعار تجريبي</button>
+        <span id="pushTestStatus" style="font-size:.78rem;color:var(--muted);margin-right:10px;"></span>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('mobile')">💾 حفظ إعدادات التطبيق</button>
+      <span class="save-status" id="st-mobile"></span>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 6: النظام ═══ -->
+  <div class="section" id="sec-system">
+    <div class="card">
+      <div class="card-title">⚙️ إعدادات عامة</div>
+      <div class="card-sub">إعدادات المتجر والنظام</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>العملة</label>
+          <select id="currency">
+            <option value="د.ع">دينار عراقي (د.ع)</option>
+            <option value="ر.س">ريال سعودي (ر.س)</option>
+            <option value="د.إ">درهم إماراتي (د.إ)</option>
+            <option value="د.ك">دينار كويتي (د.ك)</option>
+            <option value="ر.ق">ريال قطري (ر.ق)</option>
+            <option value="ر.ع">ريال عُماني (ر.ع)</option>
+            <option value="ج.م">جنيه مصري (ج.م)</option>
+            <option value="USD">دولار ($)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>حد النقاط (مبلغ = 1 نقطة)</label>
+          <input type="number" id="pointsThreshold" value="100000" min="1">
+        </div>
+        <div class="field">
+          <label>رقم واتساب المجهّز</label>
+          <input type="text" id="preparerWa" placeholder="9647700000000">
+          <span class="hint">يستقبل إشعارات الطلبات الجاهزة للتسليم</span>
+        </div>
+        <div class="field">
+          <label>الحد الأدنى للطلب</label>
+          <input type="number" id="minOrder" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>رسوم التوصيل الافتراضية</label>
+          <input type="number" id="deliveryFee" placeholder="0" min="0">
+        </div>
+        <div class="field">
+          <label>حد التوصيل المجاني</label>
+          <input type="number" id="freeDeliveryMin" placeholder="0" min="0">
+          <span class="hint">مبلغ الطلب الذي يصبح فيه التوصيل مجاناً (0 = لا يوجد)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ صيانة وأمان</div>
+      <div class="card-sub">خيارات متقدمة</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">وضع الصيانة</div>
+          <div class="toggle-sub">عند التفعيل يرى الزوار رسالة صيانة فقط</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="maintenanceMode"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">تسجيل المستخدمين الجدد</div>
+          <div class="toggle-sub">السماح للمستخدمين بإنشاء حسابات جديدة</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="allowRegister" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">موافقة يدوية على الطلبات</div>
+          <div class="toggle-sub">الطلبات تحتاج موافقة الأدمن قبل التنفيذ</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="manualApproval"><div class="toggle-slider"></div></label>
+      </div>
+      <div class="sep" style="margin-top:16px">إجراءات</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="openRulesModal()">📋 قواعد Firestore</button>
+        <button class="btn btn-outline btn-sm" onclick="exportSettings()">📤 تصدير الإعدادات</button>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button class="btn-save" onclick="saveSection('system')">💾 حفظ إعدادات النظام</button>
+      <span class="save-status" id="st-system"></span>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div id="toast"></div>
+
+<!-- Rules Modal -->
+<div class="modal-back" id="rulesModal">
+  <div class="modal-box">
+    <h3>📋 قواعد أمان Firestore</h3>
+    <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px">
+      انسخها والصقها في <strong>Firebase Console → Firestore → Rules</strong>
+    </p>
+    <pre id="rulesText">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isLoggedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+
+    match /products/{doc} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    match /{collection}/{doc} {
+      allow read, write: if isLoggedIn();
+    }
+
+    function isLoggedIn() { return request.auth != null; }
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+  }
+}</pre>
+    <div class="modal-acts">
+      <button class="btn btn-primary btn-sm" onclick="copyRules()">📋 نسخ</button>
+      <button class="btn btn-outline btn-sm" onclick="closeRulesModal()">إغلاق</button>
+    </div>
+  </div>
+</div>
+</div><!-- /mainWrap -->
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, getDocs, setDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const cfg = {
+  apiKey:"AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+  authDomain:"burjuman-6cb83.firebaseapp.com",
+  projectId:"burjuman-6cb83",
+  storageBucket:"burjuman-6cb83.firebasestorage.app",
+  messagingSenderId:"177984721378",
+  appId:"1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+};
+const apps = getApps();
+const app  = apps.length ? apps[0] : initializeApp(cfg);
+const db   = getFirestore(app);
+window._sdb = db;
+window._sfb = { doc, getDocs, setDoc, getDoc, collection };
+window._fbCfg = cfg;
+
+// ─── حماية الصفحة: أدمن فقط ───────────────────────────
+// الخطوة 1: فحص الجلسة من localStorage (نفس نظام الداشبورد)
+const _saved = localStorage.getItem('bjUser');
+let _session = null;
+try { _session = _saved ? JSON.parse(_saved) : null; } catch(e) {}
+
+const SESSION_12H = 12 * 60 * 60 * 1000;
+const _expired = _session?.loginTime && (Date.now() - _session.loginTime) > SESSION_12H;
+
+if (!_session || _session.type !== 'admin' || _expired) {
+  if (_expired) localStorage.removeItem('bjUser');
+  window.location.href = 'dashboard.html';
+} else {
+  // الخطوة 2: تحقق من Firestore للتأكد أن الحساب لا يزال أدمن (لم يُغيَّر دوره)
+  try {
+    const uSnap = await getDocs(query(collection(db, 'users'), where('username', '==', _session.username)));
+    const liveType = uSnap.empty ? null : uSnap.docs[0].data().type;
+    if (liveType !== 'admin') { window.location.href = 'dashboard.html'; }
+    else { _showPage(); }
+  } catch(e) {
+    // إذا فشل الاتصال — اقبل الجلسة المحلية كاحتياط
+    _showPage();
+  }
+}
+
+function _showPage() {
+  document.getElementById('authGate').style.display = 'none';
+  document.getElementById('mainWrap').style.display  = 'block';
+  // تحميل الإعدادات
+  getDocs(collection(db, 'settings')).then(snap => {
+    const s = {};
+    snap.forEach(d => { s[d.data().key] = d.data().value; });
+    window._loadedSettings = s;
+    document.dispatchEvent(new Event('settingsLoaded'));
+  }).catch(() => document.dispatchEvent(new Event('settingsLoaded')));
+}
+</script>
+
+<script>
+/* ══ THEMES ══ */
+const THEMES_LIST = [
+  { id:'teal',   name:'زمردي',   c1:'#0d9488', c2:'#0f766e' },
+  { id:'sky',    name:'سماوي',   c1:'#0ea5e9', c2:'#0284c7' },
+  { id:'indigo', name:'نيلي',    c1:'#6366f1', c2:'#4f46e5' },
+  { id:'violet', name:'بنفسجي',  c1:'#8b5cf6', c2:'#7c3aed' },
+  { id:'rose',   name:'وردي',    c1:'#f43f5e', c2:'#e11d48' },
+  { id:'orange', name:'برتقالي', c1:'#f97316', c2:'#ea580c' },
+  { id:'gold',   name:'ذهبي',    c1:'#f59e0b', c2:'#d97706' },
+  { id:'mint',   name:'نعناعي',  c1:'#10b981', c2:'#059669' },
+];
+let selTheme = 'teal';
+let selMode  = 'light';
+let logoData = '';
+
+/* ══ INIT ══ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderThemeSwatches();
+  setupLogoUpload();
+  showFirebaseConfig();
+});
+
+document.addEventListener('settingsLoaded', () => {
+  populateFields(window._loadedSettings || {});
+});
+
+function populateFields(s) {
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+  const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+  // معلومات المتجر
+  set('nameAr',           s.company_name_ar);
+  set('nameEn',           s.company_name_en);
+  set('phone',            s.company_phone);
+  set('whatsapp',         s.company_whatsapp);
+  set('compEmail',        s.company_email);
+  set('adminNotifEmail',  s.admin_notification_email);
+  set('address',          s.company_address);
+  set('bizDesc',          s.company_desc);
+
+  // الشعار
+  if (s.company_logo) {
+    logoData = s.company_logo;
+    const el = document.getElementById('logoThumb');
+    if (s.company_logo.startsWith('http')) {
+      document.getElementById('logoUrl').value = s.company_logo;
+    }
+    updateLogoThumb();
+  }
+
+  // التصميم
+  if (s.theme_color) { selTheme = s.theme_color; renderThemeSwatches(); if (typeof applyTheme === 'function') applyTheme(selTheme); }
+  if (s.theme_mode)  { selMode  = s.theme_mode;  setMode(selMode, false); }
+  set('bizType', s.business_type);
+
+  // الإشعارات
+  chk('waEnabled',    s.notif_wa_enabled);
+  chk('teleEnabled',  s.notif_tele_enabled);
+  chk('emailEnabled', s.notif_email_enabled);
+  if (s.notif_wa_enabled)    toggleBlock('wa',    true);
+  if (s.notif_tele_enabled)  toggleBlock('tele',  true);
+  if (s.notif_email_enabled) toggleBlock('email', true);
+  set('notifWa',    s.notif_wa_number);
+  set('teleToken',    s.telegram_token);
+  set('teleChat',     s.telegram_chat);
+  set('telePrepChat', s.preparer_telegram);
+  set('teleDriverChat', s.driver_telegram);
+  set('ejService',  s.emailjs_service_id);
+  set('ejTemplate', s.emailjs_template_id);
+  set('ejKey',      s.emailjs_public_key);
+
+  // API Keys
+  set('imgbbKey',       s.imgbb_key);
+  set('mapsKey',        s.google_maps_key);
+  set('fcmKey',         s.fcm_server_key);
+  set('vapidKey',       s.vapid_key);
+  set('custom1Name',    s.custom_api1_name);
+  set('custom1Val',     s.custom_api1_value);
+  set('custom2Name',    s.custom_api2_name);
+  set('custom2Val',     s.custom_api2_value);
+
+  // Firebase fields — من config المضمّن
+  const cfg = window._fbCfg || {};
+  set('fbApiKey',       s.fb_api_key       || cfg.apiKey);
+  set('fbAuthDomain',   s.fb_auth_domain   || cfg.authDomain);
+  set('fbProjectId',    s.fb_project_id    || cfg.projectId);
+  set('fbStorageBucket',s.fb_storage_bucket|| cfg.storageBucket);
+  set('fbSenderId',     s.fb_sender_id     || cfg.messagingSenderId);
+  set('fbAppId',        s.fb_app_id        || cfg.appId);
+
+  // التطبيق
+  set('appApiUrl',       s.app_api_url);
+  set('appSecret',       s.app_secret);
+  set('androidPkg',      s.android_package);
+  set('iosBundleId',     s.ios_bundle_id);
+  set('playStoreUrl',    s.play_store_url);
+  set('appStoreUrl',     s.app_store_url);
+  set('appUniversalUrl', s.app_universal_url);
+  set('fcmKeyMobile',    s.fcm_server_key);
+  set('fcmTopic',        s.fcm_topic || 'all_users');
+
+  // النظام
+  set('currency',         s.currency || 'د.ع');
+  set('pointsThreshold',  s.pointsThreshold || 100000);
+  set('preparerWa',       s.preparer_whatsapp);
+  set('minOrder',         s.min_order_amount);
+  set('deliveryFee',      s.delivery_fee);
+  set('freeDeliveryMin',  s.free_delivery_min);
+  chk('maintenanceMode',  s.maintenance_mode);
+  chk('allowRegister',    s.allow_register !== false);
+  chk('manualApproval',   s.manual_approval);
+}
+
+/* ══ TABS ══ */
+function switchTab(id) {
+  const tabIds = ['info','design','api','mobile','system'];
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const idx = tabIds.indexOf(id);
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+}
+
+/* ══ LOGO ══ */
+function setupLogoUpload() {
+  document.getElementById('logoFile').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = r => { logoData = r.target.result; updateLogoThumb(); };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('logoUrl').addEventListener('input', e => {
+    logoData = e.target.value.trim(); updateLogoThumb();
+  });
+}
+function updateLogoThumb() {
+  const el = document.getElementById('logoThumb');
+  if (logoData) {
+    el.innerHTML = `<img src="${logoData}" onerror="this.parentElement.innerHTML='🏬'">`;
+    el.classList.add('set');
+  } else {
+    el.innerHTML = '🏬'; el.classList.remove('set');
+  }
+}
+
+/* ══ THEME ══ */
+function renderThemeSwatches() {
+  const wrap = document.getElementById('themeSwatches');
+  wrap.innerHTML = THEMES_LIST.map(t => `
+    <div class="ts-item ${t.id===selTheme?'active':''}" data-tid="${t.id}" onclick="setTheme('${t.id}')">
+      <div class="ts-circle" style="background:linear-gradient(135deg,${t.c1},${t.c2});box-shadow:0 2px 10px ${t.c1}55"></div>
+      <div class="ts-label">${t.name}</div>
+    </div>`).join('');
+}
+function setTheme(id) {
+  selTheme = id;
+  if (typeof applyTheme === 'function') applyTheme(id);
+  document.querySelectorAll('.ts-item').forEach(el => el.classList.toggle('active', el.dataset.tid===id));
+}
+function setMode(mode, apply=true) {
+  selMode = mode;
+  if (apply && typeof applyMode === 'function') applyMode(mode);
+  document.getElementById('modeLight').classList.toggle('active', mode==='light');
+  document.getElementById('modeDark').classList.toggle('active', mode==='dark');
+}
+
+/* ══ NOTIF BLOCKS ══ */
+function toggleBlock(key, forceOpen) {
+  const block = document.getElementById('block-' + key);
+  const chk   = document.getElementById(key === 'wa' ? 'waEnabled' : key === 'tele' ? 'teleEnabled' : 'emailEnabled');
+  const open  = forceOpen !== undefined ? forceOpen : chk.checked;
+  block.style.display = open ? 'block' : 'none';
+}
+
+/* ══ EYE TOGGLE ══ */
+function toggleEye(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+
+/* ══ COPY FIELD ══ */
+function copyField(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const prev = el.type; el.type = 'text';
+  navigator.clipboard.writeText(el.value).then(() => { toast('تم النسخ ✓'); }).catch(() => {});
+  el.type = prev;
+}
+
+/* ══ GEN SECRET ══ */
+function genSecret() {
+  const arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  const secret = Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+  const el = document.getElementById('appSecret');
+  el.type = 'text'; el.value = secret;
+}
+
+/* ══ FIREBASE CONFIG BLOCK ══ */
+function showFirebaseConfig() {
+  const cfg = window._fbCfg || {};
+  const block = document.getElementById('firebaseConfigBlock');
+  block.textContent = JSON.stringify({
+    apiKey: cfg.apiKey || '...',
+    authDomain: cfg.authDomain || '...',
+    projectId: cfg.projectId || '...',
+    storageBucket: cfg.storageBucket || '...',
+    messagingSenderId: cfg.messagingSenderId || '...',
+    appId: cfg.appId || '...',
+  }, null, 2);
+}
+function copyFirebaseConfig() {
+  const text = document.getElementById('firebaseConfigBlock').textContent;
+  navigator.clipboard.writeText(text).then(() => toast('تم نسخ الكونفيج ✓')).catch(()=>{});
+}
+
+/* ══ SAVE SECTIONS ══ */
+const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+const chkVal = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+
+async function saveSection(sec) {
+  if (!window._sdb) { toast('Firebase غير متاح', 'err'); return; }
+  const db = window._sdb;
+  const { doc, setDoc } = window._sfb;
+  const btn = document.querySelector(`#sec-${sec} .btn-save`);
+  const st  = document.getElementById('st-' + sec);
+  btn.disabled = true; btn.textContent = '⏳ جاري الحفظ...';
+  st.textContent = ''; st.className = 'save-status';
+
+  try {
+    let pairs = [];
+
+    if (sec === 'info') {
+      pairs = [
+        { key:'company_name_ar',        value: v('nameAr') },
+        { key:'company_name_en',        value: v('nameEn') },
+        { key:'company_logo',           value: logoData || v('logoUrl') },
+        { key:'company_phone',          value: v('phone') },
+        { key:'company_whatsapp',       value: v('whatsapp') || v('phone') },
+        { key:'company_email',          value: v('compEmail') },
+        { key:'admin_notification_email',value: v('adminNotifEmail') },
+        { key:'company_address',        value: v('address') },
+        { key:'company_desc',           value: v('bizDesc') },
+      ];
+    } else if (sec === 'design') {
+      pairs = [
+        { key:'theme_color',   value: selTheme },
+        { key:'theme_mode',    value: selMode },
+        { key:'business_type', value: v('bizType') },
+      ];
+      if (typeof applyTheme === 'function') applyTheme(selTheme);
+      if (typeof applyMode  === 'function') applyMode(selMode);
+    } else if (sec === 'notif') {
+      pairs = [
+        { key:'notif_wa_enabled',    value: chkVal('waEnabled') },
+        { key:'notif_wa_number',     value: v('notifWa') },
+        { key:'notif_tele_enabled',  value: chkVal('teleEnabled') },
+        { key:'telegram_token',      value: v('teleToken'),      protected: true },
+        { key:'telegram_chat',       value: v('teleChat'),       protected: true },
+        { key:'preparer_telegram',   value: v('telePrepChat'),   protected: true },
+        { key:'driver_telegram',     value: v('teleDriverChat'), protected: true },
+        { key:'notif_email_enabled', value: chkVal('emailEnabled') },
+        { key:'emailjs_service_id',  value: v('ejService'),  protected: true },
+        { key:'emailjs_template_id', value: v('ejTemplate'), protected: true },
+        { key:'emailjs_public_key',  value: v('ejKey'),      protected: true },
+        { key:'preparer_whatsapp',   value: v('notifWa') || v('whatsapp') },
+      ];
+    } else if (sec === 'api') {
+      pairs = [
+        { key:'imgbb_key',         value: v('imgbbKey'),       protected: true },
+        { key:'google_maps_key',   value: v('mapsKey'),        protected: true },
+        { key:'fcm_server_key',    value: v('fcmKey'),         protected: true },
+        { key:'vapid_key',         value: v('vapidKey'),       protected: true },
+        { key:'custom_api1_name',  value: v('custom1Name') },
+        { key:'custom_api1_value', value: v('custom1Val'),     protected: true },
+        { key:'custom_api2_name',  value: v('custom2Name') },
+        { key:'custom_api2_value', value: v('custom2Val'),     protected: true },
+        { key:'fb_api_key',         value: v('fbApiKey'),      protected: true },
+        { key:'fb_auth_domain',     value: v('fbAuthDomain'),  protected: true },
+        { key:'fb_project_id',      value: v('fbProjectId'),   protected: true },
+        { key:'fb_storage_bucket',  value: v('fbStorageBucket'), protected: true },
+        { key:'fb_sender_id',       value: v('fbSenderId'),    protected: true },
+        { key:'fb_app_id',          value: v('fbAppId'),       protected: true },
+      ];
+    } else if (sec === 'mobile') {
+      pairs = [
+        { key:'app_api_url',      value: v('appApiUrl') },
+        { key:'app_secret',       value: v('appSecret'), protected: true },
+        { key:'android_package',  value: v('androidPkg') },
+        { key:'ios_bundle_id',    value: v('iosBundleId') },
+        { key:'play_store_url',   value: v('playStoreUrl') },
+        { key:'app_store_url',    value: v('appStoreUrl') },
+        { key:'app_universal_url',value: v('appUniversalUrl') },
+        { key:'fcm_server_key',   value: v('fcmKeyMobile'),  protected: true },
+        { key:'fcm_topic',        value: v('fcmTopic') || 'all_users' },
+      ];
+    } else if (sec === 'system') {
+      pairs = [
+        { key:'currency',            value: v('currency') || 'د.ع' },
+        { key:'pointsThreshold',     value: Number(v('pointsThreshold') || 100000) },
+        { key:'preparer_whatsapp',   value: v('preparerWa') },
+        { key:'min_order_amount',    value: Number(v('minOrder') || 0) },
+        { key:'delivery_fee',        value: Number(v('deliveryFee') || 0) },
+        { key:'free_delivery_min',   value: Number(v('freeDeliveryMin') || 0) },
+        { key:'maintenance_mode',    value: chkVal('maintenanceMode') },
+        { key:'allow_register',      value: chkVal('allowRegister') },
+        { key:'manual_approval',     value: chkVal('manualApproval') },
+      ];
+    }
+
+    for (const p of pairs) {
+      await setDoc(doc(db, 'settings', p.key), p);
+    }
+
+    st.textContent = '✓ تم الحفظ بنجاح';
+    st.className = 'save-status ok';
+    toast('تم الحفظ بنجاح ✓');
+    setTimeout(() => { st.textContent = ''; }, 3000);
+  } catch(err) {
+    st.textContent = '✗ فشل الحفظ: ' + err.message;
+    st.className = 'save-status err';
+    toast('فشل الحفظ ✗', 'err');
+    console.error(err);
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 ' + (sec==='info'?'حفظ المعلومات':sec==='design'?'حفظ التصميم':sec==='notif'?'حفظ الإشعارات':sec==='api'?'حفظ المفاتيح':sec==='mobile'?'حفظ إعدادات التطبيق':'حفظ إعدادات النظام');
+  }
+}
+
+/* ══ TEST PUSH ══ */
+async function sendTestPush() {
+  const token  = v('testFcmToken');
+  const title  = v('testTitle')  || 'إشعار تجريبي';
+  const body   = v('testBody')   || 'هذا إشعار تجريبي من لوحة التحكم';
+  const fcmKey = v('fcmKeyMobile') || v('fcmKey');
+  const st = document.getElementById('pushTestStatus');
+  if (!token) { st.textContent = '⚠️ أدخل FCM Token'; return; }
+  if (!fcmKey){ st.textContent = '⚠️ أدخل FCM Server Key أولاً'; return; }
+  st.textContent = '⏳ جاري الإرسال...';
+  try {
+    const res = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'key=' + fcmKey },
+      body: JSON.stringify({ to: token, notification: { title, body } })
+    });
+    const data = await res.json();
+    st.textContent = data.success === 1 ? '✅ تم الإرسال' : '❌ ' + (data.results?.[0]?.error || 'خطأ');
+  } catch(e) { st.textContent = '❌ ' + e.message; }
+}
+
+/* ══ EXPORT SETTINGS ══ */
+function exportSettings() {
+  if (!window._loadedSettings) { toast('لا توجد إعدادات محملة'); return; }
+  const blob = new Blob([JSON.stringify(window._loadedSettings, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'burjuman-settings.json';
+  a.click();
+}
+
+/* ══ TOAST ══ */
+let _toastT;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? '#ef4444' : '#1e293b';
+  el.classList.add('show');
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+/* ══ RULES MODAL ══ */
+function openRulesModal()  { document.getElementById('rulesModal').classList.add('open'); }
+function closeRulesModal() { document.getElementById('rulesModal').classList.remove('open'); }
+function copyRules() {
+  navigator.clipboard.writeText(document.getElementById('rulesText').textContent)
+    .then(() => toast('تم نسخ القواعد ✓')).catch(()=>{});
+}
+document.addEventListener('click', e => { if (e.target.id === 'rulesModal') closeRulesModal(); });
+
+/* ══ Expose ══ */
+window.switchTab=switchTab; window.setTheme=setTheme; window.setMode=setMode;
+window.toggleBlock=toggleBlock; window.toggleEye=toggleEye; window.copyField=copyField;
+window.saveSection=saveSection; window.genSecret=genSecret;
+window.copyFirebaseConfig=copyFirebaseConfig; window.sendTestPush=sendTestPush;
+window.exportSettings=exportSettings; window.openRulesModal=openRulesModal;
+window.closeRulesModal=closeRulesModal; window.copyRules=copyRules;
+</script>
+</body>
+</html>

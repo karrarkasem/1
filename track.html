@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>تتبع الطلب — برجمان</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <style>
+        *, *::before, *::after {
+            margin: 0; padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --teal:  #0d9488;
+            --teal2: #0f766e;
+            --teal3: rgba(13,148,136,.12);
+            --sky:   #0ea5e9;
+            --mint:  #10b981;
+            --mint2: #059669;
+            --gold:  #f59e0b;
+            --gold2: #d97706;
+            --rose:  #f43f5e;
+            --violet:#8b5cf6;
+            --deep:  #0f172a;
+            --deep2: #1e293b;
+            --mid:   #475569;
+            --ice:   #f8fafc;
+            --border:rgba(0,0,0,.07);
+            --shadow: 0 4px 20px rgba(0,0,0,.08);
+            --shadow-lg: 0 20px 60px rgba(0,0,0,.18);
+            --r8:8px; --r12:12px; --r16:16px; --r20:20px; --r24:24px; --r99:999px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: linear-gradient(150deg, #0f172a 0%, #0a2540 40%, #0d9488 130%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 16px 12px 40px;
+        }
+
+        /* ─── بطاقة رئيسية ─── */
+        .track-card {
+            background: #ffffff;
+            border-radius: var(--r24);
+            width: 100%;
+            max-width: 480px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp .45s cubic-bezier(.22,1,.36,1);
+        }
+        @keyframes slideUp {
+            from { opacity:0; transform:translateY(28px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        /* ─── هيدر البطاقة ─── */
+        .card-header {
+            background: linear-gradient(135deg, var(--teal), var(--teal2));
+            padding: 24px 20px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: -40px;
+            width: 140px; height: 140px;
+            background: rgba(255,255,255,.07);
+            border-radius: 50%;
+        }
+        .card-header::after {
+            content: '';
+            position: absolute;
+            bottom: -30px; right: -20px;
+            width: 100px; height: 100px;
+            background: rgba(255,255,255,.05);
+            border-radius: 50%;
+        }
+        .brand-logo {
+            width: 62px; height: 62px;
+            background: rgba(255,255,255,.18);
+            border: 2px solid rgba(255,255,255,.35);
+            border-radius: var(--r20);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 10px;
+            backdrop-filter: blur(6px);
+            position: relative; z-index: 1;
+        }
+        .brand-name {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 900;
+            letter-spacing: .02em;
+            position: relative; z-index: 1;
+        }
+        .brand-sub {
+            color: rgba(255,255,255,.72);
+            font-size: .75rem;
+            font-weight: 500;
+            margin-top: 2px;
+            position: relative; z-index: 1;
+        }
+        .order-id-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.3);
+            border-radius: var(--r99);
+            padding: 5px 14px;
+            color: white;
+            font-size: .8rem;
+            font-weight: 700;
+            margin-top: 12px;
+            backdrop-filter: blur(4px);
+            position: relative; z-index: 1;
+        }
+        .order-id-badge span { opacity: .75; font-weight: 500; }
+
+        /* ─── جسم البطاقة ─── */
+        .card-body {
+            padding: 20px 18px;
+        }
+
+        /* ─── لودر ─── */
+        .loader {
+            text-align: center;
+            padding: 44px 20px;
+        }
+        .loader-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; }
+        .loader-dots span {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--teal);
+            animation: dotBounce 1.4s infinite ease-in-out both;
+        }
+        .loader-dots span:nth-child(1) { animation-delay: -.32s; }
+        .loader-dots span:nth-child(2) { animation-delay: -.16s; }
+        @keyframes dotBounce {
+            0%,80%,100% { transform:scale(0); opacity:.4; }
+            40%          { transform:scale(1); opacity:1;  }
+        }
+        .loader-txt { color: var(--mid); font-size: .9rem; font-weight: 600; }
+
+        /* ─── خطوات التتبع ─── */
+        .steps-wrap {
+            margin-bottom: 18px;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+            padding-bottom: 6px;
+        }
+        .step:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            right: 19px;
+            top: 42px;
+            width: 2px;
+            height: calc(100% - 6px);
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+        .step.done:not(:last-child)::before,
+        .step.active:not(:last-child)::before {
+            background: linear-gradient(to bottom, var(--step-clr, var(--teal)), rgba(13,148,136,.25));
+        }
+        .step-icon-wrap {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            position: relative; z-index: 2;
+            transition: all .25s;
+        }
+        .step.done .step-icon-wrap {
+            background: var(--step-clr, var(--teal));
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(13,148,136,.3);
+        }
+        .step.active .step-icon-wrap {
+            background: var(--step-clr, var(--teal));
+            border-color: transparent;
+            box-shadow: 0 0 0 4px rgba(13,148,136,.18);
+            animation: stepPulse 2s infinite;
+        }
+        @keyframes stepPulse {
+            0%,100% { box-shadow: 0 0 0 4px rgba(13,148,136,.18); }
+            50%      { box-shadow: 0 0 0 8px rgba(13,148,136,.08); }
+        }
+        .step-body {
+            flex: 1;
+            padding: 9px 0 18px;
+        }
+        .step-title {
+            font-weight: 800;
+            font-size: .9rem;
+            color: #94a3b8;
+            transition: color .25s;
+        }
+        .step.done .step-title,
+        .step.active .step-title { color: var(--deep); }
+        .step.active .step-title {
+            color: var(--step-clr, var(--teal));
+        }
+        .step-sub {
+            font-size: .75rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .step.active .step-sub { color: var(--mid); }
+
+        /* ─── بانر السائق قريب ─── */
+        .near-banner {
+            background: linear-gradient(135deg, var(--gold), var(--gold2));
+            color: white;
+            border-radius: var(--r16);
+            padding: 14px 18px;
+            text-align: center;
+            font-weight: 800;
+            font-size: .92rem;
+            margin-bottom: 14px;
+            animation: nearPulse 2s infinite;
+            box-shadow: 0 6px 20px rgba(245,158,11,.35);
+        }
+        @keyframes nearPulse {
+            0%,100% { box-shadow: 0 6px 20px rgba(245,158,11,.35); }
+            50%      { box-shadow: 0 6px 28px rgba(245,158,11,.55); }
+        }
+
+        /* ─── بطاقة المعلومات ─── */
+        .info-card {
+            background: var(--ice);
+            border: 1px solid var(--border);
+            border-radius: var(--r16);
+            padding: 4px 0;
+            margin-bottom: 14px;
+            overflow: hidden;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 16px;
+            gap: 10px;
+        }
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+        .info-label {
+            font-size: .82rem;
+            color: var(--mid);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .info-value {
+            font-size: .88rem;
+            font-weight: 800;
+            color: var(--deep);
+            text-align: left;
+            word-break: break-word;
+        }
+
+        /* ─── بطاقة السائق ─── */
+        .driver-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(13,148,136,.06), rgba(13,148,136,.12));
+            border: 1px solid rgba(13,148,136,.2);
+            border-radius: var(--r16);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .driver-avatar {
+            width: 48px; height: 48px;
+            border-radius: var(--r12);
+            background: linear-gradient(135deg, var(--teal), var(--teal2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(13,148,136,.3);
+        }
+        .driver-info { flex: 1; }
+        .driver-name {
+            font-weight: 800;
+            font-size: .92rem;
+            color: var(--deep);
+        }
+        .driver-sub {
+            font-size: .75rem;
+            color: var(--mid);
+            margin-top: 3px;
+        }
+        .vehicle-chip {
+            background: rgba(13,148,136,.1);
+            border: 1px solid rgba(13,148,136,.25);
+            color: var(--teal2);
+            padding: 4px 10px;
+            border-radius: var(--r99);
+            font-size: .72rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ─── تحليل المركبات ─── */
+        .vehicle-analysis {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: var(--r16);
+            padding: 14px 16px;
+            margin-bottom: 14px;
+        }
+        .vehicle-analysis h4 {
+            color: #0284c7;
+            font-size: .88rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .vehicle-fit-row {
+            display: flex; align-items: center; gap: 8px;
+            background: white; border-radius: var(--r8);
+            padding: 8px 10px; margin-bottom: 6px;
+        }
+        .vehicle-fit-row:last-child { margin-bottom: 0; }
+        .vfr-icon { font-size: 1.2rem; }
+        .vfr-name { font-weight: 700; font-size: .82rem; min-width: 58px; color: var(--deep); }
+        .vehicle-fit-bar {
+            flex: 1; height: 7px;
+            background: #e2e8f0; border-radius: var(--r99); overflow: hidden;
+        }
+        .vehicle-fit-fill {
+            height: 100%; border-radius: var(--r99); transition: width .4s ease;
+        }
+        .vfr-pct { font-size: .75rem; font-weight: 800; min-width: 36px; text-align: center; }
+        .vfr-status { font-size: .85rem; }
+
+        .waiting-msg {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1.5px solid #fde68a;
+            border-radius: var(--r12);
+            padding: 12px 14px;
+            text-align: center;
+            color: #92400e;
+            font-weight: 700;
+            font-size: .85rem;
+            margin-bottom: 10px;
+        }
+        .urgent-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white; border: none;
+            padding: 12px 18px;
+            border-radius: var(--r12);
+            font-weight: 700; font-size: .9rem;
+            cursor: pointer; width: 100%;
+            font-family: 'Cairo', sans-serif;
+            margin-bottom: 4px;
+            box-shadow: 0 4px 12px rgba(239,68,68,.35);
+        }
+        .urgent-btn:active { transform: scale(.98); }
+
+        /* ─── قسم التقييم ─── */
+        .rating-section {
+            background: linear-gradient(135deg, #fffbeb, #fef9c3);
+            border: 2px solid #fde68a;
+            border-radius: var(--r20);
+            padding: 18px 16px;
+            margin-top: 6px;
+        }
+        .rating-section h3 {
+            text-align: center;
+            color: #92400e;
+            font-size: 1rem;
+            font-weight: 900;
+            margin-bottom: 16px;
+        }
+        .rating-label {
+            font-weight: 700;
+            color: var(--deep2);
+            margin-bottom: 8px;
+            font-size: .85rem;
+        }
+        .stars-row {
+            display: flex; gap: 4px;
+            margin-bottom: 14px;
+        }
+        .star-btn {
+            font-size: 1.9rem;
+            background: none; border: none;
+            cursor: pointer;
+            transition: transform .15s;
+            padding: 2px 4px;
+            line-height: 1;
+        }
+        .star-btn:hover, .star-btn:active { transform: scale(1.25); }
+        .rating-note {
+            width: 100%; padding: 10px 12px;
+            border: 2px solid #fde68a;
+            border-radius: var(--r12);
+            font-family: 'Cairo', sans-serif;
+            font-size: .88rem; resize: none;
+            background: white; color: var(--deep);
+            margin-bottom: 12px; outline: none;
+        }
+        .rating-note:focus { border-color: var(--gold); }
+        .submit-rating-btn {
+            background: linear-gradient(135deg, var(--gold), var(--gold2));
+            color: white; border: none;
+            padding: 13px;
+            border-radius: var(--r12);
+            font-weight: 800; font-size: .95rem;
+            cursor: pointer; width: 100%;
+            font-family: 'Cairo', sans-serif;
+            box-shadow: 0 4px 14px rgba(245,158,11,.35);
+        }
+        .submit-rating-btn:disabled { opacity: .55; cursor: not-allowed; }
+        .rating-done {
+            text-align: center;
+            color: var(--mint2);
+            font-weight: 800;
+            background: #f0fdf4;
+            border: 2px solid #86efac;
+            border-radius: var(--r16);
+            padding: 16px;
+            margin-top: 8px;
+            line-height: 1.8;
+        }
+
+        /* ─── خطأ ─── */
+        .error-box {
+            text-align: center;
+            padding: 36px 16px;
+            color: var(--rose);
+        }
+        .error-box .err-icon { font-size: 3rem; margin-bottom: 10px; }
+        .error-box p { font-weight: 700; font-size: .95rem; }
+
+        /* ─── صفحة انتهاء الصلاحية ─── */
+        .expired-card {
+            text-align: center;
+            padding: 36px 16px;
+        }
+        .expired-icon { font-size: 3.5rem; margin-bottom: 14px; }
+        .expired-title {
+            font-size: 1.2rem; font-weight: 900;
+            color: #94a3b8; margin-bottom: 8px;
+        }
+        .expired-msg {
+            color: #94a3b8; font-size: .88rem; line-height: 1.8;
+        }
+
+        /* ─── إغلاق الصفحة بعد التقييم ─── */
+        .page-disabled {
+            position: relative;
+            pointer-events: none;
+            user-select: none;
+        }
+        .page-disabled::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: rgba(248,250,252,.6);
+            border-radius: inherit;
+            z-index: 10;
+        }
+        .disabled-notice {
+            background: #f1f5f9;
+            border: 1.5px solid #cbd5e1;
+            border-radius: var(--r16);
+            padding: 16px;
+            text-align: center;
+            color: var(--mid);
+            font-weight: 700;
+            font-size: .88rem;
+            margin-top: 14px;
+        }
+
+        /* ─── فوتر ─── */
+        .card-footer {
+            text-align: center;
+            padding: 14px 18px 18px;
+            color: #94a3b8;
+            font-size: .75rem;
+            font-weight: 500;
+            border-top: 1px solid var(--border);
+        }
+        .card-footer strong { color: var(--teal); font-weight: 800; }
+
+        /* ─── بوب-أب السائق قريب ─── */
+        .near-popup-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 9999;
+            align-items: center; justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .near-popup-overlay.show { display: flex; animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        .near-popup-box {
+            background: white;
+            border-radius: var(--r24);
+            padding: 32px 24px;
+            text-align: center;
+            max-width: 340px; width: 100%;
+            box-shadow: 0 25px 60px rgba(0,0,0,.3);
+            animation: popBounce .45s cubic-bezier(.36,.07,.19,.97);
+        }
+        @keyframes popBounce {
+            0%   { transform: scale(.5); opacity: 0; }
+            70%  { transform: scale(1.04); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .near-popup-icon {
+            font-size: 3.5rem; margin-bottom: 10px;
+            animation: floatY 1.2s infinite ease-in-out;
+        }
+        @keyframes floatY {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-8px); }
+        }
+        .near-popup-title {
+            font-size: 1.3rem; font-weight: 900;
+            color: var(--gold2); margin-bottom: 8px;
+        }
+        .near-popup-msg {
+            color: var(--mid); font-size: .92rem;
+            line-height: 1.7; margin-bottom: 20px;
+        }
+        .near-popup-close {
+            background: linear-gradient(135deg, var(--gold), var(--gold2));
+            color: white; border: none;
+            padding: 12px 32px;
+            border-radius: var(--r99);
+            font-weight: 800; font-size: .95rem;
+            cursor: pointer; font-family: 'Cairo', sans-serif;
+            box-shadow: 0 4px 14px rgba(245,158,11,.35);
+        }
+
+        /* ─── Toast ─── */
+        .track-toast {
+            position: fixed; bottom: 22px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--deep2); color: white;
+            padding: 12px 22px; border-radius: var(--r99);
+            font-weight: 700; font-size: .88rem;
+            z-index: 9999;
+            box-shadow: 0 8px 24px rgba(0,0,0,.25);
+            animation: toastIn .3s ease;
+        }
+        @keyframes toastIn {
+            from { opacity:0; transform:translate(-50%, 12px); }
+            to   { opacity:1; transform:translate(-50%, 0); }
+        }
+        .track-toast.ok  { background: var(--mint2); }
+        .track-toast.err { background: var(--rose); }
+
+        /* ─── responsive ─── */
+        @media (max-width: 400px) {
+            body { padding: 10px 8px 32px; }
+            .card-header { padding: 20px 16px 16px; }
+            .card-body { padding: 16px 14px; }
+            .brand-logo { width: 54px; height: 54px; font-size: 1.5rem; }
+            .brand-name { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- بطاقة التتبع -->
+    <div class="track-card" id="trackCard">
+
+        <!-- هيدر -->
+        <div class="card-header">
+            <div class="brand-logo">🏪</div>
+            <div class="brand-name">برجمان</div>
+            <div class="brand-sub">تتبع طلبك في الوقت الفعلي</div>
+            <div class="order-id-badge">
+                <span>رقم الطلب:</span>
+                <strong id="orderId">...</strong>
+            </div>
+        </div>
+
+        <!-- المحتوى الديناميكي -->
+        <div class="card-body">
+            <div id="content">
+                <div class="loader">
+                    <div class="loader-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="loader-txt">جاري تحميل بيانات الطلب...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- فوتر -->
+        <div class="card-footer">
+            © 2025 <strong>برجمان</strong> — جميع الحقوق محفوظة
+        </div>
+    </div>
+
+    <!-- بوب-أب السائق قريب -->
+    <div class="near-popup-overlay" id="nearPopup">
+        <div class="near-popup-box">
+            <div class="near-popup-icon">🚗</div>
+            <div class="near-popup-title">السائق قريب منك!</div>
+            <div class="near-popup-msg" id="nearPopupMsg">
+                السائق على بعد 500 متر منك، يرجى الاستعداد لاستلام طلبك!
+            </div>
+            <button class="near-popup-close"
+                onclick="document.getElementById('nearPopup').classList.remove('show')">
+                حسناً، شكراً! 👍
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ── Firebase Config ──
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+            authDomain: "burjuman-6cb83.firebaseapp.com",
+            projectId: "burjuman-6cb83",
+            storageBucket: "burjuman-6cb83.firebasestorage.app",
+            messagingSenderId: "177984721378",
+            appId: "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ── إعدادات المركبات ──
+        let DELIVERY_VEHICLES = null;
+        async function loadVehicleSettings() {
+            try {
+                const snap = await db.collection('settings').where('key','==','delivery_vehicles').get();
+                if (!snap.empty) {
+                    const d = snap.docs[0].data();
+                    if (d.value && typeof d.value === 'object') { DELIVERY_VEHICLES = d.value; return; }
+                }
+            } catch(e) {}
+            DELIVERY_VEHICLES = {
+                scooter: { name:'ستوتة',  icon:'🛵', capacity:0.4,  maxWeight:20   },
+                pickup:  { name:'بيك اب', icon:'🚐', capacity:6,    maxWeight:500  },
+                truck:   { name:'شاحنة',  icon:'🚛', capacity:30,   maxWeight:3000 }
+            };
+        }
+
+        // ── قراءة رقم الطلب من URL ──
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId   = urlParams.get('order');
+        document.getElementById('orderId').textContent = orderId || 'غير موجود';
+
+        if (!orderId) {
+            document.getElementById('content').innerHTML = `
+                <div class="error-box">
+                    <div class="err-icon">❌</div>
+                    <p>رابط غير صحيح — لا يوجد رقم طلب</p>
+                </div>`;
+        } else {
+            loadVehicleSettings();
+            db.collection('orders').where('orderId', '==', orderId).get()
+                .then(snapshot => {
+                    if (snapshot.empty) return db.collection('orders').doc(orderId).get();
+                    return snapshot.docs[0];
+                })
+                .then(doc => {
+                    if (!doc || !doc.exists) {
+                        document.getElementById('content').innerHTML = `
+                            <div class="error-box">
+                                <div class="err-icon">🔍</div>
+                                <p>الطلب غير موجود</p>
+                            </div>`;
+                        return;
+                    }
+
+                    const order = { id: doc.id, ...doc.data() };
+
+                    if (isExpired(order)) { showExpiredPage(); return; }
+
+                    showOrderStatus(order);
+                    if (order.customer_rated) setTimeout(disablePage, 100);
+
+                    let lastNearTimestamp = order.near_notification?.timestamp || null;
+
+                    db.collection('orders').doc(order.id).onSnapshot(snap => {
+                        if (!snap.exists) return;
+                        const updated = { id: snap.id, ...snap.data() };
+
+                        if (isExpired(updated)) { showExpiredPage(); return; }
+                        showOrderStatus(updated);
+
+                        if (updated.customer_rated &&
+                            !document.getElementById('content').classList.contains('page-disabled')) {
+                            setTimeout(disablePage, 100);
+                        }
+
+                        const nearNotif = updated.near_notification;
+                        if (nearNotif?.timestamp && nearNotif.timestamp !== lastNearTimestamp) {
+                            lastNearTimestamp = nearNotif.timestamp;
+                            const msg = nearNotif.message || 'السائق على بعد 500 متر منك، يرجى الاستعداد!';
+                            document.getElementById('nearPopupMsg').textContent = msg;
+                            document.getElementById('nearPopup').classList.add('show');
+
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                new Notification('برجمان - السائق قريب! 🚗', { body: msg, icon: '/favicon.ico' });
+                            } else if ('Notification' in window && Notification.permission !== 'denied') {
+                                Notification.requestPermission().then(p => {
+                                    if (p === 'granted') new Notification('برجمان - السائق قريب! 🚗', { body: msg });
+                                });
+                            }
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById('content').innerHTML = `
+                        <div class="error-box">
+                            <div class="err-icon">⚠️</div>
+                            <p>حدث خطأ أثناء التحميل</p>
+                        </div>`;
+                });
+        }
+
+        // ── عرض حالة الطلب ──
+        function showOrderStatus(order) {
+            const steps = [
+                { icon: '✅', title: 'تأكيد الطلب',  sub: 'تم استلام طلبك',        color: '#0ea5e9' },
+                { icon: '📦', title: 'جاري التجهيز', sub: 'يتم تجهيز طلبك الآن',   color: '#f59e0b' },
+                { icon: '🚀', title: 'تم التجهيز',   sub: 'الطلب جاهز للشحن',      color: '#10b981' },
+                { icon: '🚗', title: 'في الطريق',    sub: 'السائق في طريقه إليك',  color: '#8b5cf6' },
+                { icon: '🏠', title: 'تم التسليم',   sub: 'وصل طلبك بنجاح',        color: '#059669' }
+            ];
+
+            let currentStep = 0;
+            if      (order.status === 'Delivered')                                    currentStep = 5;
+            else if (order.status === 'In Delivery' || order.status === 'NearCustomer') currentStep = 4;
+            else if (order.status === 'Prepared')                                     currentStep = 3;
+            else if (order.status === 'Preparing')                                    currentStep = 2;
+            else if (order.status === 'Confirmed' || order.status === 'Pending')      currentStep = 1;
+
+            const stepsHtml = steps.map((step, i) => {
+                const isDone   = i < currentStep;
+                const isActive = i === currentStep - 1;
+                return `
+                <div class="step ${isDone ? 'done' : ''} ${isActive ? 'active' : ''}"
+                     style="--step-clr:${step.color}">
+                    <div class="step-icon-wrap">${step.icon}</div>
+                    <div class="step-body">
+                        <div class="step-title">${step.title}</div>
+                        ${isActive || isDone ? `<div class="step-sub">${step.sub}</div>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+
+            // بانر قريب
+            const nearMsg = order.status === 'NearCustomer' ? `
+                <div class="near-banner">
+                    🚗 السائق على بعد 500 متر منك! يرجى الاستعداد لاستلام طلبك
+                </div>` : '';
+
+            // معلومات السائق
+            let driverHtml = '';
+            if (order.driver_name && currentStep >= 3) {
+                driverHtml = `
+                <div class="driver-card">
+                    <div class="driver-avatar">🚗</div>
+                    <div class="driver-info">
+                        <div class="driver-name">${order.driver_name}</div>
+                        <div class="driver-sub">سائق التوصيل</div>
+                    </div>
+                    ${order.vehicle_type ? `<span class="vehicle-chip">🚚 ${order.vehicle_type}</span>` : ''}
+                </div>`;
+            }
+
+            // معلومات الطلب
+            const infoHtml = `
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">🏪 المحل</span>
+                        <span class="info-value">${order.shopName || '—'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📍 العنوان</span>
+                        <span class="info-value">${order.shopAddress || '—'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">💰 الإجمالي</span>
+                        <span class="info-value" style="color:var(--teal);font-size:.95rem">${(order.total || 0).toLocaleString()} د.ع</span>
+                    </div>
+                </div>`;
+
+            // تحليل المركبات
+            let vehicleAnalysisHtml = '';
+            const vol = order.total_volume || 0;
+            const wgt = order.total_weight || 0;
+            if (DELIVERY_VEHICLES && vol > 0) {
+                const vehicles = Object.entries(DELIVERY_VEHICLES);
+                const smallestCap = Math.min(...vehicles.map(([,v]) => v.capacity));
+                const isSmall = vol < smallestCap * 0.2;
+
+                const vehicleRowsHtml = vehicles.map(([, v]) => {
+                    const pct      = Math.min(100, (vol / v.capacity) * 100);
+                    const fits     = vol <= v.capacity;
+                    const barColor = !fits ? '#ef4444' : pct > 80 ? '#f59e0b' : '#10b981';
+                    return `
+                    <div class="vehicle-fit-row">
+                        <span class="vfr-icon">${v.icon}</span>
+                        <span class="vfr-name">${v.name}</span>
+                        <div class="vehicle-fit-bar">
+                            <div class="vehicle-fit-fill" style="width:${pct.toFixed(0)}%;background:${barColor}"></div>
+                        </div>
+                        <span class="vfr-pct" style="color:${barColor}">${pct.toFixed(0)}%</span>
+                        <span class="vfr-status">${fits ? '✅' : '❌'}</span>
+                    </div>`;
+                }).join('');
+
+                const waitingMsgHtml = isSmall ? `
+                    <div class="waiting-msg">
+                        ⏳ حجم طلبك صغير — في انتظار تجميع قوائم أخرى للتوصيل معاً
+                    </div>` : '';
+
+                const urgentBtnHtml = order.status !== 'Delivered'
+                    ? (order.urgent_requested
+                        ? `<div style="background:#fef3c7;border:2px solid #fde68a;border-radius:10px;padding:10px;text-align:center;color:#92400e;font-weight:700;font-size:.85rem;margin-bottom:4px">⚡ تم طلب التوصيل العاجل — جاري المعالجة</div>`
+                        : `<button class="urgent-btn" onclick="requestUrgent('${order.id}')">⚡ أحتاج طلبي الآن — توصيل عاجل (رسوم إضافية)</button>`)
+                    : '';
+
+                vehicleAnalysisHtml = `
+                    <div class="vehicle-analysis">
+                        <h4>🚚 تحليل حجم الطلب</h4>
+                        <div style="font-size:.78rem;color:#0284c7;margin-bottom:10px;font-weight:600">
+                            📐 الحجم: <strong>${vol.toFixed(3)} م³</strong>
+                            ${wgt > 0 ? ` &nbsp;⚖️ الوزن: <strong>${wgt.toFixed(1)} كغ</strong>` : ''}
+                        </div>
+                        ${vehicleRowsHtml}
+                    </div>
+                    ${waitingMsgHtml}
+                    ${urgentBtnHtml}`;
+            } else if (order.vehicle_type) {
+                vehicleAnalysisHtml = `
+                    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--r12);padding:10px 14px;margin-bottom:14px;font-size:.88rem;font-weight:700;color:#065f46">
+                        🚚 مركبة التوصيل: ${order.vehicle_type}
+                    </div>`;
+            }
+
+            // قسم التقييم
+            let ratingHtml = '';
+            if (order.status === 'Delivered') {
+                if (order.customer_rated) {
+                    ratingHtml = `
+                        <div class="rating-done">
+                            ⭐ شكراً على تقييمك!<br>
+                            <span style="font-size:.82rem;font-weight:600;color:#065f46">
+                                التوصيل: ${'⭐'.repeat(order.delivery_rating||0)}
+                                &nbsp;|&nbsp;
+                                الطلب: ${'⭐'.repeat(order.order_rating||0)}
+                            </span>
+                        </div>`;
+                } else {
+                    ratingHtml = `
+                        <div class="rating-section" id="ratingSection">
+                            <h3>⭐ قيّم تجربتك</h3>
+                            <div class="rating-label">🚗 تقييم التوصيل</div>
+                            <div class="stars-row" id="delivStars">
+                                ${[1,2,3,4,5].map(i=>`<button class="star-btn" onclick="setRating('deliv',${i})" id="ds${i}">☆</button>`).join('')}
+                            </div>
+                            <div class="rating-label">📦 تقييم البضاعة / الطلب</div>
+                            <div class="stars-row" id="orderStars">
+                                ${[1,2,3,4,5].map(i=>`<button class="star-btn" onclick="setRating('order',${i})" id="os${i}">☆</button>`).join('')}
+                            </div>
+                            <textarea class="rating-note" id="ratingNote" rows="2" placeholder="ملاحظة اختيارية..."></textarea>
+                            <button class="submit-rating-btn" onclick="submitRating('${order.id}')">✅ إرسال التقييم</button>
+                        </div>`;
+                }
+            }
+
+            document.getElementById('content').innerHTML = `
+                <div class="steps-wrap">${stepsHtml}</div>
+                ${nearMsg}
+                ${infoHtml}
+                ${driverHtml}
+                ${vehicleAnalysisHtml}
+                ${ratingHtml}
+            `;
+        }
+
+        // ── التقييم ──
+        let delivRating = 0, orderRating = 0;
+
+        window.setRating = function(type, val) {
+            if (type === 'deliv') {
+                delivRating = val;
+                for (let i=1;i<=5;i++) { const s=document.getElementById(`ds${i}`); if(s) s.textContent=i<=val?'⭐':'☆'; }
+            } else {
+                orderRating = val;
+                for (let i=1;i<=5;i++) { const s=document.getElementById(`os${i}`); if(s) s.textContent=i<=val?'⭐':'☆'; }
+            }
+        };
+
+        window.submitRating = async function(docId) {
+            if (!delivRating || !orderRating) {
+                showToast('⚠️ يرجى اختيار تقييم للتوصيل والبضاعة', false);
+                return;
+            }
+            const note = document.getElementById('ratingNote')?.value.trim() || '';
+            const btn  = document.querySelector('.submit-rating-btn');
+            if (btn) { btn.disabled=true; btn.textContent='⏳ جاري الإرسال...'; }
+            try {
+                await db.collection('orders').doc(docId).update({
+                    delivery_rating: delivRating,
+                    order_rating:    orderRating,
+                    rating_note:     note,
+                    customer_rated:  true,
+                    rated_at:        new Date().toISOString()
+                });
+                const rs = document.getElementById('ratingSection');
+                if (rs) {
+                    rs.outerHTML = `
+                        <div class="rating-done">
+                            ⭐ شكراً على تقييمك!<br>
+                            <span style="font-size:.82rem;font-weight:600;color:#065f46">
+                                التوصيل: ${'⭐'.repeat(delivRating)} &nbsp;|&nbsp; الطلب: ${'⭐'.repeat(orderRating)}
+                            </span>
+                        </div>`;
+                }
+                disablePage();
+            } catch(e) {
+                console.error(e);
+                if (btn) { btn.disabled=false; btn.textContent='✅ إرسال التقييم'; }
+                showToast('❌ حدث خطأ، حاول مجدداً', false);
+            }
+        };
+
+        // ── انتهاء الصلاحية ──
+        function isExpired(order) {
+            if (order.status !== 'Delivered' || !order.delivered_at) return false;
+            return (Date.now() - new Date(order.delivered_at).getTime()) > 24 * 60 * 60 * 1000;
+        }
+
+        function showExpiredPage() {
+            document.getElementById('content').innerHTML = `
+                <div class="expired-card">
+                    <div class="expired-icon">🔒</div>
+                    <div class="expired-title">انتهت صلاحية الرابط</div>
+                    <div class="expired-msg">
+                        مضت أكثر من 24 ساعة على تسليم طلبك.<br>
+                        هذا الرابط لم يعد متاحاً.<br><br>
+                        شكراً لاختيارك <strong>برجمان</strong> 💙
+                    </div>
+                </div>`;
+            document.getElementById('trackCard').classList.add('page-disabled');
+        }
+
+        // ── التوصيل العاجل ──
+        window.requestUrgent = async function(docId) {
+            if (!confirm('سيُضاف رسم إضافي للتوصيل العاجل. هل تريد المتابعة؟')) return;
+            try {
+                const now = new Date().toISOString();
+                await db.collection('orders').doc(docId).update({
+                    urgent_requested: true, urgent_requested_at: now
+                });
+                const orderSnap = await db.collection('orders').doc(docId).get();
+                const ord = orderSnap.exists ? orderSnap.data() : {};
+                const TG_TOKEN = '8142978736:AAEpT6L_RNNIUMx54mU83gx4ap_Z3VmuXsA';
+                const urgentMsg =
+                    `⚡ *طلب توصيل عاجل!*\n\n` +
+                    `🏪 المحل: ${ord.shopName || '—'}\n` +
+                    `📍 العنوان: ${ord.shopAddress || '—'}\n` +
+                    `🆔 رقم الطلب: ${ord.orderId || docId}\n` +
+                    `💰 الإجمالي: ${(ord.total || 0).toLocaleString()} د.ع\n\n` +
+                    `⚠️ الزبون يطلب التوصيل الآن مقابل رسوم إضافية`;
+
+                fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ chat_id: '-5246620507', text: urgentMsg, parse_mode: 'Markdown' })
+                }).catch(()=>{});
+
+                const usersSnap = await db.collection('users').get();
+                usersSnap.docs.forEach(d => {
+                    const u = d.data();
+                    if (['admin','sales_manager','supervisor'].includes(u.accountType || u.type) && u.telegram) {
+                        fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                            method: 'POST', headers: {'Content-Type':'application/json'},
+                            body: JSON.stringify({ chat_id: u.telegram, text: urgentMsg, parse_mode: 'Markdown' })
+                        }).catch(()=>{});
+                    }
+                });
+                showToast('✅ تم إرسال طلب التوصيل العاجل');
+            } catch(e) {
+                console.error(e);
+                showToast('❌ حدث خطأ، حاول مجدداً', false);
+            }
+        };
+
+        // ── Toast ──
+        function showToast(msg, ok = true) {
+            const t = document.createElement('div');
+            t.className = 'track-toast ' + (ok ? 'ok' : 'err');
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
+        }
+
+        // ── تعطيل الصفحة بعد التقييم ──
+        function disablePage() {
+            const content = document.getElementById('content');
+            content.classList.add('page-disabled');
+            const notice = document.createElement('div');
+            notice.className = 'disabled-notice';
+            notice.innerHTML = '🔒 تم إغلاق هذا الطلب · شكراً لك على تقييمك';
+            content.after(notice);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎯 مركز التسويق</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/email.min.js"></script>
+<script src="js/theme.js"></script>
+<script type="module" src="js/firebase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--surface3:#f0f7ff;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.11);
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --teal:#0d9488;--teal2:#0f766e;--teal3:rgba(13,148,136,.10);
+  --sky:#0ea5e9;--sky2:#0284c7;--sky3:rgba(14,165,233,.10);
+  --mint:#10b981;--mint2:#059669;--mint3:rgba(16,185,129,.10);
+  --gold:#f59e0b;--gold2:#d97706;--gold3:rgba(245,158,11,.12);
+  --rose:#f43f5e;--rose3:rgba(244,63,94,.10);
+  --violet:#8b5cf6;--violet3:rgba(139,92,246,.10);
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px;
+  --shadow:0 4px 16px rgba(0,0,0,.08);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.06);
+}
+[data-mode="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#0f172a;--surface3:#1a2540;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.13);
+  --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s}
+
+/* ══ TOPBAR ══ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:12px 20px;display:flex;align-items:center;gap:12px;
+  box-shadow:var(--shadow-sm);
+}
+.tb-back{
+  width:38px;height:38px;border-radius:var(--r8);border:1.5px solid var(--border2);
+  background:var(--surface2);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:1rem;color:var(--muted);flex-shrink:0;
+  text-decoration:none;transition:all .15s;
+}
+.tb-back:hover{border-color:var(--teal);color:var(--teal)}
+.tb-title{flex:1;font-size:1rem;font-weight:900;color:var(--text)}
+.tb-title span{font-size:.75rem;font-weight:600;color:var(--muted);display:block}
+
+/* ══ LAYOUT ══ */
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 80px}
+
+/* ══ KPI ══ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r16);padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+}
+.kpi-ic{width:40px;height:40px;border-radius:var(--r12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.kpi-ic.sky{background:var(--sky3);}.kpi-ic.teal{background:var(--teal3);}
+.kpi-ic.mint{background:var(--mint3);}.kpi-ic.gold{background:var(--gold3);}
+.kpi-v{font-size:1.3rem;font-weight:900;line-height:1}
+.kpi-l{font-size:.7rem;color:var(--muted);margin-top:2px}
+
+/* ══ TOOL TABS ══ */
+.tool-tabs{
+  display:flex;gap:6px;margin-bottom:20px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r16);padding:8px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.tool-tabs::-webkit-scrollbar{display:none}
+.tool-tab{
+  display:flex;align-items:center;gap:6px;
+  padding:9px 16px;border-radius:var(--r12);
+  border:none;background:transparent;
+  font-family:'Cairo',sans-serif;font-size:.82rem;font-weight:700;
+  color:var(--muted);cursor:pointer;white-space:nowrap;
+  transition:all .2s;flex-shrink:0;
+}
+.tool-tab:hover{background:var(--teal3);color:var(--teal)}
+.tool-tab.active{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;box-shadow:0 4px 12px rgba(13,148,136,.3)}
+
+/* ══ SECTION ══ */
+.section{display:none;animation:fadeUp .22s ease}
+.section.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ══ CARD ══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r20);padding:22px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:.92rem;font-weight:900;color:var(--text);margin-bottom:4px}
+.card-sub{font-size:.75rem;color:var(--muted);margin-bottom:16px}
+.sep{font-size:.72rem;font-weight:800;color:var(--teal);letter-spacing:.04em;text-transform:uppercase;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.sep:first-child{margin-top:0}
+
+/* ══ CHANNEL TABS ══ */
+.ch-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.ch-tab{
+  display:flex;align-items:center;gap:6px;padding:9px 18px;
+  border-radius:var(--r99,99px);border:2px solid var(--border2);
+  background:var(--surface2);font-family:'Cairo',sans-serif;
+  font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;
+  color:var(--muted);
+}
+.ch-tab:hover{border-color:var(--teal);color:var(--teal)}
+.ch-tab.active-email{border-color:var(--sky);background:var(--sky3);color:var(--sky2)}
+.ch-tab.active-wa{border-color:#25D366;background:rgba(37,211,102,.1);color:#128C7E}
+.ch-tab.active-tele{border-color:#2AABEE;background:rgba(42,171,238,.1);color:#006EA8}
+.ch-tab.active-all{border-color:var(--violet);background:var(--violet3);color:var(--violet)}
+
+/* ══ AUDIENCE ══ */
+.aud-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:14px}
+.aud-chip{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:12px 8px;border-radius:var(--r12);border:2px solid var(--border2);
+  background:var(--surface2);cursor:pointer;transition:all .2s;user-select:none;
+  text-align:center;
+}
+.aud-chip:hover{border-color:var(--teal);background:var(--teal3)}
+.aud-chip.on{border-color:var(--teal);background:var(--teal3)}
+.aud-icon{font-size:1.3rem}
+.aud-name{font-size:.75rem;font-weight:800;color:var(--text)}
+.aud-cnt{font-size:.68rem;font-weight:700;background:var(--teal);color:#fff;padding:1px 8px;border-radius:99px;margin-top:2px}
+
+/* ══ FORM ══ */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-size:.78rem;font-weight:700;color:var(--muted)}
+.fi,.fsel,.fta{
+  background:var(--surface2);border:1.5px solid var(--border2);
+  border-radius:var(--r12);padding:10px 12px;
+  color:var(--text);font-family:'Cairo',sans-serif;font-size:.88rem;
+  outline:none;transition:border-color .18s,box-shadow .18s;width:100%;
+}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal3)}
+.fta{resize:vertical;min-height:90px}
+.hint{font-size:.7rem;color:var(--muted2)}
+.form-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-2 .full{grid-column:1/-1}
+
+/* ══ TEMPLATES ══ */
+.tmpl-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+.tmpl-row::-webkit-scrollbar{display:none}
+.tmpl-card{
+  flex-shrink:0;padding:10px 14px;border-radius:var(--r12);
+  border:2px solid var(--border2);background:var(--surface2);
+  cursor:pointer;transition:all .2s;text-align:center;min-width:90px;
+}
+.tmpl-card:hover,.tmpl-card.on{border-color:var(--teal);background:var(--teal3)}
+.tmpl-ic{font-size:1.2rem;margin-bottom:3px}
+.tmpl-nm{font-size:.72rem;font-weight:700}
+
+/* ══ VARS CHIPS ══ */
+.var-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.var-chip{
+  padding:3px 10px;border-radius:99px;font-size:.72rem;font-weight:700;
+  background:var(--sky3);color:var(--sky2);cursor:pointer;border:1px solid var(--sky3);
+  transition:all .15s;
+}
+.var-chip:hover{background:var(--sky);color:#fff}
+
+/* ══ PREVIEW ══ */
+.preview-box{
+  background:var(--surface2);border:1.5px dashed var(--border2);
+  border-radius:var(--r12);padding:14px;margin-bottom:14px;
+  font-size:.84rem;line-height:1.8;color:var(--text);
+  display:none;
+}
+.preview-box.show{display:block}
+.preview-label{font-size:.68rem;font-weight:800;color:var(--teal);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+
+/* ══ PROGRESS ══ */
+.prog-wrap{display:none;margin-top:14px;border-radius:var(--r12);border:1px solid var(--border);background:var(--surface);padding:14px}
+.prog-wrap.show{display:block}
+.prog-bar-bg{background:var(--surface2);border-radius:99px;height:8px;overflow:hidden;margin-bottom:10px}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--mint));border-radius:99px;width:0;transition:width .3s ease}
+.prog-log{font-size:.75rem;color:var(--muted);max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.prog-log .ok{color:var(--mint)}.prog-log .err{color:var(--rose)}.prog-log .inf{color:var(--sky)}
+
+/* ══ PHONE EXTRACTOR ══ */
+.phone-row{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;background:var(--surface2);
+  border-radius:var(--r12);border:1px solid var(--border);margin-bottom:6px;
+}
+
+/* ══ SCHEDULER ══ */
+.scheduled-list{display:flex;flex-direction:column;gap:8px}
+.sched-item{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--r12);padding:12px 14px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.sched-badge{
+  padding:3px 10px;border-radius:99px;font-size:.7rem;font-weight:800;
+  background:var(--teal3);color:var(--teal2);
+}
+.sched-time{font-size:.78rem;font-weight:700;color:var(--muted)}
+.sched-body{flex:1;font-size:.82rem;color:var(--text)}
+
+/* ══ CONTACTS TABLE ══ */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r12);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead{background:var(--surface2)}
+th{padding:10px 12px;text-align:right;font-weight:800;color:var(--muted);border-bottom:1px solid var(--border)}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+
+/* ══ BADGE ══ */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.68rem;font-weight:700}
+.b-sky{background:var(--sky3);color:var(--sky2)}
+.b-teal{background:var(--teal3);color:var(--teal2)}
+.b-mint{background:var(--mint3);color:var(--mint2)}
+.b-gold{background:var(--gold3);color:var(--gold2)}
+.b-rose{background:var(--rose3);color:var(--rose)}
+.b-violet{background:var(--violet3);color:var(--violet)}
+.b-green{background:rgba(37,211,102,.12);color:#128C7E}
+
+/* ══ BUTTONS ══ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 20px;border-radius:var(--r12);border:none;cursor:pointer;
+  font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;
+  transition:all .2s;text-decoration:none;
+}
+.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;box-shadow:0 4px 12px rgba(13,148,136,.25)}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-wa{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff}
+.btn-tele{background:linear-gradient(135deg,#2AABEE,#229ED9);color:#fff}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;box-shadow:0 4px 12px rgba(245,158,11,.3)}
+.btn-outline{background:transparent;color:var(--muted);border:1.5px solid var(--border2)}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal)}
+.btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--teal3);color:var(--teal);border-color:var(--teal)}
+.btn-sm{padding:6px 14px;font-size:.76rem}
+.btn-lg{padding:13px 28px;font-size:.92rem}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+.btn-danger{background:rgba(244,63,94,.08);color:var(--rose);border:1px solid rgba(244,63,94,.2)}
+
+/* ══ TOAST ══ */
+.toast-box{
+  position:fixed;bottom:24px;right:50%;transform:translateX(50%);
+  background:var(--text);color:var(--surface);
+  padding:11px 22px;border-radius:var(--r12);font-size:.84rem;font-weight:700;
+  z-index:9999;box-shadow:var(--shadow);
+  opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;
+  white-space:nowrap;max-width:90vw;
+}
+.toast-box.show{opacity:1;transform:translateX(50%) translateY(-4px)}
+.toast-box.err{background:var(--rose)}
+.toast-box.success{background:var(--mint)}
+
+/* ══ EMPTY STATE ══ */
+.empty{text-align:center;padding:30px;color:var(--muted2);font-size:.85rem}
+
+/* ══ MODAL ══ */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;backdrop-filter:blur(4px)}
+.modal-back.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r20);padding:22px;max-width:580px;width:100%;max-height:82vh;overflow-y:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-head h3{font-size:.96rem;font-weight:900}
+.modal-close{width:32px;height:32px;border-radius:var(--r8);border:1px solid var(--border2);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--muted)}
+.modal-close:hover{border-color:var(--rose);color:var(--rose)}
+
+/* ══ INFO BOX ══ */
+.info-box{padding:10px 14px;border-radius:var(--r12);font-size:.78rem;line-height:1.7;margin-top:10px}
+.info-wa{background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);color:#128C7E}
+.info-tele{background:rgba(42,171,238,.08);border:1px solid rgba(42,171,238,.2);color:#006EA8}
+.info-tip{background:var(--gold3);border:1px solid rgba(245,158,11,.2);color:var(--gold2)}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:580px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .form-2{grid-template-columns:1fr}
+  .form-2 .full{grid-column:1}
+  .tool-tab{font-size:.74rem;padding:8px 12px}
+  .aud-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <a href="index.html" class="tb-back" title="العودة للرئيسية">←</a>
+  <div class="tb-title">
+    🎯 مركز التسويق
+    <span>الإدارة الكاملة لحملاتك التسويقية</span>
+  </div>
+  <div id="connBadge" style="font-size:.72rem;font-weight:700;color:var(--muted2)">⏳ تحميل...</div>
+</div>
+
+<div class="wrap">
+
+  <!-- KPI -->
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi-card"><div class="kpi-ic sky">👥</div><div><div class="kpi-v" id="kpiTotal">—</div><div class="kpi-l">إجمالي العملاء</div></div></div>
+    <div class="kpi-card"><div class="kpi-ic teal">📧</div><div><div class="kpi-v" id="kpiEmail">—</div><div class="kpi-l">عندهم إيميل</div></div></div>
+    <div class="kpi-card"><div class="kpi-ic mint">📱</div><div><div class="kpi-v" id="kpiPhone">—</div><div class="kpi-l">عندهم هاتف</div></div></div>
+    <div class="kpi-card"><div class="kpi-ic gold">📊</div><div><div class="kpi-v" id="kpiCamp">—</div><div class="kpi-l">حملة أُرسلت</div></div></div>
+  </div>
+
+  <!-- TOOL TABS -->
+  <div class="tool-tabs">
+    <button class="tool-tab active" onclick="showSection('sec-campaign')" id="tab-campaign">📣 إرسال حملة</button>
+    <button class="tool-tab" onclick="showSection('sec-extract')"  id="tab-extract">📱 استخراج الأرقام</button>
+    <button class="tool-tab" onclick="showSection('sec-sched')"   id="tab-sched">📅 جدولة الرسائل</button>
+    <button class="tool-tab" onclick="showSection('sec-contacts')" id="tab-contacts">👥 قاعدة البيانات</button>
+    <button class="tool-tab" onclick="showSection('sec-history')" id="tab-history">📊 سجل الحملات</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECTION 1: إرسال حملة
+  ══════════════════════════════════════ -->
+  <div class="section active" id="sec-campaign">
+
+    <!-- Channel Selector -->
+    <div class="card">
+      <div class="card-title">📡 القناة والجمهور</div>
+      <div class="card-sub">اختر القناة ثم حدد الجمهور المستهدف</div>
+
+      <div class="sep">قناة الإرسال</div>
+      <div class="ch-tabs">
+        <button class="ch-tab active-email" id="chEmail" onclick="setChannel('email')">📧 إيميل</button>
+        <button class="ch-tab" id="chWa"    onclick="setChannel('wa')">💬 واتساب</button>
+        <button class="ch-tab" id="chTele"  onclick="setChannel('tele')">✈️ تيليغرام</button>
+        <button class="ch-tab" id="chAll"   onclick="setChannel('all')">🔁 الجميع</button>
+      </div>
+
+      <div class="sep">الجمهور المستهدف</div>
+      <div class="aud-grid" id="audGrid">
+        <div class="aud-chip on" data-aud="all"        onclick="toggleAud('all')"><div class="aud-icon">🌐</div><div class="aud-name">الجميع</div><span class="aud-cnt" id="ac-all">0</span></div>
+        <div class="aud-chip"   data-aud="wholesale"   onclick="toggleAud('wholesale')"><div class="aud-icon">📦</div><div class="aud-name">زوار الجملة</div><span class="aud-cnt" id="ac-wholesale">0</span></div>
+        <div class="aud-chip"   data-aud="retail"      onclick="toggleAud('retail')"><div class="aud-icon">🛍️</div><div class="aud-name">زوار المفرد</div><span class="aud-cnt" id="ac-retail">0</span></div>
+        <div class="aud-chip"   data-aud="company"     onclick="toggleAud('company')"><div class="aud-icon">🏢</div><div class="aud-name">الشركات</div><span class="aud-cnt" id="ac-company">0</span></div>
+        <div class="aud-chip"   data-aud="ws_shop"     onclick="toggleAud('ws_shop')"><div class="aud-icon">🏪</div><div class="aud-name">محلات جملة</div><span class="aud-cnt" id="ac-ws_shop">0</span></div>
+        <div class="aud-chip"   data-aud="tier1"       onclick="toggleAud('tier1')"><div class="aud-icon">🥇</div><div class="aud-name">ماركت فئة أولى</div><span class="aud-cnt" id="ac-tier1">0</span></div>
+        <div class="aud-chip"   data-aud="tier2"       onclick="toggleAud('tier2')"><div class="aud-icon">🥈</div><div class="aud-name">ماركت متوسط</div><span class="aud-cnt" id="ac-tier2">0</span></div>
+        <div class="aud-chip"   data-aud="normal"      onclick="toggleAud('normal')"><div class="aud-icon">🏬</div><div class="aud-name">ماركت عادي</div><span class="aud-cnt" id="ac-normal">0</span></div>
+        <div class="aud-chip"   data-aud="rep"         onclick="toggleAud('rep')"><div class="aud-icon">🤝</div><div class="aud-name">المندوبون</div><span class="aud-cnt" id="ac-rep">0</span></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span style="font-size:.8rem;color:var(--muted)">سيُرسل لـ <strong id="recipCount" style="color:var(--teal)">0</strong> شخص</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="fg" style="margin:0;width:140px">
+            <select class="fsel" id="cityFilter" onchange="updateCounts()" style="padding:7px 10px;font-size:.78rem">
+              <option value="">📍 كل المدن</option>
+              <option>بغداد</option><option>البصرة</option><option>الموصل</option>
+              <option>أربيل</option><option>كربلاء</option><option>النجف</option>
+              <option>كركوك</option><option>السليمانية</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Composer -->
+    <div class="card">
+      <div class="card-title">✏️ إنشاء الرسالة</div>
+      <div class="card-sub">اكتب رسالتك أو اختر قالباً جاهزاً</div>
+
+      <div class="sep">قوالب جاهزة</div>
+      <div class="tmpl-row" id="tmplRow"></div>
+
+      <div class="fg" id="subjectWrap">
+        <label class="fl">موضوع الإيميل</label>
+        <input type="text" class="fi" id="mktSubject" placeholder="مثال: عرض خاص — خصم 20% هذا الأسبوع">
+      </div>
+
+      <div class="fg">
+        <label class="fl">نص الرسالة <span style="color:var(--rose)">*</span></label>
+        <textarea class="fta" id="mktBody" rows="5" placeholder="اكتب رسالتك هنا..." oninput="updatePreview()"></textarea>
+      </div>
+
+      <div class="var-chips">
+        <span style="font-size:.72rem;color:var(--muted);font-weight:700;align-self:center">متغيرات:</span>
+        <span class="var-chip" onclick="insertVar('{name}')">👤 الاسم</span>
+        <span class="var-chip" onclick="insertVar('{shop}')">🏪 الماركت</span>
+        <span class="var-chip" onclick="insertVar('{city}')">📍 المدينة</span>
+        <span class="var-chip" onclick="insertVar('{balance}')">💰 الرصيد</span>
+        <span class="var-chip" onclick="insertVar('{points}')">⭐ النقاط</span>
+      </div>
+
+      <div class="preview-box" id="previewBox">
+        <div class="preview-label">👁️ معاينة — كما سيستلمها العميل</div>
+        <div id="previewContent"></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:6px">
+        <div style="font-size:.75rem;color:var(--muted)">
+          <span id="charCount">0</span> حرف
+        </div>
+        <button class="btn btn-gold btn-lg" id="sendBtn" onclick="sendCampaign()">🚀 إرسال الحملة</button>
+      </div>
+
+      <!-- Progress -->
+      <div class="prog-wrap" id="progWrap">
+        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:800;color:var(--teal);margin-bottom:8px">
+          <span id="progTxt">جاري الإرسال...</span>
+          <span id="progPct">0%</span>
+        </div>
+        <div class="prog-bar-bg"><div class="prog-bar" id="progBar"></div></div>
+        <div class="prog-log" id="progLog"></div>
+      </div>
+
+      <div class="info-box info-tip" style="margin-top:12px">
+        💡 <strong>واتساب:</strong> ستفتح نافذة لكل رقم يدوياً — المتصفح يمنع الفتح التلقائي لأسباب أمنية.<br>
+        💡 <strong>تيليغرام:</strong> يتطلب ضبط Bot Token من الإعدادات.
+      </div>
+    </div>
+
+  </div><!-- /sec-campaign -->
+
+
+  <!-- ══════════════════════════════════════
+       SECTION 2: استخراج الأرقام
+  ══════════════════════════════════════ -->
+  <div class="section" id="sec-extract">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="card-title">📱 استخراج الأرقام الذكي</div>
+          <div class="card-sub" style="margin-bottom:0">الصق نصاً أو ارفع ملف — يدعم الأرقام العراقية والدولية</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.72rem;font-weight:700;color:var(--muted)">تم استخراج:</span>
+          <span id="extCount" style="background:var(--teal);color:#fff;padding:3px 14px;border-radius:99px;font-weight:800;font-size:.78rem">0</span>
+        </div>
+      </div>
+
+      <div class="sep" style="margin-top:16px">مصدر الأرقام</div>
+      <textarea class="fta" id="extInput" rows="5" style="direction:ltr;font-size:.83rem" placeholder="الصق النص هنا...&#10;07700123456&#10;+9647700123456&#10;009647700123456"></textarea>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">
+        <label style="cursor:pointer">
+          <input type="file" accept=".txt,.csv,.xlsx,.xls" style="display:none" onchange="processExtractFile(this.files[0])">
+          <span class="btn btn-ghost btn-sm">📂 رفع ملف (txt/csv/xlsx)</span>
+        </label>
+        <button class="btn btn-primary btn-sm" onclick="doExtract()">🔍 استخراج الأرقام</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearExtract()">🗑️ مسح</button>
+        <button class="btn btn-ghost btn-sm" onclick="dedupeExtract()">✨ إزالة التكرار</button>
+      </div>
+
+      <!-- Filter by WA/TG status -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <span style="font-size:.72rem;font-weight:700;color:var(--muted)">فلتر:</span>
+        <button class="btn btn-ghost btn-sm" id="filterAll" onclick="setExtFilter('all')" style="border-color:var(--teal);color:var(--teal)">الكل</button>
+        <button class="btn btn-ghost btn-sm" id="filterWA"  onclick="setExtFilter('wa')">✅ واتساب</button>
+        <button class="btn btn-ghost btn-sm" id="filterTG"  onclick="setExtFilter('tg')">✅ تيليغرام</button>
+      </div>
+
+      <div id="extResults" style="max-height:380px;overflow-y:auto"></div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="selectAllExt(true)">تحديد الكل</button>
+        <button class="btn btn-ghost btn-sm" onclick="selectAllExt(false)">إلغاء الكل</button>
+        <button class="btn btn-wa btn-sm" onclick="sendExtToWA()">💬 إرسال المحدد عبر WA</button>
+        <button class="btn btn-tele btn-sm" onclick="sendExtToTele()">✈️ إرسال عبر TG</button>
+        <button class="btn btn-outline btn-sm" onclick="exportExtCSV()">📥 تصدير CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="addExtToContacts()">➕ إضافة للعملاء</button>
+      </div>
+
+      <div class="info-box info-tip" style="margin-top:12px">
+        💡 اضغط <strong>WA</strong> أو <strong>TG</strong> بجانب أي رقم للتحقق من وجوده — إذا فتح المحادثة فالرقم نشط.
+        الأرقام العراقية 07xxxxxxxxx تتحول تلقائياً لـ +9647xxxxxxxxx
+      </div>
+    </div>
+  </div><!-- /sec-extract -->
+
+
+  <!-- ══════════════════════════════════════
+       SECTION 3: جدولة الرسائل
+  ══════════════════════════════════════ -->
+  <div class="section" id="sec-sched">
+    <div class="card">
+      <div class="card-title">📅 جدولة رسالة جديدة</div>
+      <div class="card-sub">حدد التاريخ والوقت — سيُنبهك النظام عند موعد الإرسال</div>
+
+      <div class="form-2">
+        <div class="fg">
+          <label class="fl">القناة</label>
+          <select class="fsel" id="schedChannel">
+            <option value="wa">💬 واتساب</option>
+            <option value="tele">✈️ تيليغرام</option>
+            <option value="email">📧 إيميل</option>
+            <option value="all">🔁 جميع القنوات</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">الجمهور</label>
+          <select class="fsel" id="schedAudience">
+            <option value="all">🌐 الجميع</option>
+            <option value="wholesale">📦 زوار الجملة</option>
+            <option value="retail">🛍️ زوار المفرد</option>
+            <option value="company">🏢 الشركات</option>
+            <option value="ws_shop">🏪 محلات الجملة</option>
+            <option value="tier1">🥇 ماركت فئة أولى</option>
+            <option value="tier2">🥈 ماركت متوسط</option>
+            <option value="normal">🏬 ماركت عادي</option>
+            <option value="rep">🤝 المندوبون</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">تاريخ الإرسال</label>
+          <input type="date" class="fi" id="schedDate">
+        </div>
+        <div class="fg">
+          <label class="fl">وقت الإرسال</label>
+          <input type="time" class="fi" id="schedTime" value="09:00">
+        </div>
+        <div class="fg full">
+          <label class="fl">موضوع الإيميل (اختياري)</label>
+          <input type="text" class="fi" id="schedSubject" placeholder="موضوع الإيميل...">
+        </div>
+        <div class="fg full">
+          <label class="fl">نص الرسالة <span style="color:var(--rose)">*</span></label>
+          <textarea class="fta" id="schedBody" rows="4" placeholder="نص الرسالة..."></textarea>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="addScheduled()">📅 جدولة الرسالة</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div>
+          <div class="card-title">⏰ الرسائل المجدولة</div>
+          <div style="font-size:.73rem;color:var(--muted)">يتم التحقق تلقائياً عند فتح الصفحة</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="clearAllScheduled()">حذف الكل</button>
+      </div>
+      <div class="scheduled-list" id="schedList"></div>
+    </div>
+  </div><!-- /sec-sched -->
+
+
+  <!-- ══════════════════════════════════════
+       SECTION 4: قاعدة البيانات
+  ══════════════════════════════════════ -->
+  <div class="section" id="sec-contacts">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div>
+          <div class="card-title">👥 قاعدة بيانات العملاء</div>
+          <div style="font-size:.73rem;color:var(--muted)">جميع المستخدمين المسجلين والزوار</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="text" class="fi" id="contactSearch" style="width:160px;padding:7px 10px;font-size:.78rem" placeholder="🔍 بحث..." oninput="renderContacts()">
+          <select class="fsel" id="contactTypeFilter" style="padding:7px 10px;font-size:.78rem" onchange="renderContacts()">
+            <option value="">كل الأنواع</option>
+            <option value="rep">مندوب</option>
+            <option value="market_owner">ماركت</option>
+            <option value="wholesale">جملة</option>
+            <option value="retail">مفرد</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="exportContacts()">📥 Excel</button>
+        </div>
+      </div>
+
+      <!-- Segment tabs -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:14px;overflow-x:auto">
+        <button class="seg-tab active" id="st-users" onclick="setSegTab('users')" style="flex:1;min-width:80px;padding:9px;border:none;background:none;font-weight:800;font-size:.8rem;color:var(--teal);border-bottom:2.5px solid var(--teal);cursor:pointer;white-space:nowrap">👥 المستخدمون</button>
+        <button class="seg-tab" id="st-visitors" onclick="setSegTab('visitors')" style="flex:1;min-width:80px;padding:9px;border:none;background:none;font-weight:700;font-size:.8rem;color:var(--muted);cursor:pointer;white-space:nowrap">👤 الزوار</button>
+      </div>
+
+      <div id="contactsBody"></div>
+      <div id="visitorsBody" style="display:none"></div>
+    </div>
+  </div><!-- /sec-contacts -->
+
+
+  <!-- ══════════════════════════════════════
+       SECTION 5: سجل الحملات
+  ══════════════════════════════════════ -->
+  <div class="section" id="sec-history">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div>
+          <div class="card-title">📊 سجل الحملات التسويقية</div>
+          <div style="font-size:.73rem;color:var(--muted)">تاريخ جميع الحملات المُرسلة</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="text" class="fi" id="histSearch" style="width:150px;padding:7px 10px;font-size:.78rem" placeholder="🔍 بحث..." oninput="renderHistory()">
+          <button class="btn btn-danger btn-sm" onclick="deleteAllHistory()">حذف الكل</button>
+        </div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>التاريخ</th><th>الموضوع</th><th>القناة</th><th>الجمهور</th>
+            <th>المُرسَل</th><th>نجحت</th><th>فشلت</th><th></th>
+          </tr></thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /sec-history -->
+
+</div><!-- /wrap -->
+
+<!-- WA Bulk Modal -->
+<div class="modal-back" id="waBulkModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>💬 إرسال واتساب — قائمة المستلمين</h3>
+      <div class="modal-close" onclick="closeModal('waBulkModal')">✕</div>
+    </div>
+    <p id="waBulkInfo" style="font-size:.78rem;color:var(--muted);margin-bottom:12px"></p>
+    <div id="waBulkList" style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto"></div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('waBulkModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   CONFIG & STATE
+═══════════════════════════════════════════════════ */
+let users        = [];
+let visitors     = [];
+let campaigns    = [];
+let selChannel   = 'email';
+let selAudience  = ['all'];
+let extPhones    = [];
+let extFilter    = 'all';
+let scheduledMsgs = JSON.parse(localStorage.getItem('_scheduledMsgs') || '[]');
+
+let EMAILJS_SVC = '', EMAILJS_TPL = '', EMAILJS_KEY = '';
+let TELE_TOKEN  = '', TELE_CHAT   = '';
+let COMPANY_NAME = 'برجمان';
+
+const MKT_TEMPLATES = [
+  { icon:'🎉', name:'عرض خاص',   body:'عزيزنا {name}،\n\nلدينا عرض خاص حصري هذا الأسبوع!\nاستمتع بخصومات تصل إلى 30% على جميع المنتجات.\nلا تفوّت الفرصة — العرض محدود!' },
+  { icon:'📦', name:'منتج جديد', body:'مرحباً {name}،\n\nيسعدنا إعلامك بوصول منتجات جديدة إلى {shop}.\nتفضل بزيارتنا للاطلاع على أحدث التشكيلات!' },
+  { icon:'⭐', name:'نقاط مكافأة',body:'عزيزنا {name}،\n\nرصيد نقاطك الحالي: {points} نقطة\nاستبدل نقاطك بخصومات مميزة على مشترياتك القادمة!' },
+  { icon:'🏪', name:'دعوة ماركت', body:'تحية طيبة {name}،\n\nنتشرف بدعوتك للانضمام لبرنامج ماركتات {shop}.\nاستفد من أسعار الجملة والتوصيل المجاني!' },
+  { icon:'🔔', name:'تذكير',      body:'مرحباً {name}،\n\nنُذكّرك بزيارة متجرنا واستعراض أحدث العروض المتاحة لك في {city}.' },
+  { icon:'💰', name:'رصيد',       body:'عزيزنا {name}،\n\nرصيد محفظتك: {balance}\nيمكنك استخدام رصيدك في أي طلب قادم.' },
+];
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+document.addEventListener('fbReady', async () => {
+  document.getElementById('connBadge').textContent = '🟢 متصل';
+  document.getElementById('connBadge').style.color = 'var(--mint)';
+  await loadData();
+  renderTemplates();
+  updateCounts();
+  renderHistory();
+  renderContacts();
+  renderScheduled();
+  checkDueMessages();
+
+  // Load settings
+  const db = window._db;
+  const { getDocs, collection } = window._fb;
+  try {
+    const snap = await getDocs(collection(db, 'settings'));
+    snap.forEach(d => {
+      const v = d.data();
+      if (v.key === 'emailjs_service_id')  EMAILJS_SVC  = v.value || '';
+      if (v.key === 'emailjs_template_id') EMAILJS_TPL  = v.value || '';
+      if (v.key === 'emailjs_public_key')  EMAILJS_KEY  = v.value || '';
+      if (v.key === 'telegram_token')      TELE_TOKEN   = v.value || '';
+      if (v.key === 'telegram_chat')       TELE_CHAT    = v.value || '';
+      if (v.key === 'company_name_ar')     COMPANY_NAME = v.value || 'برجمان';
+    });
+    if (EMAILJS_KEY) emailjs.init(EMAILJS_KEY);
+  } catch(e) {}
+});
+
+// Fallback if fbReady already fired
+setTimeout(() => {
+  if (!users.length && window._fbReady) {
+    document.dispatchEvent(new Event('fbReady'));
+  }
+}, 2000);
+
+async function loadData() {
+  const db = window._db;
+  if (!db) return;
+  const { getDocs, collection } = window._fb;
+  try {
+    const [uSnap, vSnap, cSnap] = await Promise.all([
+      getDocs(collection(db, 'users')),
+      getDocs(collection(db, 'visitors')).catch(() => ({ forEach: () => {} })),
+      getDocs(collection(db, 'campaigns')).catch(() => ({ forEach: () => {} }))
+    ]);
+    users    = []; uSnap.forEach(d => users.push({ _id: d.id, ...d.data() }));
+    visitors = []; vSnap.forEach(d => visitors.push({ _id: d.id, ...d.data() }));
+    campaigns= []; cSnap.forEach(d => campaigns.push({ _id: d.id, ...d.data() }));
+    campaigns.sort((a, b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    updateKpi();
+  } catch(e) {
+    console.warn('loadData error', e);
+    toast('تعذّر تحميل البيانات', 'err');
+  }
+}
+
+function updateKpi() {
+  const all = users.filter(u => u.type === 'rep' || u.type === 'market_owner');
+  document.getElementById('kpiTotal').textContent = all.length;
+  document.getElementById('kpiEmail').textContent = users.filter(u => u.email).length;
+  document.getElementById('kpiPhone').textContent = users.filter(u => u.phone).length;
+  document.getElementById('kpiCamp').textContent  = campaigns.length;
+}
+
+/* ═══════════════════════════════════════════════════
+   SECTION NAVIGATION
+═══════════════════════════════════════════════════ */
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const tabId = 'tab-' + id.replace('sec-', '');
+  document.getElementById(tabId)?.classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════
+   CHANNEL
+═══════════════════════════════════════════════════ */
+function setChannel(ch) {
+  selChannel = ch;
+  document.getElementById('subjectWrap').style.display = (ch === 'email' || ch === 'all') ? 'block' : 'none';
+  ['email','wa','tele','all'].forEach(c => {
+    const el = document.getElementById('ch' + c.charAt(0).toUpperCase() + c.slice(1));
+    if (!el) return;
+    el.className = 'ch-tab' + (c === ch ? ' active-' + c : '');
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   AUDIENCE
+═══════════════════════════════════════════════════ */
+function getAudienceUsers(audList) {
+  let result = [];
+  const cityVal = document.getElementById('cityFilter')?.value || '';
+  const allUsers = users.filter(u => u.type !== 'admin' && u.type !== 'preparer' && u.type !== 'driver' && u.status !== 'inactive');
+
+  if (audList.includes('all')) {
+    result = allUsers;
+  } else {
+    const seen = new Set();
+    const add = (list) => list.forEach(u => { if (!seen.has(u._id||u.username)) { seen.add(u._id||u.username); result.push(u); } });
+    if (audList.includes('rep'))       add(allUsers.filter(u => u.type === 'rep'));
+    if (audList.includes('wholesale')) add(allUsers.filter(u => u.buyerMode === 'wholesale'));
+    if (audList.includes('retail'))    add(allUsers.filter(u => u.buyerMode === 'retail'));
+    if (audList.includes('company'))   add(allUsers.filter(u => u.shopType === 'company'));
+    if (audList.includes('ws_shop'))   add(allUsers.filter(u => u.shopType === 'wholesale' || u.marketTier === 'wholesale'));
+    if (audList.includes('tier1'))     add(allUsers.filter(u => u.marketTier === 'tier1'));
+    if (audList.includes('tier2'))     add(allUsers.filter(u => u.marketTier === 'tier2'));
+    if (audList.includes('normal'))    add(allUsers.filter(u => u.type === 'market_owner' && !u.marketTier));
+  }
+
+  if (cityVal) result = result.filter(u => u.city === cityVal);
+  return result;
+}
+
+function getAudCount(aud) {
+  return getAudienceUsers([aud]).length;
+}
+
+function updateCounts() {
+  ['all','wholesale','retail','company','ws_shop','tier1','tier2','normal','rep'].forEach(k => {
+    const el = document.getElementById('ac-' + k);
+    if (el) el.textContent = getAudCount(k);
+  });
+  const recip = getAudienceUsers(selAudience);
+  document.getElementById('recipCount').textContent = recip.length;
+}
+
+function toggleAud(type) {
+  const chip = document.querySelector(`.aud-chip[data-aud="${type}"]`);
+  if (type === 'all') {
+    selAudience = ['all'];
+    document.querySelectorAll('.aud-chip').forEach(c => c.classList.remove('on'));
+    chip?.classList.add('on');
+  } else {
+    selAudience = selAudience.filter(a => a !== 'all');
+    document.querySelector('.aud-chip[data-aud="all"]')?.classList.remove('on');
+    if (selAudience.includes(type)) {
+      selAudience = selAudience.filter(a => a !== type);
+      chip?.classList.remove('on');
+    } else {
+      selAudience.push(type);
+      chip?.classList.add('on');
+    }
+    if (!selAudience.length) {
+      selAudience = ['all'];
+      document.querySelector('.aud-chip[data-aud="all"]')?.classList.add('on');
+    }
+  }
+  updateCounts();
+}
+
+/* ═══════════════════════════════════════════════════
+   TEMPLATES
+═══════════════════════════════════════════════════ */
+function renderTemplates() {
+  document.getElementById('tmplRow').innerHTML = MKT_TEMPLATES.map((t, i) => `
+    <div class="tmpl-card" id="tmpl_${i}" onclick="applyTemplate(${i})">
+      <div class="tmpl-ic">${t.icon}</div>
+      <div class="tmpl-nm">${t.name}</div>
+    </div>`).join('');
+}
+
+function applyTemplate(i) {
+  document.querySelectorAll('.tmpl-card').forEach(c => c.classList.remove('on'));
+  document.getElementById('tmpl_' + i)?.classList.add('on');
+  const t = MKT_TEMPLATES[i];
+  document.getElementById('mktBody').value = t.body;
+  document.getElementById('mktSubject').value = `${COMPANY_NAME} — ${t.name}`;
+  updatePreview();
+}
+
+/* ═══════════════════════════════════════════════════
+   PREVIEW
+═══════════════════════════════════════════════════ */
+function personalizeMsg(tpl, user) {
+  return tpl
+    .replace(/{name}/g,    user.name    || 'عزيزنا العميل')
+    .replace(/{shop}/g,    user.shopName|| user.name || '')
+    .replace(/{city}/g,    user.city    || '')
+    .replace(/{balance}/g, (parseFloat(user.balance)||0).toLocaleString() + ' د.ع')
+    .replace(/{points}/g,  (parseInt(user.earnedPoints)||0).toString());
+}
+
+function updatePreview() {
+  const body = document.getElementById('mktBody').value;
+  document.getElementById('charCount').textContent = body.length;
+  const box = document.getElementById('previewBox');
+  const cont = document.getElementById('previewContent');
+  if (!body.trim()) { box.classList.remove('show'); return; }
+  const sample = users.find(u => u.type === 'market_owner' || u.type === 'rep')
+    || { name: 'أحمد علي', shopName: 'ماركت الرشيد', city: 'بغداد', balance: 50000, earnedPoints: 10 };
+  box.classList.add('show');
+  cont.textContent = personalizeMsg(body, sample);
+}
+
+function insertVar(v) {
+  const ta = document.getElementById('mktBody');
+  if (!ta) return;
+  const pos = ta.selectionStart;
+  ta.value = ta.value.slice(0, pos) + v + ta.value.slice(ta.selectionEnd);
+  ta.selectionStart = ta.selectionEnd = pos + v.length;
+  ta.focus();
+  updatePreview();
+}
+
+/* ═══════════════════════════════════════════════════
+   SEND CAMPAIGN
+═══════════════════════════════════════════════════ */
+async function sendCampaign() {
+  const body    = document.getElementById('mktBody').value.trim();
+  const subject = document.getElementById('mktSubject').value.trim() || `رسالة من ${COMPANY_NAME}`;
+  if (!body) { toast('اكتب نص الرسالة أولاً', 'err'); return; }
+
+  const recipients = getAudienceUsers(selAudience);
+  if (!recipients.length) { toast('لا يوجد مستلمون للشريحة المختارة', 'err'); return; }
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true; btn.textContent = '⏳ جاري الإرسال...';
+  const progWrap = document.getElementById('progWrap');
+  const progBar  = document.getElementById('progBar');
+  const progPct  = document.getElementById('progPct');
+  const progTxt  = document.getElementById('progTxt');
+  const progLog  = document.getElementById('progLog');
+  progWrap.classList.add('show');
+  progLog.innerHTML = '';
+
+  let emailSent = 0, emailFailed = 0;
+  const campId = 'CAM' + Date.now();
+
+  // ── إيميل ──
+  if ((selChannel === 'email' || selChannel === 'all') && EMAILJS_SVC && EMAILJS_TPL) {
+    const emailList = recipients.filter(u => u.email);
+    for (let i = 0; i < emailList.length; i++) {
+      const u = emailList[i];
+      const msg = personalizeMsg(body, u);
+      const pct = Math.round((i + 1) / emailList.length * 100);
+      progBar.style.width = pct + '%';
+      progPct.textContent = pct + '%';
+      progTxt.textContent = `📧 إرسال لـ ${u.name} (${i + 1}/${emailList.length})`;
+      try {
+        await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+          to_email: u.email, subject, rep_name: u.name,
+          shop_name: u.shopName || '', order_id: campId,
+          order_date: new Date().toLocaleString('ar-IQ'), products: msg,
+          total: '', commission: '', net: '', shop_addr: '', shop_note: '', location: ''
+        });
+        emailSent++;
+        addLog(progLog, `✅ ${u.name} — ${u.email}`, 'ok');
+      } catch (e) {
+        emailFailed++;
+        addLog(progLog, `❌ ${u.name} — ${e.text || e.message || 'خطأ'}`, 'err');
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
+  } else if (selChannel === 'email' || selChannel === 'all') {
+    addLog(progLog, '⚠️ لم يتم ضبط إعدادات EmailJS — تحقق من setup.html', 'inf');
+  }
+
+  // ── تيليغرام ──
+  if ((selChannel === 'tele' || selChannel === 'all') && TELE_TOKEN && TELE_CHAT) {
+    const msg = personalizeMsg(body, { name: 'عملاء ' + COMPANY_NAME });
+    addLog(progLog, '✈️ إرسال رسالة تيليغرام...', 'inf');
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: TELE_CHAT, text: msg })
+      });
+      const data = await r.json();
+      if (data.ok) addLog(progLog, '✅ تيليغرام — تم الإرسال', 'ok');
+      else addLog(progLog, '❌ تيليغرام — ' + (data.description || 'خطأ'), 'err');
+    } catch (e) {
+      addLog(progLog, '❌ تيليغرام — ' + e.message, 'err');
+    }
+  } else if (selChannel === 'tele') {
+    addLog(progLog, '⚠️ لم يتم ضبط Bot Token/Chat ID — تحقق من setup.html', 'inf');
+  }
+
+  // ── واتساب ──
+  if (selChannel === 'wa' || selChannel === 'all') {
+    const waList = recipients.filter(u => u.phone);
+    if (waList.length) openWaBulk(waList, body);
+    else addLog(progLog, '⚠️ لا يوجد أرقام واتساب للمستلمين', 'inf');
+  }
+
+  // ── حفظ الحملة ──
+  const campData = {
+    campaignId: campId, subject, channel: selChannel,
+    audience: selAudience.join(','),
+    bodyPreview: body.substring(0, 100),
+    totalSent: emailSent, totalFailed: emailFailed,
+    recipientCount: recipients.length,
+    date: new Date().toLocaleDateString('ar-IQ'),
+    createdAt: { seconds: Date.now() / 1000 }
+  };
+  try {
+    const db = window._db;
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'campaigns', campId), campData);
+    campaigns.unshift({ ...campData, _id: campId });
+    updateKpi();
+    renderHistory();
+  } catch(e) {}
+
+  progBar.style.width = '100%';
+  progPct.textContent = '100%';
+  progTxt.textContent = `✅ اكتمل الإرسال — ${emailSent} إيميل`;
+  btn.disabled = false; btn.textContent = '🚀 إرسال الحملة';
+  toast(`✅ الحملة اكتملت — ${emailSent} إيميل وصل`);
+  setTimeout(() => progWrap.classList.remove('show'), 8000);
+}
+
+function addLog(el, msg, type) {
+  const d = document.createElement('div');
+  d.className = type;
+  d.textContent = msg;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+
+function openWaBulk(recipients, bodyTemplate) {
+  const el = document.getElementById('waBulkInfo');
+  const list = document.getElementById('waBulkList');
+  el.textContent = `${recipients.length} مستلم — اضغط "إرسال" لكل شخص`;
+  list.innerHTML = recipients.map(u => {
+    const msg = personalizeMsg(bodyTemplate, u);
+    const num = (u.phone || '').replace(/\+|\s|-/g, '');
+    const url = `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+    return `<div class="phone-row">
+      <div style="flex:1"><div style="font-weight:700;font-size:.83rem">${u.name||'—'}</div>
+        <div style="font-size:.73rem;color:var(--muted);direction:ltr;text-align:right">${u.phone||''}</div></div>
+      <a href="${url}" target="_blank" class="btn btn-wa btn-sm" onclick="this.textContent='✅';this.style.opacity='.6'">💬 إرسال</a>
+    </div>`;
+  }).join('');
+  openModal('waBulkModal');
+}
+
+/* ═══════════════════════════════════════════════════
+   PHONE EXTRACTOR
+═══════════════════════════════════════════════════ */
+function normalizePhone(raw) {
+  let n = raw.replace(/\D/g, '');
+  if (/^07[3-9]\d{8}$/.test(n)) return '+964' + n.slice(1);
+  if (/^9647[3-9]\d{8}$/.test(n)) return '+' + n;
+  if (/^00964/.test(n)) return '+' + n.slice(2);
+  if (raw.startsWith('+') && n.length >= 10) return '+' + n;
+  if (n.length >= 10 && n.length <= 14) return '+' + n;
+  return null;
+}
+
+function extractNumbers(text) {
+  if (!text) return [];
+  const patterns = [
+    /(?:\+964|00964|0)7[3-9]\d{8}/g,
+    /\+\d{10,14}/g,
+    /\b07[3-9]\d{8}\b/g,
+    /\b\d{11,13}\b/g,
+  ];
+  const found = new Set();
+  patterns.forEach(p => {
+    const m = text.match(p);
+    if (m) m.forEach(num => {
+      const n = normalizePhone(num);
+      if (n) found.add(n);
+    });
+  });
+  return [...found];
+}
+
+function doExtract() {
+  const raw = document.getElementById('extInput').value || '';
+  const phones = extractNumbers(raw);
+  extPhones = phones.map(p => ({ phone: p, wa: null, tg: null, selected: true }));
+  renderExtractedPhones();
+}
+
+async function processExtractFile(file) {
+  const el = document.getElementById('extInput');
+  if (!file || !el) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt' || ext === 'csv') {
+    el.value = await file.text();
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    if (typeof XLSX === 'undefined') { toast('مكتبة Excel غير محملة', 'err'); return; }
+    const arr = await file.arrayBuffer();
+    const wb  = XLSX.read(new Uint8Array(arr), { type: 'array' });
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    el.value  = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' }).map(r => r.join(' ')).join('\n');
+  } else {
+    toast('صيغة غير مدعومة — استخدم txt/csv/xlsx', 'err'); return;
+  }
+  doExtract();
+}
+
+function clearExtract() {
+  document.getElementById('extInput').value = '';
+  extPhones = [];
+  renderExtractedPhones();
+}
+
+function dedupeExtract() {
+  extPhones = [...new Map(extPhones.map(p => [p.phone, p])).values()];
+  renderExtractedPhones();
+  toast(`تم — ${extPhones.length} رقم فريد`);
+}
+
+function setExtFilter(f) {
+  extFilter = f;
+  ['filterAll','filterWA','filterTG'].forEach(id => document.getElementById(id)?.classList.remove('btn-primary'));
+  document.getElementById('filter' + f.charAt(0).toUpperCase() + f.slice(1))?.classList.add('btn-primary');
+  renderExtractedPhones();
+}
+
+function renderExtractedPhones() {
+  const el = document.getElementById('extResults');
+  const cnt = document.getElementById('extCount');
+  let list = extPhones;
+  if (extFilter === 'wa') list = list.filter(p => p.wa);
+  if (extFilter === 'tg') list = list.filter(p => p.tg);
+  if (cnt) cnt.textContent = list.length;
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">لم يتم العثور على أرقام</div>';
+    return;
+  }
+  el.innerHTML = list.map((item, i) => {
+    const num = item.phone.replace('+', '');
+    const waUrl = `https://wa.me/${num}`;
+    const tgUrl = `https://t.me/+${num}`;
+    return `<div class="phone-row" id="pr_${i}">
+      <input type="checkbox" ${item.selected ? 'checked' : ''} onchange="extPhones[${i}].selected=this.checked"
+        style="width:16px;height:16px;accent-color:var(--teal);flex-shrink:0">
+      <span style="flex:1;font-weight:700;font-size:.87rem;direction:ltr">${item.phone}</span>
+      <a href="${waUrl}" target="_blank" class="btn btn-wa btn-sm"
+        onclick="extPhones[${i}].wa=true;this.textContent='✅ WA';this.style.opacity='.7'" style="text-decoration:none">
+        ${item.wa ? '✅ WA' : '💬 WA'}</a>
+      <a href="${tgUrl}" target="_blank" class="btn btn-tele btn-sm"
+        onclick="extPhones[${i}].tg=true;this.textContent='✅ TG';this.style.opacity='.7'" style="text-decoration:none">
+        ${item.tg ? '✅ TG' : '✈️ TG'}</a>
+      <button class="btn btn-danger btn-sm" onclick="extPhones.splice(${i},1);renderExtractedPhones()">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function selectAllExt(val) {
+  extPhones.forEach(p => p.selected = val);
+  renderExtractedPhones();
+}
+
+function sendExtToWA() {
+  const sel = extPhones.filter(p => p.selected);
+  if (!sel.length) { toast('اختر أرقاماً أولاً', 'err'); return; }
+  const body = document.getElementById('mktBody').value || 'مرحباً';
+  if (sel.length > 15 && !confirm(`سيتم فتح ${sel.length} نافذة. استمر؟`)) return;
+  sel.forEach((item, i) => {
+    const num = item.phone.replace('+', '');
+    setTimeout(() => window.open(`https://wa.me/${num}?text=${encodeURIComponent(body)}`, '_blank'), i * 350);
+  });
+}
+
+function sendExtToTele() {
+  if (!TELE_TOKEN || !TELE_CHAT) {
+    toast('ضبط Bot Token/Chat ID مطلوب في setup.html', 'err'); return;
+  }
+  const sel = extPhones.filter(p => p.selected);
+  const body = document.getElementById('mktBody').value || 'مرحباً';
+  sel.forEach(p => {
+    window.open(`https://t.me/${p.phone.replace('+', '')}`, '_blank');
+  });
+  toast(`فتحت ${sel.length} محادثة تيليغرام`);
+}
+
+function exportExtCSV() {
+  const sel = extPhones.filter(p => p.selected);
+  if (!sel.length) { toast('اختر أرقاماً أولاً', 'err'); return; }
+  const csv = 'phone,whatsapp,telegram\n' + sel.map(p => `${p.phone},${p.wa ? 'yes' : ''},${p.tg ? 'yes' : ''}`).join('\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  const a = document.createElement('a'); a.href = url; a.download = 'phones_' + Date.now() + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast(`تم تصدير ${sel.length} رقم`);
+}
+
+function addExtToContacts() {
+  toast('ميزة الإضافة للعملاء قيد التطوير', 'inf');
+}
+
+/* ═══════════════════════════════════════════════════
+   SCHEDULER
+═══════════════════════════════════════════════════ */
+function addScheduled() {
+  const channel  = document.getElementById('schedChannel').value;
+  const audience = document.getElementById('schedAudience').value;
+  const date     = document.getElementById('schedDate').value;
+  const time     = document.getElementById('schedTime').value;
+  const subject  = document.getElementById('schedSubject').value.trim();
+  const body     = document.getElementById('schedBody').value.trim();
+
+  if (!date || !time) { toast('اختر التاريخ والوقت', 'err'); return; }
+  if (!body) { toast('اكتب نص الرسالة', 'err'); return; }
+
+  const scheduled = {
+    id: Date.now(),
+    channel, audience, date, time, subject, body,
+    datetime: date + 'T' + time,
+    status: 'pending'
+  };
+  scheduledMsgs.unshift(scheduled);
+  saveScheduled();
+  renderScheduled();
+  toast('✅ تمت الجدولة');
+
+  // clear form
+  document.getElementById('schedBody').value = '';
+  document.getElementById('schedSubject').value = '';
+}
+
+function saveScheduled() {
+  localStorage.setItem('_scheduledMsgs', JSON.stringify(scheduledMsgs));
+}
+
+function renderScheduled() {
+  const el = document.getElementById('schedList');
+  if (!el) return;
+  if (!scheduledMsgs.length) {
+    el.innerHTML = '<div class="empty">لا توجد رسائل مجدولة</div>';
+    return;
+  }
+  const chIcon = { wa: '💬', tele: '✈️', email: '📧', all: '🔁' };
+  const audName = {
+    all: 'الجميع', wholesale: 'زوار الجملة', retail: 'زوار المفرد',
+    company: 'الشركات', ws_shop: 'محلات الجملة',
+    tier1: 'فئة أولى', tier2: 'متوسط', normal: 'عادي', rep: 'المندوبون'
+  };
+  el.innerHTML = scheduledMsgs.map(s => `
+    <div class="sched-item">
+      <div>
+        <div style="font-size:1.2rem">${chIcon[s.channel] || '📩'}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:.83rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.body.substring(0, 60)}${s.body.length > 60 ? '...' : ''}</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:3px">
+          ${audName[s.audience] || s.audience} • ${s.date} ${s.time}
+        </div>
+      </div>
+      <span class="sched-badge ${s.status === 'sent' ? '' : ''}" style="${s.status === 'sent' ? 'background:var(--mint3);color:var(--mint2)' : s.status === 'due' ? 'background:var(--gold3);color:var(--gold2)' : ''}">
+        ${s.status === 'sent' ? '✅ أُرسلت' : s.status === 'due' ? '⏰ حان الوقت' : '⏳ معلقة'}
+      </span>
+      ${s.status === 'due' ? `<button class="btn btn-primary btn-sm" onclick="sendScheduledNow(${s.id})">إرسال الآن</button>` : ''}
+      <button class="btn btn-danger btn-sm" onclick="deleteScheduled(${s.id})">✕</button>
+    </div>`).join('');
+}
+
+function deleteScheduled(id) {
+  scheduledMsgs = scheduledMsgs.filter(s => s.id !== id);
+  saveScheduled();
+  renderScheduled();
+}
+
+function clearAllScheduled() {
+  if (!confirm('حذف كل الرسائل المجدولة؟')) return;
+  scheduledMsgs = [];
+  saveScheduled();
+  renderScheduled();
+}
+
+function checkDueMessages() {
+  const now = new Date();
+  let changed = false;
+  scheduledMsgs.forEach(s => {
+    if (s.status === 'pending') {
+      const due = new Date(s.datetime);
+      if (due <= now) { s.status = 'due'; changed = true; }
+    }
+  });
+  if (changed) {
+    saveScheduled();
+    renderScheduled();
+    toast('⏰ لديك رسائل مجدولة حان وقت إرسالها!', 'inf');
+  }
+}
+
+async function sendScheduledNow(id) {
+  const s = scheduledMsgs.find(m => m.id === id);
+  if (!s) return;
+  const recipients = getAudienceUsers([s.audience]);
+  if (!recipients.length) { toast('لا يوجد مستلمون', 'err'); return; }
+
+  if (s.channel === 'wa' || s.channel === 'all') {
+    openWaBulk(recipients.filter(u => u.phone), s.body);
+  }
+  if ((s.channel === 'tele' || s.channel === 'all') && TELE_TOKEN) {
+    try {
+      await fetch(`https://api.telegram.org/bot${TELE_TOKEN}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: TELE_CHAT, text: s.body })
+      });
+    } catch(e) {}
+  }
+
+  s.status = 'sent';
+  saveScheduled();
+  renderScheduled();
+  toast('✅ تم الإرسال');
+}
+
+// Set default date to today
+document.addEventListener('DOMContentLoaded', () => {
+  const d = document.getElementById('schedDate');
+  if (d) d.value = new Date().toISOString().split('T')[0];
+});
+
+/* ═══════════════════════════════════════════════════
+   CONTACTS
+═══════════════════════════════════════════════════ */
+let segTab = 'users';
+
+function setSegTab(tab) {
+  segTab = tab;
+  document.getElementById('contactsBody').style.display = tab === 'users' ? 'block' : 'none';
+  document.getElementById('visitorsBody').style.display = tab === 'visitors' ? 'block' : 'none';
+  document.getElementById('st-users').style.color    = tab === 'users' ? 'var(--teal)' : 'var(--muted)';
+  document.getElementById('st-users').style.borderBottom = tab === 'users' ? '2.5px solid var(--teal)' : 'none';
+  document.getElementById('st-visitors').style.color    = tab === 'visitors' ? 'var(--teal)' : 'var(--muted)';
+  document.getElementById('st-visitors').style.borderBottom = tab === 'visitors' ? '2.5px solid var(--teal)' : 'none';
+  if (tab === 'visitors') renderVisitorsTable();
+}
+
+function renderContacts() {
+  const q    = (document.getElementById('contactSearch')?.value || '').toLowerCase();
+  const type = document.getElementById('contactTypeFilter')?.value || '';
+  let list   = users.filter(u => u.type !== 'admin' && u.type !== 'preparer' && u.type !== 'driver');
+  if (q)    list = list.filter(u => (u.name||'').toLowerCase().includes(q) || (u.phone||'').includes(q) || (u.email||'').toLowerCase().includes(q));
+  if (type) list = list.filter(u => u.type === type || u.buyerMode === type);
+
+  const ROLE = { rep: 'مندوب', market_owner: 'ماركت', admin: 'مدير', preparer: 'مجهز', driver: 'سائق' };
+  const TIER = { tier1: 'فئة أولى', tier2: 'متوسط', wholesale: 'جملة' };
+  const el = document.getElementById('contactsBody');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div class="empty">لا يوجد عملاء</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>الاسم</th><th>النوع</th><th>الفئة</th><th>الهاتف</th><th>الإيميل</th><th>المدينة</th><th>الرصيد</th></tr></thead>
+    <tbody>${list.map(u => `<tr>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td><span class="badge ${u.type==='rep'?'b-sky':'b-teal'}">${ROLE[u.type]||u.type||'—'}</span></td>
+      <td>${TIER[u.marketTier||u.shopType||u.buyerMode]||u.marketTier||u.shopType||'—'}</td>
+      <td style="direction:ltr;text-align:right">${u.phone||'—'}</td>
+      <td>${u.email||'—'}</td>
+      <td>${u.city||'—'}</td>
+      <td style="font-weight:700;color:var(--teal)">${(parseFloat(u.balance)||0).toLocaleString()}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function renderVisitorsTable() {
+  const el = document.getElementById('visitorsBody');
+  if (!el) return;
+  const list = visitors.slice(0, 200);
+  if (!list.length) { el.innerHTML = '<div class="empty">لا يوجد زوار مسجلون</div>'; return; }
+  el.innerHTML = `<div class="tbl-wrap"><table>
+    <thead><tr><th>المعرّف</th><th>نوع الزائر</th><th>الجهاز</th><th>آخر زيارة</th><th>الطلبات</th></tr></thead>
+    <tbody>${list.map(v => `<tr>
+      <td style="font-size:.72rem;direction:ltr">${(v._id||'').substring(0,14)}...</td>
+      <td><span class="badge ${v.buyerMode==='wholesale'?'b-teal':'b-sky'}">${v.buyerMode==='wholesale'?'📦 جملة':'🛍️ مفرد'}</span></td>
+      <td style="font-size:.75rem;color:var(--muted)">${v.device||'—'}</td>
+      <td style="font-size:.75rem;color:var(--muted)">${v.lastVisit||v.updatedAt||'—'}</td>
+      <td><span class="badge b-gold">${v.ordersCount||0}</span></td>
+    </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+function exportContacts() {
+  if (typeof XLSX === 'undefined') { toast('تحميل مكتبة Excel...'); return; }
+  const list = users.filter(u => u.type === 'rep' || u.type === 'market_owner');
+  const rows = [['الاسم', 'النوع', 'الهاتف', 'الإيميل', 'المدينة', 'الماركت', 'الرصيد', 'النقاط']];
+  list.forEach(u => rows.push([u.name, u.type, u.phone||'', u.email||'', u.city||'', u.shopName||'', parseFloat(u.balance)||0, parseInt(u.earnedPoints)||0]));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Contacts');
+  XLSX.writeFile(wb, 'contacts_' + new Date().toISOString().split('T')[0] + '.xlsx');
+  toast(`تم تصدير ${list.length} عميل`);
+}
+
+/* ═══════════════════════════════════════════════════
+   CAMPAIGN HISTORY
+═══════════════════════════════════════════════════ */
+function renderHistory() {
+  const el = document.getElementById('histBody');
+  if (!el) return;
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  const list = q ? campaigns.filter(c => (c.subject||'').toLowerCase().includes(q) || (c.channel||'').includes(q) || (c.date||'').includes(q)) : campaigns;
+  const chBadge = { email: 'b-sky', wa: 'b-green', tele: 'b-violet', all: 'b-violet' };
+  const chLabel = { email: '📧 إيميل', wa: '💬 واتساب', tele: '✈️ تيليغرام', all: '🔁 الجميع' };
+  const audLabel = { all: 'الجميع', wholesale: 'جملة', retail: 'مفرد', company: 'شركات', ws_shop: 'محلات جملة', tier1: 'فئة أولى', tier2: 'متوسط', normal: 'عادي', rep: 'مندوبون' };
+  el.innerHTML = list.length ? list.map(c => `<tr>
+    <td style="font-size:.73rem;color:var(--muted);white-space:nowrap">${c.date||'—'}</td>
+    <td style="font-weight:700;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.subject||'—'}</td>
+    <td><span class="badge ${chBadge[c.channel]||'b-teal'}">${chLabel[c.channel]||c.channel||'—'}</span></td>
+    <td style="font-size:.75rem">${(c.audience||'').split(',').map(a => audLabel[a]||a).join('، ')||'—'}</td>
+    <td>${c.recipientCount||0}</td>
+    <td style="color:var(--mint);font-weight:700">${c.totalSent||0}</td>
+    <td style="color:var(--rose);font-weight:700">${c.totalFailed||0}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="deleteCampaign('${c._id||c.campaignId||''}')">حذف</button></td>
+  </tr>`).join('')
+  : `<tr><td colspan="8" class="empty" style="text-align:center">لا توجد حملات${q ? ' بهذا البحث' : ' بعد'}</td></tr>`;
+}
+
+async function deleteCampaign(id) {
+  if (!id || !confirm('حذف هذه الحملة؟')) return;
+  try {
+    const db = window._db;
+    const { doc, deleteDoc } = window._fb;
+    await deleteDoc(doc(db, 'campaigns', id));
+  } catch(e) {}
+  campaigns = campaigns.filter(c => (c._id || c.campaignId) !== id);
+  updateKpi();
+  renderHistory();
+  toast('تم حذف الحملة');
+}
+
+async function deleteAllHistory() {
+  const q = (document.getElementById('histSearch')?.value || '').toLowerCase();
+  const toDelete = q ? campaigns.filter(c => (c.subject||'').toLowerCase().includes(q)) : campaigns;
+  if (!toDelete.length || !confirm(`حذف ${toDelete.length} حملة؟`)) return;
+  const db = window._db;
+  const { doc, deleteDoc } = window._fb;
+  await Promise.all(toDelete.map(c => deleteDoc(doc(db, 'campaigns', c._id || c.campaignId || '')).catch(() => {})));
+  const delIds = new Set(toDelete.map(c => c._id || c.campaignId));
+  campaigns = campaigns.filter(c => !delIds.has(c._id || c.campaignId));
+  updateKpi();
+  renderHistory();
+  toast(`تم حذف ${toDelete.length} حملة`);
+}
+
+/* ═══════════════════════════════════════════════════
+   MODAL & TOAST
+═══════════════════════════════════════════════════ */
+function openModal(id)  { document.getElementById(id)?.classList.add('open') }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open') }
+document.addEventListener('click', e => { if (e.target.classList.contains('modal-back')) closeModal(e.target.id) });
+
+let _toastTimer;
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toastBox');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast-box show' + (type === 'err' ? ' err' : type === 'inf' ? '' : ' success');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// Set default channel UI on load
+document.addEventListener('DOMContentLoaded', () => {
+  setChannel('email');
+  updateCounts();
+});
+</script>
+</body>
+</html>

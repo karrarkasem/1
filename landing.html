@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>برجمان — أنشئ متجرك الإلكتروني اليوم</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="js/theme.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f8fafc;--surface:#fff;--surface2:#f1f5f9;
+  --border:rgba(0,0,0,.07);--text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --accent:#0d9488;--accent2:#0f766e;--accent3:rgba(13,148,136,.10);
+  --teal:#0d9488;--teal2:#0f766e;--teal3:rgba(13,148,136,.10);
+}
+[data-mode="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#0f172a;
+  --border:rgba(255,255,255,.08);--text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;transition:background .25s,color .25s;}
+a{text-decoration:none;color:inherit;}
+
+/* ══ NAV ══ */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(248,250,252,.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 5%;
+  display:flex;align-items:center;gap:16px;height:64px;
+  transition:background .25s;
+}
+[data-mode="dark"] .nav{background:rgba(15,23,42,.92);}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:900;font-size:1.1rem;}
+.nav-gem{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal2));display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+.nav-links{display:flex;gap:4px;margin-right:auto;}
+.nav-link{padding:7px 14px;border-radius:8px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .18s;}
+.nav-link:hover{background:var(--surface2);color:var(--text);}
+.nav-actions{display:flex;gap:8px;align-items:center;}
+.btn-nav-login{padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .18s;}
+.btn-nav-login:hover{border-color:var(--teal);color:var(--teal);}
+.btn-nav-start{padding:8px 18px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(13,148,136,.3);transition:all .2s;}
+.btn-nav-start:hover{opacity:.9;transform:translateY(-1px);}
+.nav-mode-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s;}
+.nav-mode-btn:hover{border-color:var(--teal);}
+
+/* ══ HERO ══ */
+.hero{
+  padding:72px 5% 60px;
+  text-align:center;
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-200px;right:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(13,148,136,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;bottom:-150px;left:-150px;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(99,102,241,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 14px;border-radius:99px;
+  background:var(--accent3);border:1px solid rgba(13,148,136,.25);
+  color:var(--accent2);font-size:.78rem;font-weight:700;
+  margin-bottom:20px;
+}
+.hero h1{
+  font-size:clamp(1.8rem,5vw,3.2rem);font-weight:900;
+  line-height:1.2;margin-bottom:16px;
+  letter-spacing:-.02em;
+}
+.hero h1 span{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{font-size:1.05rem;color:var(--muted);max-width:560px;margin:0 auto 32px;line-height:1.8;}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px;}
+.btn-hero-primary{
+  padding:14px 28px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;
+  font-family:'Cairo',sans-serif;font-size:1rem;font-weight:800;
+  cursor:pointer;box-shadow:0 8px 28px rgba(13,148,136,.35);
+  transition:all .2s;display:flex;align-items:center;gap:8px;
+}
+.btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(13,148,136,.4);}
+.btn-hero-secondary{
+  padding:14px 28px;border-radius:12px;border:1.5px solid var(--border);
+  background:var(--surface);color:var(--text);
+  font-family:'Cairo',sans-serif;font-size:1rem;font-weight:700;
+  cursor:pointer;transition:all .2s;
+}
+.btn-hero-secondary:hover{border-color:var(--teal);color:var(--teal);}
+.hero-stats{
+  display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
+  padding:20px 0 0;
+}
+.hero-stat{text-align:center;}
+.hero-stat-val{font-size:1.6rem;font-weight:900;color:var(--teal);}
+.hero-stat-lbl{font-size:.78rem;color:var(--muted);font-weight:600;}
+
+/* ══ MOCK SCREENSHOT ══ */
+.hero-mock{
+  max-width:820px;margin:40px auto 0;
+  border-radius:20px;overflow:hidden;
+  border:1px solid var(--border);
+  box-shadow:0 24px 80px rgba(0,0,0,.12);
+  background:var(--surface);
+}
+.mock-topbar{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  padding:12px 18px;display:flex;align-items:center;gap:10px;
+}
+.mock-dots{display:flex;gap:6px;}
+.mock-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.4);}
+.mock-title{color:rgba(255,255,255,.9);font-weight:700;font-size:.9rem;flex:1;text-align:center;}
+.mock-body{display:flex;min-height:220px;}
+.mock-side{width:180px;background:var(--surface);border-left:1px solid var(--border);padding:12px 8px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.mock-nav{padding:8px 10px;border-radius:8px;font-size:.78rem;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.mock-nav.act{background:var(--accent3);color:var(--teal2);}
+.mock-content{flex:1;padding:16px;background:var(--surface2);}
+.mock-kpi-row{display:flex;gap:10px;margin-bottom:12px;}
+.mock-kpi{flex:1;background:var(--surface);border-radius:10px;padding:10px;border:1px solid var(--border);}
+.mock-kpi-val{font-size:1.1rem;font-weight:900;color:var(--teal);}
+.mock-kpi-lbl{font-size:.65rem;color:var(--muted);}
+.mock-prod-row{display:flex;gap:8px;}
+.mock-prod{flex:1;background:var(--surface);border-radius:8px;padding:8px;border:1px solid var(--border);font-size:.65rem;color:var(--muted);}
+.mock-prod-img{height:40px;background:var(--accent3);border-radius:6px;margin-bottom:5px;}
+
+/* ══ SECTION COMMONS ══ */
+section{padding:64px 5%;}
+.sec-badge{display:inline-block;padding:5px 14px;border-radius:99px;background:var(--accent3);color:var(--teal2);font-size:.75rem;font-weight:800;margin-bottom:12px;}
+.sec-title{font-size:clamp(1.3rem,3vw,2rem);font-weight:900;margin-bottom:8px;}
+.sec-sub{color:var(--muted);font-size:.95rem;line-height:1.8;max-width:560px;}
+.text-center{text-align:center;}
+.text-center .sec-sub{margin:0 auto;}
+
+/* ══ HOW IT WORKS ══ */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:40px;}
+.step-card-lp{
+  background:var(--surface);border-radius:16px;padding:24px;
+  border:1px solid var(--border);position:relative;
+  transition:transform .2s,box-shadow .2s;
+}
+.step-card-lp:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.08);}
+.step-num{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:900;font-size:.95rem;margin-bottom:14px;
+}
+.step-card-lp h3{font-size:.95rem;font-weight:800;margin-bottom:6px;}
+.step-card-lp p{font-size:.82rem;color:var(--muted);line-height:1.7;}
+.step-arrow{
+  display:none;
+}
+@media(min-width:768px){
+  .steps-grid{position:relative;}
+  .step-arrow{display:block;position:absolute;top:42px;font-size:1.4rem;color:var(--muted2);}
+}
+
+/* ══ BIZ TYPES ══ */
+.biz-grid-lp{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:36px;}
+.biz-card-lp{
+  background:var(--surface);border-radius:14px;padding:20px 14px;
+  text-align:center;border:1px solid var(--border);
+  transition:all .2s;cursor:default;
+}
+.biz-card-lp:hover{border-color:var(--teal);transform:translateY(-3px);box-shadow:0 8px 24px rgba(13,148,136,.12);}
+.biz-icon-lp{font-size:2rem;margin-bottom:8px;}
+.biz-name-lp{font-size:.85rem;font-weight:700;}
+.biz-desc-lp{font-size:.72rem;color:var(--muted);margin-top:3px;}
+
+/* ══ FEATURES ══ */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;margin-top:36px;}
+.feat-card{background:var(--surface);border-radius:14px;padding:22px;border:1px solid var(--border);transition:all .2s;}
+.feat-card:hover{border-color:var(--teal);box-shadow:0 6px 24px rgba(13,148,136,.1);}
+.feat-icon{font-size:1.6rem;margin-bottom:10px;}
+.feat-title{font-size:.9rem;font-weight:800;margin-bottom:5px;}
+.feat-desc{font-size:.8rem;color:var(--muted);line-height:1.7;}
+
+/* ══ PRICING ══ */
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:40px;max-width:900px;margin-left:auto;margin-right:auto;}
+.plan-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:20px;padding:28px;position:relative;
+  transition:transform .2s,box-shadow .2s;
+}
+.plan-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.1);}
+.plan-card.popular{
+  border-color:var(--teal);
+  box-shadow:0 0 0 3px var(--accent3),0 16px 48px rgba(13,148,136,.15);
+}
+.popular-badge{
+  position:absolute;top:-13px;right:50%;transform:translateX(50%);
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:#fff;font-size:.72rem;font-weight:800;
+  padding:4px 14px;border-radius:99px;white-space:nowrap;
+}
+.plan-name{font-size:.85rem;font-weight:800;color:var(--muted);margin-bottom:8px;}
+.plan-price{font-size:2.4rem;font-weight:900;line-height:1;margin-bottom:4px;}
+.plan-price span{font-size:.85rem;font-weight:600;color:var(--muted);}
+.plan-period{font-size:.78rem;color:var(--muted);margin-bottom:20px;}
+.plan-features{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+.plan-feat{display:flex;align-items:flex-start;gap:8px;font-size:.83rem;}
+.plan-feat-icon{color:var(--teal);font-weight:900;flex-shrink:0;margin-top:1px;}
+.plan-feat.disabled{color:var(--muted2);}
+.plan-feat.disabled .plan-feat-icon{color:var(--muted2);}
+.btn-plan{
+  width:100%;padding:12px;border-radius:10px;cursor:pointer;
+  font-family:'Cairo',sans-serif;font-size:.88rem;font-weight:700;border:none;
+  transition:all .2s;
+}
+.btn-plan-primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;box-shadow:0 4px 14px rgba(13,148,136,.3);}
+.btn-plan-primary:hover{opacity:.92;transform:translateY(-1px);}
+.btn-plan-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-plan-outline:hover{border-color:var(--teal);color:var(--teal);}
+.trial-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);
+  color:#059669;padding:4px 12px;border-radius:99px;font-size:.75rem;font-weight:800;
+  margin-bottom:8px;
+}
+[data-mode="dark"] .trial-badge{color:#34d399;}
+
+/* ══ NOTIF SECTION ══ */
+.notif-cards{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px;justify-content:center;}
+.notif-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:14px;padding:20px 24px;
+  display:flex;align-items:center;gap:14px;
+  transition:all .2s;flex:1;min-width:200px;max-width:260px;
+}
+.notif-card:hover{border-color:var(--teal);box-shadow:0 6px 20px rgba(13,148,136,.1);}
+.notif-icon{font-size:2rem;flex-shrink:0;}
+.notif-name{font-size:.9rem;font-weight:800;margin-bottom:3px;}
+.notif-desc{font-size:.75rem;color:var(--muted);}
+
+/* ══ CTA SECTION ══ */
+.cta-section{
+  margin:0 5% 64px;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  border-radius:24px;padding:52px 32px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.cta-section::before{content:'';position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.07);}
+.cta-section::after{content:'';position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.05);}
+.cta-section h2{color:#fff;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:900;margin-bottom:10px;}
+.cta-section p{color:rgba(255,255,255,.8);font-size:.95rem;margin-bottom:28px;}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-cta-white{padding:13px 26px;border-radius:10px;border:none;background:#fff;color:var(--teal2);font-family:'Cairo',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:all .2s;}
+.btn-cta-white:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.2);}
+.btn-cta-outline{padding:13px 26px;border-radius:10px;border:2px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-family:'Cairo',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-cta-outline:hover{background:rgba(255,255,255,.12);}
+
+/* ══ FOOTER ══ */
+footer{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:32px 5%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+.footer-logo{display:flex;align-items:center;gap:8px;font-weight:900;}
+.footer-links{display:flex;gap:16px;}
+.footer-link{font-size:.82rem;color:var(--muted);cursor:pointer;}
+.footer-link:hover{color:var(--teal);}
+footer p{font-size:.78rem;color:var(--muted2);}
+
+/* ══ MOBILE ══ */
+@media(max-width:640px){
+  .nav-links{display:none;}
+  .hero{padding:48px 5% 40px;}
+  .biz-grid-lp{grid-template-columns:repeat(3,1fr);}
+  .mock-side{display:none;}
+}
+
+/* ══ ANIMATIONS ══ */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-gem">🏪</div>
+    <span>برجمان</span>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link" href="#how">كيف يعمل؟</a>
+    <a class="nav-link" href="#features">المزايا</a>
+    <a class="nav-link" href="#pricing">الأسعار</a>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-mode-btn" onclick="toggleMode()" id="navModeBtn">🌙</button>
+    <button class="btn-nav-login" onclick="location.href='index.html'">لدي موقع — دخول</button>
+    <button class="btn-nav-start" onclick="location.href='setup.html'">ابدأ مجاناً ✨</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">🚀 الفترة التجريبية — شهران مجاناً بدون بطاقة ائتمانية</div>
+  <h1>أنشئ <span>متجرك أو مطعمك</span><br>الإلكتروني في 5 دقائق</h1>
+  <p class="hero-sub">منصة إدارة متكاملة للمتاجر والمطاعم والشركات — إدارة المنتجات، الطلبات، التوصيل، العملاء، والنقاط من مكان واحد.</p>
+  <div class="hero-cta">
+    <button class="btn-hero-primary" onclick="location.href='setup.html'">
+      🏪 إنشاء موقع جديد
+    </button>
+    <button class="btn-hero-secondary" onclick="location.href='index.html'">
+      لدي موقع — تسجيل الدخول ←
+    </button>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="hero-stat-val">+500</div><div class="hero-stat-lbl">متجر نشط</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">٩٩٪</div><div class="hero-stat-lbl">رضا العملاء</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">5 دقائق</div><div class="hero-stat-lbl">وقت الإعداد</div></div>
+    <div class="hero-stat"><div class="hero-stat-val">٢٤/٧</div><div class="hero-stat-lbl">دعم فني</div></div>
+  </div>
+
+  <!-- Mock UI -->
+  <div class="hero-mock fade-in">
+    <div class="mock-topbar">
+      <div class="mock-dots"><div class="mock-dot"></div><div class="mock-dot"></div><div class="mock-dot"></div></div>
+      <div class="mock-title">لوحة تحكم — مطعم الشيف الذهبي</div>
+    </div>
+    <div class="mock-body">
+      <div class="mock-side">
+        <div class="mock-nav act">🏠 الرئيسية</div>
+        <div class="mock-nav">📦 المنتجات</div>
+        <div class="mock-nav">🛒 الطلبات</div>
+        <div class="mock-nav">👥 العملاء</div>
+        <div class="mock-nav">📊 التقارير</div>
+      </div>
+      <div class="mock-content">
+        <div class="mock-kpi-row">
+          <div class="mock-kpi"><div class="mock-kpi-val">١٢٤</div><div class="mock-kpi-lbl">طلب اليوم</div></div>
+          <div class="mock-kpi"><div class="mock-kpi-val">٣.٢م</div><div class="mock-kpi-lbl">المبيعات</div></div>
+          <div class="mock-kpi"><div class="mock-kpi-val">٤٨</div><div class="mock-kpi-lbl">عميل جديد</div></div>
+        </div>
+        <div class="mock-prod-row">
+          <div class="mock-prod"><div class="mock-prod-img"></div>برجر كلاسيك</div>
+          <div class="mock-prod"><div class="mock-prod-img" style="background:rgba(99,102,241,.15)"></div>بيتزا مارغريتا</div>
+          <div class="mock-prod"><div class="mock-prod-img" style="background:rgba(245,158,11,.15)"></div>شاورما دجاج</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background:var(--surface2)">
+  <div class="text-center">
+    <div class="sec-badge">كيف يعمل؟</div>
+    <h2 class="sec-title">ابدأ في 3 خطوات بسيطة</h2>
+    <p class="sec-sub">لا تحتاج خبرة تقنية — فقط أجب على بعض الأسئلة وسيتم كل شيء تلقائياً</p>
+  </div>
+  <div class="steps-grid fade-in">
+    <div class="step-card-lp">
+      <div class="step-num">1</div>
+      <h3>اختر نوع نشاطك</h3>
+      <p>مطعم، متجر، صيدلية، شركة... اختر تخصصك ويُهيَّأ النظام تلقائياً لمتطلباتك</p>
+    </div>
+    <div class="step-card-lp">
+      <div class="step-num">2</div>
+      <h3>خصّص هويتك البصرية</h3>
+      <p>اختر الألوان والشعار والثيم — واجهة كاملة بتصميمك أنت، فاتحة أو داكنة</p>
+    </div>
+    <div class="step-card-lp">
+      <div class="step-num">3</div>
+      <h3>ابدأ إدارة نشاطك</h3>
+      <p>أضف منتجاتك، تلقَّ الطلبات، تابع التوصيل، وابنِ قاعدة عملائك فوراً</p>
+    </div>
+  </div>
+</section>
+
+<!-- BIZ TYPES -->
+<section id="types">
+  <div class="text-center">
+    <div class="sec-badge">أنواع النشاط</div>
+    <h2 class="sec-title">مناسب لكل نوع نشاط تجاري</h2>
+    <p class="sec-sub">نظام مرن يتكيف مع متطلبات كل قطاع</p>
+  </div>
+  <div class="biz-grid-lp fade-in">
+    <div class="biz-card-lp"><div class="biz-icon-lp">🛒</div><div class="biz-name-lp">متجر عام</div><div class="biz-desc-lp">بيع بالتجزئة</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">🍽️</div><div class="biz-name-lp">مطعم / كافيه</div><div class="biz-desc-lp">طعام ومشروبات</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">👗</div><div class="biz-name-lp">أزياء وملابس</div><div class="biz-desc-lp">محل ملابس</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">💊</div><div class="biz-name-lp">صيدلية / طب</div><div class="biz-desc-lp">أدوية وصحة</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">🏢</div><div class="biz-name-lp">شركة تجارية</div><div class="biz-desc-lp">توزيع وتجارة</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">📦</div><div class="biz-name-lp">مستودع</div><div class="biz-desc-lp">تخزين وتوزيع</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">🔧</div><div class="biz-name-lp">خدمات وصيانة</div><div class="biz-desc-lp">تقنية وحرف</div></div>
+    <div class="biz-card-lp"><div class="biz-icon-lp">✨</div><div class="biz-name-lp">أخرى</div><div class="biz-desc-lp">نشاط مخصص</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="background:var(--surface2)">
+  <div class="text-center">
+    <div class="sec-badge">المزايا</div>
+    <h2 class="sec-title">كل ما تحتاجه في مكان واحد</h2>
+    <p class="sec-sub">أدوات احترافية لإدارة نشاطك التجاري بالكامل</p>
+  </div>
+  <div class="features-grid fade-in">
+    <div class="feat-card"><div class="feat-icon">🛒</div><div class="feat-title">إدارة الطلبات</div><div class="feat-desc">استقبل ومتابع وأدر طلباتك بسهولة مع إشعارات فورية لكل طلب جديد</div></div>
+    <div class="feat-card"><div class="feat-icon">📦</div><div class="feat-title">إدارة المنتجات</div><div class="feat-desc">أضف منتجاتك بصور وأسعار ووحدات متعددة، مع خيار الاستيراد من ملف Excel</div></div>
+    <div class="feat-card"><div class="feat-icon">🚚</div><div class="feat-title">تتبع التوصيل</div><div class="feat-desc">تتبع السائقين على الخريطة في الوقت الفعلي وأُعلم العملاء بحالة طلباتهم</div></div>
+    <div class="feat-card"><div class="feat-icon">👥</div><div class="feat-title">إدارة العملاء</div><div class="feat-desc">قاعدة بيانات كاملة للعملاء مع المحافظ الرقمية ونظام النقاط والمكافآت</div></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">تقارير وتحليلات</div><div class="feat-desc">لوحة بيانات ذكية مع تقارير المبيعات والأرباح والأداء، قابلة للتصدير</div></div>
+    <div class="feat-card"><div class="feat-icon">🔔</div><div class="feat-title">إشعارات متعددة</div><div class="feat-desc">استقبل إشعارات الطلبات عبر واتساب، تيليغرام، أو البريد الإلكتروني</div></div>
+    <div class="feat-card"><div class="feat-icon">🎨</div><div class="feat-title">تخصيص كامل</div><div class="feat-desc">اختر ألوانك وشعارك وتصميمك — واجهة تعكس هوية علامتك التجارية</div></div>
+    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">يعمل على الجوال</div><div class="feat-desc">تصميم متجاوب يعمل بكفاءة على الهاتف والتابلت والحاسوب</div></div>
+    <div class="feat-card"><div class="feat-icon">🤝</div><div class="feat-title">إدارة المندوبين</div><div class="feat-desc">أضف مندوبين وتابع أداءهم وعمولاتهم وتوزيع الطلبات عليهم</div></div>
+  </div>
+</section>
+
+<!-- NOTIFICATIONS -->
+<section>
+  <div class="text-center">
+    <div class="sec-badge">الإشعارات</div>
+    <h2 class="sec-title">اختر طريقة استقبال الإشعارات</h2>
+    <p class="sec-sub">تصلك إشعارات فورية على الطريقة التي تفضلها عند كل طلب جديد</p>
+  </div>
+  <div class="notif-cards fade-in">
+    <div class="notif-card">
+      <div class="notif-icon">📱</div>
+      <div><div class="notif-name">واتساب</div><div class="notif-desc">رسائل فورية لكل طلب جديد مباشرة على هاتفك</div></div>
+    </div>
+    <div class="notif-card">
+      <div class="notif-icon">✈️</div>
+      <div><div class="notif-name">تيليغرام</div><div class="notif-desc">بوت تيليغرام يرسل تفاصيل الطلب فور وصوله</div></div>
+    </div>
+    <div class="notif-card">
+      <div class="notif-icon">📧</div>
+      <div><div class="notif-name">البريد الإلكتروني</div><div class="notif-desc">إيميل مفصل بكل طلب جديد مع ملخص يومي</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing" style="background:var(--surface2)">
+  <div class="text-center">
+    <div class="sec-badge">الأسعار</div>
+    <h2 class="sec-title">أسعار بسيطة وشفافة</h2>
+    <p class="sec-sub">ابدأ مجاناً لشهرين كاملين — لا بطاقة ائتمانية مطلوبة</p>
+  </div>
+  <div class="pricing-grid fade-in">
+
+    <!-- Trial -->
+    <div class="plan-card">
+      <div class="trial-badge">🎁 مجاني تماماً</div>
+      <div class="plan-name">تجريبي</div>
+      <div class="plan-price">0<span> $</span></div>
+      <div class="plan-period">شهران مجاناً بدون قيود</div>
+      <div class="plan-features">
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>وصول كامل لجميع الميزات</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>حتى 100 منتج</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>إشعارات واتساب وتيليغرام</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>لوحة تحكم كاملة</div>
+        <div class="plan-feat disabled"><span class="plan-feat-icon">✗</span>دعم فني مخصص</div>
+        <div class="plan-feat disabled"><span class="plan-feat-icon">✗</span>نطاق خاص</div>
+      </div>
+      <button class="btn-plan btn-plan-outline" onclick="location.href='setup.html?plan=trial'">ابدأ مجاناً</button>
+    </div>
+
+    <!-- Basic -->
+    <div class="plan-card popular">
+      <div class="popular-badge">⭐ الأكثر طلباً</div>
+      <div class="plan-name">الأساسي</div>
+      <div class="plan-price">15<span> $ / شهر</span></div>
+      <div class="plan-period">بعد انتهاء التجربة المجانية</div>
+      <div class="plan-features">
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>وصول كامل لجميع الميزات</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>منتجات غير محدودة</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>جميع قنوات الإشعارات</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>تقارير متقدمة</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>دعم فني خلال 24 ساعة</div>
+        <div class="plan-feat disabled"><span class="plan-feat-icon">✗</span>نطاق مخصص</div>
+      </div>
+      <button class="btn-plan btn-plan-primary" onclick="location.href='setup.html?plan=basic'">اختر هذه الخطة</button>
+    </div>
+
+    <!-- Pro -->
+    <div class="plan-card">
+      <div class="plan-name">المتقدم</div>
+      <div class="plan-price">35<span> $ / شهر</span></div>
+      <div class="plan-period">للمشاريع الكبيرة والمتنامية</div>
+      <div class="plan-features">
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>كل ما في الأساسي</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>فروع متعددة</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>API للتكامل الخارجي</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>نطاق مخصص</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>دعم فني أولوية</div>
+        <div class="plan-feat"><span class="plan-feat-icon">✓</span>تخصيص متقدم للواجهة</div>
+      </div>
+      <button class="btn-plan btn-plan-outline" onclick="location.href='setup.html?plan=pro'">اختر المتقدم</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>جاهز لبدء نشاطك الإلكتروني؟</h2>
+  <p>انضم لمئات الأعمال التجارية الناجحة — ابدأ مجاناً اليوم</p>
+  <div class="cta-btns">
+    <button class="btn-cta-white" onclick="location.href='setup.html'">🚀 إنشاء موقعي الآن</button>
+    <button class="btn-cta-outline" onclick="location.href='index.html'">لدي موقع — دخول</button>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <div class="nav-gem" style="width:30px;height:30px;font-size:.9rem">🏪</div>
+    <span>برجمان</span>
+  </div>
+  <div class="footer-links">
+    <span class="footer-link" onclick="location.href='setup.html'">إنشاء موقع</span>
+    <span class="footer-link" onclick="location.href='index.html'">تسجيل الدخول</span>
+    <span class="footer-link" href="#pricing">الأسعار</span>
+  </div>
+  <p>© 2025 برجمان — جميع الحقوق محفوظة</p>
+</footer>
+
+<script>
+// Mode toggle
+const modeBtn = document.getElementById('navModeBtn');
+function updateNavModeBtn(){
+  modeBtn.textContent = document.documentElement.getAttribute('data-mode')==='dark' ? '☀️' : '🌙';
+}
+updateNavModeBtn();
+const _orig = window.applyMode;
+window.applyMode = function(m){ if(_orig)_orig(m); updateNavModeBtn(); };
+modeBtn.onclick = function(){ toggleMode(); updateNavModeBtn(); };
+
+// Scroll fade-in
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+},{threshold:.15});
+document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+
+// Smooth scroll for nav links
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
+</script>
+</body>
+</html>

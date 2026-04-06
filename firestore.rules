@@ -1,0 +1,145 @@
+rules_version = '2';
+// ملاحظة: التطبيق يستخدم مصادقة كلمة مرور مخصصة بدون Firebase Auth
+// request.auth سيكون دائماً null — الحماية تعتمد على تقييد القراءة/الكتابة بالحقول
+// الترقية الكاملة تتطلب دمج Firebase Authentication + Custom Claims لاحقاً.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── المنتجات: قراءة عامة (المتجر)، الكتابة تتطلب حقل اسم ──
+    match /products/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['name','price']) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.name.size() > 0;
+      allow update: if resource.data != null;
+      allow delete: if false;
+    }
+
+    // ── الطلبات: أي شخص يقدر يرسل طلب، الحذف ممنوع تماماً ──
+    match /orders/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['orderId','total','products']) &&
+                       request.resource.data.total is number &&
+                       request.resource.data.total >= 0;
+      allow update: if resource.data != null;
+      allow delete: if false;
+    }
+
+    // ── المستخدمون: قراءة عامة للتسجيل، الكتابة تتطلب username ──
+    match /users/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['username','name']) &&
+                       request.resource.data.username is string;
+      allow update: if resource.data != null;
+      allow delete: if false;
+    }
+
+    // ── المحافظ (sub-collection تحت users) ──
+    match /users/{userId}/transactions/{txId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['type','amount','date']);
+      allow update, delete: if false;
+    }
+
+    // ── الإشعارات: قراءة عامة، الإنشاء مفتوح، الحذف ممنوع ──
+    match /notifications/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['title','type','read']);
+      allow update: if resource.data != null &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['read','updatedAt']);
+      allow delete: if false;
+    }
+
+    // ── الإعلانات: قراءة عامة ──
+    match /ads/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['title','target','status']);
+      allow delete: if false;
+    }
+
+    // ── العروض: قراءة عامة ──
+    match /offers/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['title','status']);
+      allow delete: if false;
+    }
+
+    // ── الخصومات ──
+    match /discounts/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['amount','date']);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── المشتريات ──
+    match /purchases/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['supplier','total']);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── الحملات التسويقية ──
+    match /campaigns/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['subject','channel','sentCount']);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ── الإعدادات: قراءة عامة، الكتابة تتطلب key ──
+    match /settings/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['key','value']);
+      allow delete: if false;
+    }
+
+    // ── النقاط ──
+    match /points/{docId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasAll(['username','points']);
+      allow delete: if false;
+    }
+
+    // ── وحدات التعبئة ──
+    match /packagingUnits/{docId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if false;
+    }
+
+    // ── اقتراحات المنتجات ──
+    match /productSuggestions/{docId} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['name','date']);
+      allow update: if resource.data != null &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','reviewedAt','reviewedBy']);
+      allow delete: if false;
+    }
+
+    // ── سجلات OTP: الكتابة فقط، لا قراءة عامة ──
+    match /otpLogs/{docId} {
+      allow read: if false;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+
+    // ── زوار الموقع (analytics) ──
+    match /visitors/{docId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if false;
+    }
+
+    // ── حظر أي مجموعة غير مذكورة أعلاه ──
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

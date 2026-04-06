@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>برجمان — المحفظة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="module" src="js/firebase.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="loading-screen" id="loadScreen">
+
+  <div class="ls-spinner"></div>
+  <div class="ls-brand">
+    <div class="loading-txt">برجمان</div>
+    <div class="ls-brand-en">BARJOMAN</div>
+  </div>
+  <div class="loading-sub" id="loadSub">جاري التحميل...</div>
+  <div class="ls-progress"><div class="ls-progress-bar"></div></div>
+</div>
+
+<div class="app-wrap z1">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-gem">🏪</div>
+      <div class="sb-logo-text"><h2>برجمان</h2><span>BARJOMAN</span></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAv">🌐</div>
+      <div>
+        <div class="sb-uname" id="sbName">زائر</div>
+        <div class="sb-urole" id="sbRole">—</div>
+        <div class="sb-online" id="sbOnline" style="display:none">متصل</div>
+      </div>
+    </div>
+    <div id="sbWalletBar" style="display:none;padding:0 8px 2px">
+      <div class="user-wallet-bar">
+        <div class="uw-label">💰 رصيد المحفظة</div>
+        <div class="uw-amount" id="sbWalletAmt">0 د.ع</div>
+        <div class="uw-sub">محفظتك الحالية</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">التنقل</div>
+      <a href="admin.html" class="nav-item" id="navAdmin" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">🏠</span> لوحة الإدارة
+      </a>
+      <div class="nav-item active">
+        <span class="nav-icon">💰</span> المحفظة
+      </div>
+      <a href="points.html" class="nav-item" id="navPoints" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">⭐</span> إدارة النقاط
+      </a>
+      <a href="reps.html" class="nav-item" id="navReps" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">📍</span> المندوبون والمبيعات
+      </a>
+      <div class="sb-section">أخرى</div>
+      <a href="index.html" class="nav-item" style="text-decoration:none;color:inherit">
+        <span class="nav-icon">🛍️</span> المتجر
+      </a>
+    </div>
+    <div class="sb-bottom"><div id="sbLoginLogout"></div></div>
+  </nav>
+
+  <main class="main" style="flex:1;display:flex;flex-direction:column;min-height:100vh;width:100%">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="القائمة">☰</button>
+      <div class="topbar-title">💰 المحفظة</div>
+      <div class="topbar-right">
+        <div class="fb-status" id="fbStatusBadge">
+          <div class="fb-dot" id="fbDot"></div>
+          <span id="fbStatusTxt">...</span>
+        </div>
+        <button class="top-btn sky" id="topLoginBtn" onclick="showLoginBox()"><span>دخول</span></button>
+      </div>
+    </div>
+
+    <div style="flex:1;padding:16px 14px">
+
+      <div class="ph"><h1>💰 المحفظة</h1><p>الرصيد والمعاملات المالية</p></div>
+
+      <div class="wallet-hero">
+        <div class="wh-lbl">الرصيد المتاح</div>
+        <div class="wh-amount"><span class="wh-cur">د.ع</span><span id="walBal">0</span></div>
+        <div id="walSub" style="font-size:.74rem;color:rgba(255,255,255,.38);margin-top:5px;position:relative;z-index:1"></div>
+        <div class="wh-acts" id="walActs"></div>
+      </div>
+
+      <div class="kpi-grid" id="walKpi" style="margin-bottom:16px"></div>
+
+      <div class="tabs" id="walTabs">
+        <button class="tab on" onclick="switchWalTab('txs',this)">🔄 المعاملات</button>
+        <button class="tab" onclick="switchWalTab('pts',this)">⭐ النقاط</button>
+      </div>
+
+      <div id="walTabTxs" class="tab-pane on">
+        <div class="card" style="margin-bottom:0"><div id="txList"></div></div>
+      </div>
+      <div id="walTabDisc" class="tab-pane"></div>
+      <div id="walTabPts" class="tab-pane">
+        <div class="pts-info-card">
+          <div class="pts-info-icon">⭐</div>
+          <div class="pts-info-text">
+            لكل <strong>100,000 د.ع</strong> من قيمة الطلبات تحصل على <strong>نقطة واحدة</strong>.
+            تتراكم النقاط تلقائياً عند إتمام كل طلب.
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="pts-card">
+            <div class="pts-val" id="ptsTotal">0</div>
+            <div class="pts-lbl">النقاط المتراكمة</div>
+          </div>
+          <div class="pts-card" style="background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.03));border-color:rgba(245,158,11,.2)">
+            <div class="pts-val" style="color:var(--gold2)" id="ptsRedeemed">0</div>
+            <div class="pts-lbl">النقاط المستردة</div>
+          </div>
+        </div>
+        <div class="pts-progress-wrap card" id="ptsProgressWrap" style="display:none">
+          <div class="pts-prog-label">
+            <span>التقدم نحو النقطة القادمة</span>
+            <span id="ptsProgText">0 / 100,000 د.ع</span>
+          </div>
+          <div class="pts-prog-bar">
+            <div class="pts-prog-fill" id="ptsProgFill" style="width:0%"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title" style="margin-bottom:13px">📋 سجل النقاط</div>
+          <div id="ptsHistList"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toastWrap" class="z1"></div>
+
+<!-- LOGIN -->
+<div id="loginOverlay" class="z1" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(15,23,42,.5);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+  <div class="login-box">
+    <div class="login-logo">🏪</div>
+    <div class="login-hd"><h2>برجمان</h2><p>سجّل دخولك للمتابعة</p></div>
+    <input id="lUser" type="text" class="fi" placeholder="اسم المستخدم" style="margin-bottom:9px" autocomplete="off">
+    <input id="lPass" type="password" class="fi" placeholder="كلمة المرور" style="margin-bottom:13px"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/wallet.js"></script>
+</body>
+</html>

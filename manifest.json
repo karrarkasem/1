@@ -1,0 +1,45 @@
+{
+  "name": "برجمان — للمفرد والجملة",
+  "short_name": "برجمان",
+  "description": "تسوق مواد غذائية وبضائع بالمفرد والجملة بأفضل الأسعار",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0fdf9",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["shopping", "food"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='90' fill='%230d9488'/%3E%3Ctext x='256' y='380' text-anchor='middle' font-size='300' font-family='serif'%3E%F0%9F%8F%AA%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='90' fill='%230d9488'/%3E%3Ctext x='256' y='380' text-anchor='middle' font-size='300' font-family='serif'%3E%F0%9F%8F%AA%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "🛍️ المتجر",
+      "url": "./index.html?page=store&source=pwa",
+      "description": "تصفح المنتجات"
+    },
+    {
+      "name": "📦 طلباتي",
+      "url": "./index.html?page=orders&source=pwa",
+      "description": "تتبع طلباتك"
+    },
+    {
+      "name": "🎁 العروض",
+      "url": "./index.html?page=offers&source=pwa",
+      "description": "أحدث العروض"
+    }
+  ]
+}

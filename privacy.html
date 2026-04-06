@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سياسة الخصوصية والشروط — برجمان</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#f0fdf9 0%,#e6f7f5 100%);min-height:100vh;color:#1e293b;direction:rtl}
+
+/* ── Header ── */
+.site-header{background:linear-gradient(135deg,#0d9488,#0f766e);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 20px rgba(13,148,136,.3)}
+.header-logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.header-logo-icon{width:40px;height:40px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.header-logo-text{color:white;font-size:1.1rem;font-weight:900}
+.header-back{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.9);text-decoration:none;font-size:.85rem;font-weight:700;background:rgba(255,255,255,.15);padding:8px 14px;border-radius:10px;transition:.2s}
+.header-back:hover{background:rgba(255,255,255,.25)}
+
+/* ── Hero ── */
+.hero{background:linear-gradient(135deg,#0d9488,#0f766e);padding:48px 24px 64px;text-align:center;color:white;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:40px;background:linear-gradient(135deg,#f0fdf9,#e6f7f5);clip-path:ellipse(55% 100% at 50% 100%)}
+.hero-icon{font-size:3rem;margin-bottom:12px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.hero-title{font-size:1.8rem;font-weight:900;margin-bottom:8px}
+.hero-sub{font-size:.9rem;opacity:.85;line-height:1.7}
+
+/* ── Main layout ── */
+.container{max-width:860px;margin:0 auto;padding:0 16px 60px}
+
+/* ── Tab switcher ── */
+.tabs{display:flex;gap:8px;margin:32px 0 24px;background:white;padding:6px;border-radius:16px;box-shadow:0 2px 12px rgba(9,50,87,.08)}
+.tab-btn{flex:1;padding:10px 16px;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:.2s;background:transparent;color:#64748b}
+.tab-btn.active{background:linear-gradient(135deg,#0d9488,#0f766e);color:white;box-shadow:0 4px 12px rgba(13,148,136,.3)}
+
+/* ── Cards ── */
+.section-card{background:white;border-radius:20px;box-shadow:0 4px 20px rgba(9,50,87,.07);margin-bottom:16px;overflow:hidden;border:1.5px solid rgba(13,148,136,.08)}
+.section-header{padding:18px 22px;background:linear-gradient(135deg,rgba(13,148,136,.06),rgba(15,118,110,.03));border-bottom:1px solid rgba(13,148,136,.1);display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+.section-num{width:34px;height:34px;background:linear-gradient(135deg,#0d9488,#0f766e);color:white;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;flex-shrink:0}
+.section-title{font-size:1rem;font-weight:900;color:#093257;flex:1}
+.section-arrow{color:#0d9488;font-size:.8rem;transition:.2s}
+.section-card.open .section-arrow{transform:rotate(180deg)}
+.section-body{padding:20px 22px;display:none;line-height:1.9;color:#334155;font-size:.92rem}
+.section-card.open .section-body{display:block}
+
+/* ── List styles inside sections ── */
+.section-body ul{padding-right:20px;margin:8px 0}
+.section-body li{margin-bottom:8px;position:relative}
+.section-body li::marker{color:#0d9488}
+.section-body p{margin-bottom:10px}
+.section-body strong{color:#0d9488}
+
+/* ── Highlight box ── */
+.highlight-box{background:linear-gradient(135deg,rgba(13,148,136,.07),rgba(15,118,110,.04));border:1.5px solid rgba(13,148,136,.2);border-radius:12px;padding:14px 16px;margin:10px 0;font-size:.88rem}
+
+/* ── Tab content ── */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── Contact card ── */
+.contact-card{background:linear-gradient(135deg,#0d9488,#0f766e);color:white;border-radius:20px;padding:28px;text-align:center;margin-top:8px}
+.contact-card h3{font-size:1.1rem;margin-bottom:8px}
+.contact-card p{opacity:.88;font-size:.88rem;line-height:1.8;margin-bottom:18px}
+.contact-btn{display:inline-flex;align-items:center;gap:8px;background:white;color:#0d9488;padding:11px 24px;border-radius:12px;font-family:'Cairo',sans-serif;font-weight:800;font-size:.9rem;text-decoration:none;transition:.2s}
+.contact-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.15)}
+
+/* ── Update date ── */
+.update-notice{text-align:center;color:#94a3b8;font-size:.8rem;margin-top:32px;padding:16px;background:white;border-radius:12px}
+
+/* ── English section ── */
+.en-content{direction:ltr;text-align:left}
+.en-content .section-header{flex-direction:row-reverse}
+
+/* ── Footer ── */
+.footer-note{text-align:center;padding:24px;color:rgba(9,50,87,.4);font-size:.78rem}
+.footer-note a{color:#0d9488;text-decoration:none}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <a href="/index.html" class="header-logo">
+    <div class="header-logo-icon">🛍️</div>
+    <span class="header-logo-text">برجمان</span>
+  </a>
+  <a href="javascript:history.back()" class="header-back">← رجوع</a>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-icon">🔒</div>
+  <h1 class="hero-title">الخصوصية والشروط</h1>
+  <p class="hero-sub">نحن نحترم خصوصيتك ونلتزم بحمايتها<br>آخر تحديث: يناير ٢٠٢٥</p>
+</div>
+
+<div class="container">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('privacy')">🔒 سياسة الخصوصية</button>
+    <button class="tab-btn" onclick="switchTab('terms')">📋 شروط الاستخدام</button>
+    <button class="tab-btn" onclick="switchTab('en')">🌐 English</button>
+  </div>
+
+  <!-- ═══ Privacy Tab ═══ -->
+  <div id="tab-privacy" class="tab-content active">
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">١</div>
+        <div class="section-title">المعلومات التي نجمعها</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>نجمع المعلومات الضرورية فقط لإتمام طلباتك وتقديم الخدمة بشكل صحيح:</p>
+        <ul>
+          <li><strong>معلومات الحساب:</strong> اسم المتجر أو الاسم الشخصي، رقم الهاتف، كلمة المرور (مشفرة).</li>
+          <li><strong>معلومات الطلب:</strong> المنتجات المطلوبة، الكمية، العنوان، رقم التواصل.</li>
+          <li><strong>الموقع الجغرافي:</strong> اختياري — يُستخدم فقط لتحديد موقع التسليم بدقة.</li>
+          <li><strong>بيانات الاستخدام:</strong> الصفحات التي تزورها داخل التطبيق لتحسين التجربة.</li>
+        </ul>
+        <div class="highlight-box">
+          🛡️ لا نجمع أي معلومات مالية أو بيانات بطاقات ائتمان. جميع المدفوعات تتم عبر قنوات خارجية آمنة.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٢</div>
+        <div class="section-title">كيف نستخدم معلوماتك</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>تنفيذ الطلبات وتوصيلها إلى عنوانك أو متجرك.</li>
+          <li>التواصل معك بشأن حالة الطلب وتحديثاته عبر واتساب أو الهاتف.</li>
+          <li>إرسال إشعارات بالعروض والخصومات (يمكن إيقافها في الإعدادات).</li>
+          <li>تحسين جودة الخدمة وتجربة الاستخدام.</li>
+          <li>الامتثال للمتطلبات القانونية والتنظيمية.</li>
+        </ul>
+        <p><strong>لا نبيع أو نشارك بياناتك مع أطراف ثالثة</strong> لأغراض تسويقية أبدًا.</p>
+      </div>
+    </div>
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٣</div>
+        <div class="section-title">حماية وتأمين البيانات</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>يتم تشفير جميع البيانات أثناء النقل باستخدام بروتوكول <strong>HTTPS/TLS</strong>.</li>
+          <li>تُخزَّن البيانات على خوادم <strong>Google Firebase</strong> الآمنة والمعتمدة دوليًا.</li>
+          <li>كلمات المرور مشفرة ولا يمكن لأي موظف الاطلاع عليها.</li>
+          <li>نقيّد الوصول إلى بياناتك على الموظفين المخوّلين فقط.</li>
+        </ul>
+        <div class="highlight-box">
+          🔐 في حال اكتشاف أي اختراق أمني، سنُبلغك فورًا خلال 72 ساعة.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٤</div>
+        <div class="section-title">ملفات تعريف الارتباط (Cookies)</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>نستخدم التخزين المحلي (localStorage) في متصفحك للأغراض التالية:</p>
+        <ul>
+          <li>تذكّر بياناتك لتجنب تسجيل الدخول في كل مرة.</li>
+          <li>حفظ تفضيلاتك مثل اللغة وإعدادات العرض.</li>
+          <li>حفظ محتوى سلة التسوق مؤقتًا.</li>
+        </ul>
+        <p>يمكنك مسح هذه البيانات في أي وقت من إعدادات المتصفح.</p>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٥</div>
+        <div class="section-title">حقوقك</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>يحق لك في أي وقت:</p>
+        <ul>
+          <li><strong>الاطلاع</strong> على جميع البيانات المخزنة عنك.</li>
+          <li><strong>تصحيح</strong> أي معلومات غير دقيقة.</li>
+          <li><strong>حذف</strong> حسابك وجميع بياناتك المرتبطة به.</li>
+          <li><strong>إيقاف</strong> استلام الإشعارات التسويقية.</li>
+          <li><strong>نقل</strong> بياناتك إلى منصة أخرى.</li>
+        </ul>
+        <p>للمطالبة بأي من هذه الحقوق، تواصل معنا عبر واتساب أو البريد الإلكتروني.</p>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٦</div>
+        <div class="section-title">خصوصية الأطفال</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>خدماتنا موجهة للبالغين وأصحاب المتاجر. لا نجمع عن قصد أي بيانات من أشخاص دون سن 18 عامًا. إذا علمنا بوجود بيانات لقاصر، سنحذفها فورًا.</p>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="contact-card">
+      <h3>تواصل معنا بخصوص الخصوصية</h3>
+      <p>إذا كان لديك أي سؤال أو طلب يتعلق ببياناتك الشخصية، نحن هنا للمساعدة</p>
+      <a href="https://wa.me/9647742222194" class="contact-btn" target="_blank" rel="noopener">💬 تواصل عبر واتساب</a>
+    </div>
+
+  </div><!-- /tab-privacy -->
+
+  <!-- ═══ Terms Tab ═══ -->
+  <div id="tab-terms" class="tab-content">
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">١</div>
+        <div class="section-title">قبول الشروط</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>باستخدام منصة <strong>برجمان</strong>، فأنت توافق على الشروط والأحكام المذكورة في هذه الصفحة. إذا كنت لا توافق على أي جزء منها، يُرجى التوقف عن استخدام الخدمة.</p>
+        <div class="highlight-box">
+          📌 هذه الشروط سارية المفعول اعتبارًا من يناير ٢٠٢٥ وتُطبَّق على جميع مستخدمي المنصة.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٢</div>
+        <div class="section-title">الخدمات المقدمة</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>توفر منصة برجمان:</p>
+        <ul>
+          <li>منصة إلكترونية لطلب المنتجات بالمفرد والجملة.</li>
+          <li>خدمة توصيل للمنازل والمتاجر داخل نطاق الخدمة.</li>
+          <li>نظام متابعة الطلبات وإدارة الحسابات.</li>
+          <li>عروض وخصومات دورية للعملاء المميزين.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٣</div>
+        <div class="section-title">الطلبات والتسليم</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>تُعتبر الطلبات مؤكدة بعد تأكيد ممثلنا عليها عبر واتساب أو الهاتف.</li>
+          <li>يتحمل العميل مسؤولية صحة عنوان التسليم ورقم التواصل.</li>
+          <li>نحتفظ بحق تعديل أسعار التوصيل بحسب المنطقة والكمية.</li>
+          <li>في حال عدم التواجد عند التسليم، يحق لنا تأجيل الطلب لليوم التالي.</li>
+          <li>يُمنع إلغاء الطلب بعد خروجه للتوصيل إلا بموافقة الإدارة.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٤</div>
+        <div class="section-title">الأسعار والدفع</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>جميع الأسعار بالدينار العراقي وقابلة للتغيير دون إشعار مسبق.</li>
+          <li>الدفع نقدًا عند الاستلام ما لم يُتفق على خلاف ذلك.</li>
+          <li>للعملاء بالجملة: تُطبَّق أسعار خاصة بعد التحقق من الحساب.</li>
+          <li>لا نتحمل أي رسوم بنكية أو عمولات شبكات الدفع.</li>
+        </ul>
+        <div class="highlight-box">
+          💡 نظام النقاط: تكسب نقطة مكافأة لكل ١٠٠,٠٠٠ دينار عراقي من مشترياتك لتستخدمها في خصومات مستقبلية.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٥</div>
+        <div class="section-title">الاسترجاع والاستبدال</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>يُقبل الاسترجاع خلال <strong>24 ساعة</strong> من الاستلام في حال وجود عيب مصنعي.</li>
+          <li>المنتجات الغذائية والمواد القابلة للتلف لا تُسترجع بعد الاستلام.</li>
+          <li>يجب أن تكون المنتجات بحالتها الأصلية وعبوتها غير مفتوحة للاسترجاع.</li>
+          <li>التواصل للاسترجاع يتم عبر واتساب فقط مع صورة المنتج.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٦</div>
+        <div class="section-title">سلوك المستخدم والمحظورات</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>يُحظر على المستخدمين:</p>
+        <ul>
+          <li>إدخال معلومات كاذبة أو مضللة عند التسجيل أو الطلب.</li>
+          <li>استخدام المنصة لأغراض غير مشروعة أو مخالفة للقانون.</li>
+          <li>مشاركة بيانات الدخول مع أطراف أخرى.</li>
+          <li>محاولة اختراق أو التلاعب بأنظمة المنصة.</li>
+          <li>تقديم طلبات وهمية بشكل متعمد ومتكرر.</li>
+        </ul>
+        <p>نحتفظ بالحق في تعليق أو إلغاء أي حساب يخالف هذه الشروط.</p>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٧</div>
+        <div class="section-title">إخلاء المسؤولية</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <ul>
+          <li>لا نضمن توفر الخدمة بشكل مستمر في حالات القوة القاهرة (ظروف أمنية، كوارث، انقطاع الإنترنت).</li>
+          <li>لسنا مسؤولين عن أي تأخير في التسليم بسبب ظروف خارجة عن إرادتنا.</li>
+          <li>الأسعار والمخزون قابلان للتغيير وقد تختلف الصور التوضيحية عن المنتج الفعلي.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">٨</div>
+        <div class="section-title">تعديل الشروط</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>نحتفظ بحق تعديل هذه الشروط في أي وقت. سيتم إشعارك بأي تغييرات جوهرية عبر الإشعارات داخل التطبيق أو واتساب. استمرارك في استخدام المنصة بعد التعديل يعني موافقتك على الشروط الجديدة.</p>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="contact-card">
+      <h3>استفسارات قانونية؟</h3>
+      <p>لأي استفسار حول الشروط أو للإبلاغ عن انتهاك، تواصل معنا مباشرة</p>
+      <a href="https://wa.me/9647742222194" class="contact-btn" target="_blank" rel="noopener">💬 تواصل مع الإدارة</a>
+    </div>
+
+  </div><!-- /tab-terms -->
+
+  <!-- ═══ English Tab ═══ -->
+  <div id="tab-en" class="tab-content en-content">
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">1</div>
+        <div class="section-title" style="text-align:left">Privacy Policy</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>At <strong>Burjman (brjman.com)</strong>, we are committed to protecting your personal information and your right to privacy. This policy explains what information we collect and how we use it.</p>
+        <ul>
+          <li><strong>Information We Collect:</strong> Name, phone number, delivery address, and order details.</li>
+          <li><strong>How We Use It:</strong> To process and deliver your orders, and to send order updates.</li>
+          <li><strong>Data Security:</strong> All data is encrypted via HTTPS and stored securely on Google Firebase servers.</li>
+          <li><strong>Your Rights:</strong> You may request access, correction, or deletion of your data at any time.</li>
+        </ul>
+        <div class="highlight-box" style="direction:ltr;text-align:left">
+          🔒 We do not sell or share your personal data with third parties for marketing purposes.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card open">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-num">2</div>
+        <div class="section-title" style="text-align:left">Terms of Service</div>
+        <span class="section-arrow">▼</span>
+      </div>
+      <div class="section-body">
+        <p>By using the Burjman platform, you agree to these terms:</p>
+        <ul>
+          <li>Orders are confirmed only after our representative confirms via WhatsApp or phone.</li>
+          <li>All prices are in Iraqi Dinar (IQD) and may change without prior notice.</li>
+          <li>Returns are accepted within 24 hours of delivery for defective items only.</li>
+          <li>We reserve the right to suspend accounts that violate our usage policy.</li>
+          <li>We are not liable for delays caused by force majeure events.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="contact-card">
+      <h3>Contact Us</h3>
+      <p>For any privacy or legal inquiries, reach out to our team directly</p>
+      <a href="https://wa.me/9647742222194" class="contact-btn" target="_blank" rel="noopener">💬 WhatsApp Support</a>
+    </div>
+
+  </div><!-- /tab-en -->
+
+  <div class="update-notice">
+    آخر تحديث: يناير ٢٠٢٥ — جميع الحقوق محفوظة © برجمان ٢٠٢٥
+  </div>
+
+</div><!-- /container -->
+
+<footer class="footer-note">
+  <a href="/index.html">🏠 العودة للمتجر</a> &nbsp;·&nbsp;
+  <a href="mailto:info@brjman.com">📧 info@brjman.com</a>
+</footer>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+function toggleSection(header) {
+  const card = header.closest('.section-card');
+  card.classList.toggle('open');
+}
+// Open all sections by default
+document.querySelectorAll('.section-card').forEach(c => c.classList.add('open'));
+</script>
+</body>
+</html>

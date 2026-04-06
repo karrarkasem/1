@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>برجمان — المندوبون والمبيعات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="module" src="js/firebase.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/theme.js"></script>
+</head>
+<body>
+
+<div class="loading-screen" id="loadScreen">
+
+  <div class="ls-spinner"></div>
+  <div class="ls-brand">
+    <div class="loading-txt">برجمان</div>
+    <div class="ls-brand-en">BARJOMAN</div>
+  </div>
+  <div class="loading-sub" id="loadSub">جاري التحميل...</div>
+  <div class="ls-progress"><div class="ls-progress-bar"></div></div>
+</div>
+
+<div class="app-wrap z1">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-gem">🏪</div>
+      <div class="sb-logo-text"><h2>برجمان</h2><span>BARJOMAN</span></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAv">🌐</div>
+      <div>
+        <div class="sb-uname" id="sbName">زائر</div>
+        <div class="sb-urole" id="sbRole">—</div>
+        <div class="sb-online" id="sbOnline" style="display:none">متصل</div>
+      </div>
+    </div>
+    <div id="sbWalletBar" style="display:none;padding:0 8px 2px">
+      <div class="user-wallet-bar">
+        <div class="uw-label">💰 رصيد المحفظة</div>
+        <div class="uw-amount" id="sbWalletAmt">0 د.ع</div>
+        <div class="uw-sub">محفظتك الحالية</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">التنقل</div>
+      <a href="admin.html" class="nav-item" id="navAdmin" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">🏠</span> لوحة الإدارة
+      </a>
+      <a href="wallet.html" class="nav-item" style="text-decoration:none;color:inherit">
+        <span class="nav-icon">💰</span> المحفظة
+      </a>
+      <a href="points.html" class="nav-item" id="navPoints" style="display:none;text-decoration:none;color:inherit">
+        <span class="nav-icon">⭐</span> إدارة النقاط
+      </a>
+      <div class="nav-item active">
+        <span class="nav-icon">📍</span> المندوبون والمبيعات
+      </div>
+      <div class="sb-section">أخرى</div>
+      <a href="index.html" class="nav-item" style="text-decoration:none;color:inherit">
+        <span class="nav-icon">🛍️</span> المتجر
+      </a>
+    </div>
+    <div class="sb-bottom"><div id="sbLoginLogout"></div></div>
+  </nav>
+
+  <main class="main" style="flex:1;display:flex;flex-direction:column;min-height:100vh;width:100%">
+    <div class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()" aria-label="القائمة">☰</button>
+      <div class="topbar-title">📍 المندوبون والمبيعات</div>
+      <div class="topbar-right">
+        <div class="fb-status" id="fbStatusBadge">
+          <div class="fb-dot" id="fbDot"></div>
+          <span id="fbStatusTxt">...</span>
+        </div>
+        <button class="top-btn sky" id="topLoginBtn" onclick="showLoginBox()"><span>دخول</span></button>
+      </div>
+    </div>
+
+    <div id="pageContent" style="flex:1;padding:16px 14px">
+
+      <!-- TABS -->
+      <div class="tabs" style="margin-bottom:16px" id="mainTabs">
+        <button class="tab on" onclick="switchMainTab('tracking',this)">تتبع المندوبين</button>
+        <button class="tab" onclick="switchMainTab('invoices',this)">🧾 الفواتير</button>
+        <button class="tab" onclick="switchMainTab('reports',this)">📊 التقارير</button>
+      </div>
+
+      <!-- TAB: تتبع المندوبين -->
+      <div id="tabTracking" class="tab-pane on">
+        <div class="ph"><h1>📍 تتبع المندوبين</h1><p>متابعة نشاط المندوبين ومبيعاتهم</p></div>
+        <div id="repTrackList"></div>
+      </div>
+
+      <!-- TAB: الفواتير -->
+      <div id="tabInvoices" class="tab-pane">
+        <div class="ph"><h1>🧾 الفواتير</h1><p>سجل فواتير الشراء والبيع</p></div>
+        <div class="tabs" id="invTabs">
+          <button class="tab on" onclick="switchInvTab('pur',this)">🛒 شراء</button>
+          <button class="tab" onclick="switchInvTab('sal',this)">💰 بيع</button>
+        </div>
+        <div id="tabPur" class="tab-pane on">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>التاريخ</th><th>المورد</th><th>المنتجات</th><th>الإجمالي</th><th>بواسطة</th></tr></thead>
+              <tbody id="purBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="tabSal" class="tab-pane">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>التاريخ</th><th>المحل</th><th>المنتجات</th><th>الإجمالي</th><th>المندوب</th></tr></thead>
+              <tbody id="salBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: التقارير -->
+      <div id="tabReports" class="tab-pane">
+        <div class="ph"><h1>📊 التقارير</h1><p>إحصائيات ومؤشرات الأداء</p></div>
+
+        <!-- فلتر الفترة -->
+        <div class="card" style="margin-bottom:16px;padding:14px 16px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:.82rem;font-weight:800;color:var(--deep)">📅 الفترة:</span>
+            <div class="tabs" id="repFilterTabs" style="margin:0;flex:1;min-width:200px">
+              <button class="tab on" onclick="setRepFilter('all',this)">الكل</button>
+              <button class="tab" onclick="setRepFilter('today',this)">اليوم</button>
+              <button class="tab" onclick="setRepFilter('week',this)">الأسبوع</button>
+              <button class="tab" onclick="setRepFilter('month',this)">الشهر</button>
+              <button class="tab" onclick="setRepFilter('custom',this)">مخصص</button>
+            </div>
+          </div>
+          <div id="repCustomDates" style="display:none;margin-top:10px">
+            <div class="frow">
+              <div class="fg" style="margin:0">
+                <label class="fl">من تاريخ</label>
+                <input type="date" id="repFrom" class="fi" onchange="_repFrom=this.value;renderReports()">
+              </div>
+              <div class="fg" style="margin:0">
+                <label class="fl">إلى تاريخ</label>
+                <input type="date" id="repTo" class="fi" onchange="_repTo=this.value;renderReports()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-grid" id="repKpi"></div>
+
+        <div class="card" id="repRepsCard">
+          <div class="card-hd"><div class="card-title">🏆 أداء المندوبين</div></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>المندوب</th><th>الطلبات</th><th>إجمالي المبيعات</th><th>العمولات</th><th>الصافي</th></tr></thead>
+              <tbody id="repRepsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">📦 أكثر المنتجات مبيعاً</div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>المنتج</th><th>الكمية المباعة</th><th>الإيراد</th></tr></thead>
+              <tbody id="repProdsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div id="toastWrap" class="z1"></div>
+
+<!-- LOGIN -->
+<div id="loginOverlay" class="z1" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(15,23,42,.5);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px;">
+  <div class="login-box">
+    <div class="login-logo">🏪</div>
+    <div class="login-hd"><h2>برجمان</h2><p>سجّل دخولك للمتابعة</p></div>
+    <input id="lUser" type="text" class="fi" placeholder="اسم المستخدم" style="margin-bottom:9px" autocomplete="off">
+    <input id="lPass" type="password" class="fi" placeholder="كلمة المرور" style="margin-bottom:13px"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <div id="loginErr" class="login-err"></div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script>
+function switchMainTab(tab, btn) {
+  document.querySelectorAll('#mainTabs .tab').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tabTracking').classList.toggle('on', tab === 'tracking');
+  document.getElementById('tabInvoices').classList.toggle('on', tab === 'invoices');
+  document.getElementById('tabReports').classList.toggle('on', tab === 'reports');
+  if (tab === 'reports') renderReports();
+}
+</script>
+<script src="js/reps.js"></script>
+</body>
+</html>

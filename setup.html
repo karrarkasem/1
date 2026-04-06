@@ -904,12 +904,12 @@ function populateFields(s) {
 
 /* ══ TABS ══ */
 function switchTab(id) {
-  const tabIds = ['info','design','api','mobile','system'];
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const idx = tabIds.indexOf(id);
-  const tabs = document.querySelectorAll('.tab');
-  if (tabs[idx]) tabs[idx].classList.add('active');
+  // نبحث عن الزر بـ onclick مطابق بدل الـ index (لأن تبويب الإشعارات <a> يخرب الترتيب)
+  document.querySelectorAll('.tab[onclick]').forEach(t => {
+    if (t.getAttribute('onclick') === `switchTab('${id}')`) t.classList.add('active');
+  });
   const sec = document.getElementById('sec-' + id);
   if (sec) sec.classList.add('active');
 }

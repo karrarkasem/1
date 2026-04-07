@@ -1871,20 +1871,33 @@ async function sendOrder(){
   if(hasErr){toast('⚠️ أكمل الحقول المطلوبة — رقم الهاتف 11 رقم بالضبط',false);return;}
   if(CU?.type==='rep'&&!selLoc){toast('⚠️ المندوب مطلوب منه تحديد الموقع',false);return;}
 
-  // حساب المجموع الفرعي مبكراً للتحقق من شرط الموقع والهاتف
+  // حساب المجموع الفرعي مبكراً للتحقق من شروط الموقع والهاتف
   let _earlySubtotal = 0;
   for(const k in cart) _earlySubtotal += cart[k].qty * cart[k].price;
-  if(_earlySubtotal < FREE_DELIVERY_MIN && _earlySubtotal > 0) {
-    // رقم الهاتف إلزامي (07XXXXXXXXX)
-    const phoneVal = (CU?.phone || visPhone || '').replace(/\s/g,'');
-    if(!/^07\d{9}$/.test(phoneVal)){
+  const phoneVal = (CU?.phone || visPhone || '').replace(/\s/g,'');
+  const validPhone = /^07\d{9}$/.test(phoneVal);
+
+  if(_earlySubtotal > 0 && _earlySubtotal < FREE_DELIVERY_MIN) {
+    // أقل من الحد → الموقع والهاتف كلاهما إلزامي
+    if(!validPhone){
       document.getElementById('visitorPhone')?.classList.add('err');
       toast('⚠️ رقم الهاتف مطلوب ويجب أن يبدأ بـ 07 ويتكون من 11 رقم', false);
       return;
     }
-    // الموقع إلزامي لاحتساب رسوم التوصيل
     if(!selLoc){
       toast('⚠️ يرجى تحديد موقعك على الخريطة لاحتساب رسوم التوصيل', false);
+      return;
+    }
+  } else if(_earlySubtotal >= FREE_DELIVERY_MIN && !selLoc) {
+    // توصيل مجاني لكن بدون موقع → يجب هاتف صحيح + عنوان تفصيلي (15 حرف على الأقل)
+    if(!validPhone){
+      document.getElementById('visitorPhone')?.classList.add('err');
+      toast('⚠️ بدون تحديد الموقع يجب إدخال رقم هاتف يبدأ بـ 07 وعنوان تفصيلي', false);
+      return;
+    }
+    if(addr.length < 15){
+      document.getElementById('shopAddr').classList.add('err');
+      toast('⚠️ يرجى كتابة عنوان تفصيلي (المنطقة، الشارع، رقم الدار) أو تحديد الموقع على الخريطة', false);
       return;
     }
   }

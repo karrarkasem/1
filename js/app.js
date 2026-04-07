@@ -1464,8 +1464,8 @@ function updateCartUI(){
   let subtotal=0,count=0;
   for(const k in cart){subtotal+=cart[k].qty*cart[k].price;count+=cart[k].qty;}
 
-  // رسوم التوصيل الفعلية: إذا حدد المستخدم موقعه → dynamicDeliveryFee، وإلا → deliveryFee
-  const activeFee = selLoc ? dynamicDeliveryFee : deliveryFee;
+  // رسوم التوصيل: تُحسب فقط بعد تحديد الموقع
+  const activeFee = selLoc ? dynamicDeliveryFee : 0;
   const fee = subtotal > 0 && subtotal < FREE_DELIVERY_MIN ? activeFee : 0;
   const grandTotal = subtotal + fee;
   const fmtT = grandTotal.toLocaleString()+' د.ع';
@@ -1478,15 +1478,23 @@ function updateCartUI(){
   const dfRow = document.getElementById('deliveryFeeRow');
   const fdRow = document.getElementById('freeDeliveryRow');
   if (dfRow && fdRow) {
-    if (subtotal > 0 && subtotal < FREE_DELIVERY_MIN) {
+    if (subtotal > 0 && subtotal >= FREE_DELIVERY_MIN) {
+      // توصيل مجاني
+      dfRow.style.display = 'none';
+      fdRow.style.display = 'flex';
+    } else if (subtotal > 0 && selLoc) {
+      // موقع محدد → عرض الرسوم المحسوبة
       dfRow.style.display = 'flex';
       fdRow.style.display = 'none';
       document.getElementById('deliveryFeeDisp').textContent = activeFee.toLocaleString()+' د.ع';
       const remaining = FREE_DELIVERY_MIN - subtotal;
       document.getElementById('deliveryFeeHint').textContent = 'أضف '+remaining.toLocaleString()+' د.ع للتوصيل المجاني';
-    } else if (subtotal >= FREE_DELIVERY_MIN) {
-      dfRow.style.display = 'none';
-      fdRow.style.display = 'flex';
+    } else if (subtotal > 0 && !selLoc) {
+      // لم يحدد الموقع بعد → رسالة تنبيه
+      dfRow.style.display = 'flex';
+      fdRow.style.display = 'none';
+      document.getElementById('deliveryFeeDisp').textContent = '—';
+      document.getElementById('deliveryFeeHint').textContent = '📍 حدد موقعك لمعرفة رسوم التوصيل';
     } else {
       dfRow.style.display = 'none';
       fdRow.style.display = 'none';
@@ -1554,17 +1562,21 @@ function cartGoStep3() {
     </div>`;
   }).join('');
   const reviewBox = document.getElementById('cartReviewBox');
-  const _activeFee = selLoc ? dynamicDeliveryFee : deliveryFee;
+  const _activeFee = selLoc ? dynamicDeliveryFee : 0;
   const revFee = total > 0 && total < FREE_DELIVERY_MIN ? _activeFee : 0;
   const revGrand = total + revFee;
-  const deliveryRow = revFee > 0
-    ? `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:.82rem">
-        <span style="color:#dc2626;font-weight:700">🚚 أجرة التوصيل</span>
-        <span style="font-weight:800;color:#dc2626">${revFee.toLocaleString()} د.ع</span>
-       </div>`
-    : `<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:.78rem;color:var(--teal2);font-weight:700">
+  const deliveryRow = total >= FREE_DELIVERY_MIN
+    ? `<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:.78rem;color:var(--teal2);font-weight:700">
         ✅ التوصيل مجاني
-       </div>`;
+       </div>`
+    : selLoc
+      ? `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:.82rem">
+          <span style="color:#dc2626;font-weight:700">🚚 أجرة التوصيل</span>
+          <span style="font-weight:800;color:#dc2626">${revFee.toLocaleString()} د.ع</span>
+         </div>`
+      : `<div style="display:flex;align-items:center;gap:5px;padding:5px 0;font-size:.78rem;color:#f59e0b;font-weight:700">
+          📍 حدد موقعك لمعرفة رسوم التوصيل
+         </div>`;
   if (reviewBox) reviewBox.innerHTML = `
     <div style="font-size:.82rem;font-weight:800;color:var(--deep);margin-bottom:10px">📋 ملخص الطلب</div>
     ${items}

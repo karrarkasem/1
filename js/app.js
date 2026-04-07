@@ -1798,19 +1798,60 @@ function addFromModal(){
 // ═══════════════════════════════════════════════════════
 // MAP
 // ═══════════════════════════════════════════════════════
+function updateMapInfoBar() {
+  if (!leafMap) return;
+  const c = leafMap.getCenter();
+  const dist = calcDistanceKm(HQ[0], HQ[1], c.lat, c.lng);
+  const fee  = calcDeliveryFeeByDistance(dist);
+  const distEl = document.getElementById('liveDistTxt');
+  const feeEl  = document.getElementById('liveFeeBar');
+  if (distEl) distEl.textContent = dist.toFixed(2) + ' كم';
+  if (feeEl)  feeEl.textContent  = fee > 0 ? fee.toLocaleString() + ' د.ع' : 'مجاني';
+}
+
+window.locateMe = function() {
+  if (!navigator.geolocation) { toast('المتصفح لا يدعم تحديد الموقع', false); return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    if (!leafMap) return;
+    leafMap.setView([pos.coords.latitude, pos.coords.longitude], 16);
+    updateMapInfoBar();
+  }, () => toast('تعذّر تحديد موقعك الحالي', false));
+};
+
 function toggleMap(){
-  const c=document.getElementById('mapContainer');
-  c.style.display=c.style.display==='none'?'block':'none';
-  if(c.style.display==='block'&&!leafMap){
-    setTimeout(()=>{
-      leafMap=L.map('map').setView(HQ,15);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'©OSM'}).addTo(leafMap);
-      L.marker(HQ).addTo(leafMap).bindPopup('🏪 برجمان').openPopup();
-      c.scrollIntoView({behavior:'smooth',block:'nearest'});
-    },200);
-  } else if(c.style.display==='block'){
+  const c = document.getElementById('mapContainer');
+  const isHidden = c.style.display === 'none' || c.style.display === '';
+  c.style.display = isHidden ? 'block' : 'none';
+  document.getElementById('locOk').style.display = 'none';
+  if (isHidden && !leafMap) {
+    setTimeout(() => {
+      leafMap = L.map('map', { zoomControl: false }).setView(HQ, 14);
+      // خريطة احترافية داكنة
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(leafMap);
+      // زر zoom في الزاوية اليمنى
+      L.control.zoom({ position: 'bottomright' }).addTo(leafMap);
+      // علامة المقر الرئيسي
+      L.marker(HQ, {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="font-size:1.6rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))">🏢</div>',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        })
+      }).addTo(leafMap).bindPopup('<b>🏢 الموقع الرئيسي</b>').openPopup();
+      // تحديث المعلومات عند تحريك الخريطة
+      leafMap.on('move', updateMapInfoBar);
+      leafMap.on('moveend', updateMapInfoBar);
+      updateMapInfoBar();
+      c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 200);
+  } else if (isHidden) {
     leafMap?.invalidateSize();
-    c.scrollIntoView({behavior:'smooth',block:'nearest'});
+    updateMapInfoBar();
+    c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 // حساب المسافة بين نقطتين (كيلومتر) — Haversine
@@ -1838,18 +1879,21 @@ function confirmLoc(){
   const c = leafMap.getCenter();
   selLoc = `https://www.google.com/maps?q=${c.lat},${c.lng}`;
 
-  // حساب المسافة من المقر HQ إلى موقع الزبون
-  selLocDistKm = calcDistanceKm(HQ[0], HQ[1], c.lat, c.lng);
+  selLocDistKm    = calcDistanceKm(HQ[0], HQ[1], c.lat, c.lng);
   dynamicDeliveryFee = calcDeliveryFeeByDistance(selLocDistKm);
 
-  document.getElementById('mapContainer').style.display='none';
-  document.getElementById('locOk').style.display='block';
+  document.getElementById('mapContainer').style.display = 'none';
+  const locOkEl = document.getElementById('locOk');
+  locOkEl.style.display = 'block';
+  const distTxt = selLocDistKm.toFixed(2) + ' كم';
+  const feeTxt  = dynamicDeliveryFee > 0 ? dynamicDeliveryFee.toLocaleString() + ' د.ع' : 'مجاني';
+  const distEl = document.getElementById('locOkDist');
+  const feeEl  = document.getElementById('locOkFee');
+  if (distEl) distEl.textContent = distTxt;
+  if (feeEl)  feeEl.textContent  = feeTxt;
 
-  // تحديث عرض رسوم التوصيل في السلة فوراً
   updateCart();
-
-  const distTxt = selLocDistKm.toFixed(1);
-  toast(`تم تحديد الموقع — المسافة: ${distTxt} كم — رسوم التوصيل: ${dynamicDeliveryFee.toLocaleString()} د.ع`);
+  toast(`✅ تم تحديد الموقع — ${distTxt} — توصيل: ${feeTxt}`);
 }
 
 // ═══════════════════════════════════════════════════════

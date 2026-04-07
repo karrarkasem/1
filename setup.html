@@ -631,8 +631,14 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
           <input type="number" id="minOrder" placeholder="0" min="0">
         </div>
         <div class="field">
-          <label>رسوم التوصيل الافتراضية</label>
+          <label>أقل رسوم توصيل (د.ع)</label>
           <input type="number" id="deliveryFee" placeholder="0" min="0">
+          <span class="hint">الحد الأدنى لرسوم التوصيل بغض النظر عن المسافة</span>
+        </div>
+        <div class="field">
+          <label>سعر الكيلومتر الواحد (د.ع)</label>
+          <input type="number" id="pricePerKm" placeholder="0" min="0" step="100">
+          <span class="hint">يُضرب بالمسافة بين موقع الزبون والمقر — النتيجة لا تقل عن أقل رسوم توصيل</span>
         </div>
         <div class="field">
           <label>حد التوصيل المجاني</label>
@@ -896,6 +902,7 @@ function populateFields(s) {
   set('preparerWa',       s.preparer_whatsapp);
   set('minOrder',         s.min_order_amount);
   set('deliveryFee',      s.delivery_fee);
+  set('pricePerKm',       s.price_per_km);
   set('freeDeliveryMin',  s.free_delivery_min);
   chk('maintenanceMode',  s.maintenance_mode);
   chk('allowRegister',    s.allow_register !== false);
@@ -1095,6 +1102,7 @@ async function saveSection(sec) {
         { key:'preparer_whatsapp',   value: v('preparerWa') },
         { key:'min_order_amount',    value: Number(v('minOrder') || 0) },
         { key:'delivery_fee',        value: Number(v('deliveryFee') || 0) },
+        { key:'price_per_km',        value: Number(v('pricePerKm') || 0) },
         { key:'free_delivery_min',   value: Number(v('freeDeliveryMin') || 0) },
         { key:'maintenance_mode',    value: chkVal('maintenanceMode') },
         { key:'allow_register',      value: chkVal('allowRegister') },

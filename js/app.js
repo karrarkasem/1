@@ -14,7 +14,8 @@ let preparerWhatsApp = '';
 let preparerTelegram = '';
 let driverTelegram   = '';
 window.COMPANY = {};
-let deliveryFee = 0;               // أجرة التوصيل — تُحمَّل من الإعدادات
+let deliveryFee = 0;               // أقل رسوم توصيل — تُحمَّل من الإعدادات
+let pricePerKm  = 0;               // سعر الكيلومتر الواحد — يُحمَّل من الإعدادات
 let FREE_DELIVERY_MIN = 50000;     // الحد الأدنى للتوصيل المجاني (د.ع) — يُحمَّل من الإعدادات
 
 async function loadAllSettings() {
@@ -71,8 +72,9 @@ async function loadAllSettings() {
     // ── تحديث المتغيرات العامة من الإعدادات ──
     if (s.whatsapp_number && s.whatsapp_number.trim()) WA = s.whatsapp_number.trim();
     if (s.site_url        && s.site_url.trim())        SITE_URL = s.site_url.trim().replace(/\/$/, '');
-    if (typeof s.delivery_fee        !== 'undefined') deliveryFee      = parseFloat(s.delivery_fee)        || 0;
-    if (typeof s.free_delivery_min  !== 'undefined') FREE_DELIVERY_MIN = parseFloat(s.free_delivery_min) || 50000;
+    if (typeof s.delivery_fee       !== 'undefined') deliveryFee       = parseFloat(s.delivery_fee)       || 0;
+    if (typeof s.price_per_km       !== 'undefined') pricePerKm        = parseFloat(s.price_per_km)       || 0;
+    if (typeof s.free_delivery_min  !== 'undefined') FREE_DELIVERY_MIN = parseFloat(s.free_delivery_min)  || 50000;
   } catch (e) {
     console.error('loadAllSettings:', e);
   }
@@ -1461,7 +1463,10 @@ function cartAdd(name, unitQty, unitPrice, piecesPerUnit, addedAs) {
 function updateCartUI(){
   let subtotal=0,count=0;
   for(const k in cart){subtotal+=cart[k].qty*cart[k].price;count+=cart[k].qty;}
-  const fee = subtotal > 0 && subtotal < FREE_DELIVERY_MIN ? deliveryFee : 0;
+
+  // رسوم التوصيل الفعلية: إذا حدد المستخدم موقعه → dynamicDeliveryFee، وإلا → deliveryFee
+  const activeFee = selLoc ? dynamicDeliveryFee : deliveryFee;
+  const fee = subtotal > 0 && subtotal < FREE_DELIVERY_MIN ? activeFee : 0;
   const grandTotal = subtotal + fee;
   const fmtT = grandTotal.toLocaleString()+' د.ع';
   document.getElementById('cartCountTop').textContent=count;
@@ -1476,7 +1481,7 @@ function updateCartUI(){
     if (subtotal > 0 && subtotal < FREE_DELIVERY_MIN) {
       dfRow.style.display = 'flex';
       fdRow.style.display = 'none';
-      document.getElementById('deliveryFeeDisp').textContent = deliveryFee.toLocaleString()+' د.ع';
+      document.getElementById('deliveryFeeDisp').textContent = activeFee.toLocaleString()+' د.ع';
       const remaining = FREE_DELIVERY_MIN - subtotal;
       document.getElementById('deliveryFeeHint').textContent = 'أضف '+remaining.toLocaleString()+' د.ع للتوصيل المجاني';
     } else if (subtotal >= FREE_DELIVERY_MIN) {
@@ -1549,7 +1554,8 @@ function cartGoStep3() {
     </div>`;
   }).join('');
   const reviewBox = document.getElementById('cartReviewBox');
-  const revFee = total > 0 && total < FREE_DELIVERY_MIN ? deliveryFee : 0;
+  const _activeFee = selLoc ? dynamicDeliveryFee : deliveryFee;
+  const revFee = total > 0 && total < FREE_DELIVERY_MIN ? _activeFee : 0;
   const revGrand = total + revFee;
   const deliveryRow = revFee > 0
     ? `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:.82rem">
@@ -1795,13 +1801,43 @@ function toggleMap(){
     c.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 }
+// حساب المسافة بين نقطتين (كيلومتر) — Haversine
+function calcDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// احتساب رسوم التوصيل بناءً على المسافة
+function calcDeliveryFeeByDistance(distKm) {
+  if (pricePerKm > 0) {
+    return Math.max(deliveryFee, Math.round(distKm * pricePerKm));
+  }
+  return deliveryFee;
+}
+
+let selLocDistKm = 0;        // المسافة المحسوبة عند تأكيد الموقع
+let dynamicDeliveryFee = 0;  // رسوم التوصيل المحسوبة بالمسافة
+
 function confirmLoc(){
   if(!leafMap) return;
-  const c=leafMap.getCenter();
-  selLoc=`https://www.google.com/maps?q=${c.lat},${c.lng}`;
+  const c = leafMap.getCenter();
+  selLoc = `https://www.google.com/maps?q=${c.lat},${c.lng}`;
+
+  // حساب المسافة من المقر HQ إلى موقع الزبون
+  selLocDistKm = calcDistanceKm(HQ[0], HQ[1], c.lat, c.lng);
+  dynamicDeliveryFee = calcDeliveryFeeByDistance(selLocDistKm);
+
   document.getElementById('mapContainer').style.display='none';
   document.getElementById('locOk').style.display='block';
-  toast('تم تحديد الموقع');
+
+  // تحديث عرض رسوم التوصيل في السلة فوراً
+  updateCart();
+
+  const distTxt = selLocDistKm.toFixed(1);
+  toast(`تم تحديد الموقع — المسافة: ${distTxt} كم — رسوم التوصيل: ${dynamicDeliveryFee.toLocaleString()} د.ع`);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1833,7 +1869,8 @@ async function sendOrder(){
     prodList.push(`${k}(${cart[k].qty}${unitLbl})`);
     subtotal+=cart[k].qty*cart[k].price;
   }
-  const appliedDeliveryFee = subtotal > 0 && subtotal < FREE_DELIVERY_MIN ? deliveryFee : 0;
+  const _orderFee = selLoc ? dynamicDeliveryFee : deliveryFee;
+  const appliedDeliveryFee = subtotal > 0 && subtotal < FREE_DELIVERY_MIN ? _orderFee : 0;
   const total = subtotal + appliedDeliveryFee;
   const commPct=CU?.commPct||0;
   const commission=Math.round(subtotal*commPct/100);
@@ -7041,64 +7078,11 @@ window.saveDeliveryVehicles = async function() {
   }
 };
 
-// ── رسوم التوصيل والحد الأدنى للتوصيل المجاني ──
-function populateDeliveryFeeForm() {
-  const feeEl = document.getElementById('cfgDeliveryFee');
-  const minEl = document.getElementById('cfgFreeDeliveryMin');
-  if (feeEl) feeEl.value = deliveryFee || 0;
-  if (minEl) minEl.value = FREE_DELIVERY_MIN || 50000;
-  updateDeliveryPreview();
-}
-
-function updateDeliveryPreview() {
-  const fee = parseFloat(document.getElementById('cfgDeliveryFee')?.value) || 0;
-  const min = parseFloat(document.getElementById('cfgFreeDeliveryMin')?.value) || 0;
-  const fmtFee = fee.toLocaleString();
-  const fmtMin = min.toLocaleString();
-  ['previewFee','previewFee2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtFee; });
-  ['previewMin','previewMin2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtMin; });
-}
-
-// ربط حدث الإدخال لتحديث المعاينة
-document.addEventListener('input', e => {
-  if (e.target.id === 'cfgDeliveryFee' || e.target.id === 'cfgFreeDeliveryMin') updateDeliveryPreview();
-});
-
-window.saveDeliveryFeeSettings = async function() {
-  const fee = parseFloat(document.getElementById('cfgDeliveryFee')?.value) || 0;
-  const min = parseFloat(document.getElementById('cfgFreeDeliveryMin')?.value) || 0;
-  if (min < 0 || fee < 0) { toast('❌ القيم يجب أن تكون موجبة', false); return; }
-  try {
-    const snap = await fb().getDocs(fb().collection(db(), 'settings'));
-    const docs  = {};
-    snap.docs.forEach(d => { docs[d.data().key] = d.id; });
-
-    async function upsert(key, value) {
-      if (docs[key]) {
-        await fb().updateDoc(fb().doc(db(), 'settings', docs[key]), { value });
-      } else {
-        await fb().addDoc(fb().collection(db(), 'settings'), { key, value });
-      }
-    }
-
-    await Promise.all([upsert('delivery_fee', fee), upsert('free_delivery_min', min)]);
-
-    // تحديث المتغيرات العامة فوراً
-    deliveryFee      = fee;
-    FREE_DELIVERY_MIN = min;
-    toast('✅ تم حفظ رسوم التوصيل');
-  } catch(e) {
-    console.error(e);
-    toast('❌ حدث خطأ في الحفظ', false);
-  }
-};
-
 // Hook into page show for pageDeliverySettings
 const _origShowPageDV = showPage;
 showPage = function(page) {
   _origShowPageDV(page);
   if (page === 'pageDeliverySettings') {
-    populateDeliveryFeeForm();
     if (!_dvSettings) {
       loadDeliveryVehiclesSettings().then(renderDvList);
     } else {

@@ -3318,7 +3318,10 @@ function renderManageProds(){
       <td><span class="${p.stock===0?'badge b-red':p.stock<p.minStock?'badge b-gold':'badge b-green'}">${mpQty}${mpSu?' '+mpSu:''}</span>
         <button class="btn btn-ghost btn-sm" style="margin-right:4px" onclick="openStockEdit(${p.idx})">مخزون</button></td>
       <td><span class="badge ${p.status==='active'?'b-green':'b-red'}">${p.status==='active'?'🟢 متوفر':'🔴 متوقف'}</span></td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openEditProd(${i})">تعديل</button></td>
+      <td style="display:flex;gap:4px;align-items:center">
+        <button class="btn btn-ghost btn-sm" onclick="openEditProd(${i})">تعديل</button>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#1877f2,#25d366);color:white;border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;cursor:pointer" onclick="openShareModal(${i})" title="نشر على السوشيال ميديا">📢 نشر</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -7477,3 +7480,87 @@ function _showPWAInstallBtn() {
 function _initPWAInstall() {
   if (_pwaInstallEvt) _showPWAInstallBtn();
 }
+
+// ══════════════════════════════════════════════════════
+// SOCIAL SHARE — نشر المنتج على السوشيال ميديا
+// ══════════════════════════════════════════════════════
+let _shareProduct = null;
+
+function _buildShareText(p) {
+  const price     = p.price ? p.price.toLocaleString() + ' د.ع' : '';
+  const wholesale = p.wholesalePrice > 0 ? '\n🏷️ سعر الجملة: ' + p.wholesalePrice.toLocaleString() + ' د.ع' : '';
+  const det       = p.det ? '\n📝 ' + p.det : '';
+  const storeUrl  = SITE_URL || window.location.origin;
+  const company   = window.COMPANY?.company_name_ar || 'متجرنا';
+  return `🛍️ ${p.name}
+💰 سعر المفرد: ${price}${wholesale}${det}
+
+🏪 اطلب الآن من ${company}:
+🔗 ${storeUrl}
+
+#${(p.cat||'منتجات').replace(/\s/g,'')} #${company.replace(/\s/g,'')} #تسوق_الان`;
+}
+
+window.openShareModal = function(idx) {
+  const p = products[idx];
+  if (!p) return;
+  _shareProduct = p;
+  const text = _buildShareText(p);
+  document.getElementById('shareProdImg').src   = p.img || '';
+  document.getElementById('shareProdName').textContent  = p.name;
+  document.getElementById('shareProdPrice').textContent = '💰 ' + (p.price||0).toLocaleString() + ' د.ع';
+  document.getElementById('sharePostText').textContent  = text;
+  document.getElementById('copyShareBtn').textContent   = '📋 نسخ النص';
+  openModal('shareModal');
+};
+
+window.closeShareModal = function() { closeModal('shareModal'); };
+
+window.shareToFacebook = function() {
+  if (!_shareProduct) return;
+  const url  = encodeURIComponent(SITE_URL || window.location.origin);
+  const text = encodeURIComponent(_buildShareText(_shareProduct));
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank', 'width=600,height=500');
+};
+
+window.shareToInstagram = function() {
+  if (!_shareProduct) return;
+  const text = _buildShareText(_shareProduct);
+  // Instagram لا يدعم web share API للنشر المباشر
+  // نستخدم Web Share API على الجوال، وإلا ننسخ النص
+  if (navigator.share) {
+    navigator.share({
+      title: _shareProduct.name,
+      text: text,
+      url: SITE_URL || window.location.origin
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      toast('✅ تم نسخ النص — افتح Instagram وألصقه في منشور جديد');
+    }).catch(() => {
+      toast('افتح Instagram وانسخ النص يدوياً', false);
+    });
+  }
+};
+
+window.shareToWhatsApp = function() {
+  if (!_shareProduct) return;
+  const text = encodeURIComponent(_buildShareText(_shareProduct));
+  window.open(`https://wa.me/?text=${text}`, '_blank');
+};
+
+window.copyShareText = function() {
+  if (!_shareProduct) return;
+  const text = _buildShareText(_shareProduct);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyShareBtn');
+    btn.textContent = '✅ تم النسخ!';
+    btn.style.background = '#dcfce7';
+    btn.style.borderColor = '#86efac';
+    setTimeout(() => {
+      btn.textContent = '📋 نسخ النص';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+};

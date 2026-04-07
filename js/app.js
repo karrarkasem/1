@@ -15,7 +15,7 @@ let preparerTelegram = '';
 let driverTelegram   = '';
 window.COMPANY = {};
 let deliveryFee = 0;               // أجرة التوصيل — تُحمَّل من الإعدادات
-const FREE_DELIVERY_MIN = 50000;   // الحد الأدنى للتوصيل المجاني (د.ع)
+let FREE_DELIVERY_MIN = 50000;     // الحد الأدنى للتوصيل المجاني (د.ع) — يُحمَّل من الإعدادات
 
 async function loadAllSettings() {
   try {
@@ -71,7 +71,8 @@ async function loadAllSettings() {
     // ── تحديث المتغيرات العامة من الإعدادات ──
     if (s.whatsapp_number && s.whatsapp_number.trim()) WA = s.whatsapp_number.trim();
     if (s.site_url        && s.site_url.trim())        SITE_URL = s.site_url.trim().replace(/\/$/, '');
-    if (typeof s.delivery_fee !== 'undefined') deliveryFee = parseFloat(s.delivery_fee) || 0;
+    if (typeof s.delivery_fee        !== 'undefined') deliveryFee      = parseFloat(s.delivery_fee)        || 0;
+    if (typeof s.free_delivery_min  !== 'undefined') FREE_DELIVERY_MIN = parseFloat(s.free_delivery_min) || 50000;
   } catch (e) {
     console.error('loadAllSettings:', e);
   }
@@ -7040,11 +7041,64 @@ window.saveDeliveryVehicles = async function() {
   }
 };
 
+// ── رسوم التوصيل والحد الأدنى للتوصيل المجاني ──
+function populateDeliveryFeeForm() {
+  const feeEl = document.getElementById('cfgDeliveryFee');
+  const minEl = document.getElementById('cfgFreeDeliveryMin');
+  if (feeEl) feeEl.value = deliveryFee || 0;
+  if (minEl) minEl.value = FREE_DELIVERY_MIN || 50000;
+  updateDeliveryPreview();
+}
+
+function updateDeliveryPreview() {
+  const fee = parseFloat(document.getElementById('cfgDeliveryFee')?.value) || 0;
+  const min = parseFloat(document.getElementById('cfgFreeDeliveryMin')?.value) || 0;
+  const fmtFee = fee.toLocaleString();
+  const fmtMin = min.toLocaleString();
+  ['previewFee','previewFee2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtFee; });
+  ['previewMin','previewMin2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmtMin; });
+}
+
+// ربط حدث الإدخال لتحديث المعاينة
+document.addEventListener('input', e => {
+  if (e.target.id === 'cfgDeliveryFee' || e.target.id === 'cfgFreeDeliveryMin') updateDeliveryPreview();
+});
+
+window.saveDeliveryFeeSettings = async function() {
+  const fee = parseFloat(document.getElementById('cfgDeliveryFee')?.value) || 0;
+  const min = parseFloat(document.getElementById('cfgFreeDeliveryMin')?.value) || 0;
+  if (min < 0 || fee < 0) { toast('❌ القيم يجب أن تكون موجبة', false); return; }
+  try {
+    const snap = await fb().getDocs(fb().collection(db(), 'settings'));
+    const docs  = {};
+    snap.docs.forEach(d => { docs[d.data().key] = d.id; });
+
+    async function upsert(key, value) {
+      if (docs[key]) {
+        await fb().updateDoc(fb().doc(db(), 'settings', docs[key]), { value });
+      } else {
+        await fb().addDoc(fb().collection(db(), 'settings'), { key, value });
+      }
+    }
+
+    await Promise.all([upsert('delivery_fee', fee), upsert('free_delivery_min', min)]);
+
+    // تحديث المتغيرات العامة فوراً
+    deliveryFee      = fee;
+    FREE_DELIVERY_MIN = min;
+    toast('✅ تم حفظ رسوم التوصيل');
+  } catch(e) {
+    console.error(e);
+    toast('❌ حدث خطأ في الحفظ', false);
+  }
+};
+
 // Hook into page show for pageDeliverySettings
 const _origShowPageDV = showPage;
 showPage = function(page) {
   _origShowPageDV(page);
   if (page === 'pageDeliverySettings') {
+    populateDeliveryFeeForm();
     if (!_dvSettings) {
       loadDeliveryVehiclesSettings().then(renderDvList);
     } else {

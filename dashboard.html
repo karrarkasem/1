@@ -356,7 +356,35 @@
 
     <!-- DELIVERY SETTINGS -->
     <div class="page" id="pageDeliverySettings">
-      <div class="ph"><h1>🚚 إعدادات التوصيل</h1><p>إدارة مركبات التوصيل وأوزانها وأبعادها</p></div>
+      <div class="ph"><h1>🚚 إعدادات التوصيل</h1><p>إدارة رسوم التوصيل ومركبات التوصيل</p></div>
+
+      <!-- بطاقة رسوم التوصيل -->
+      <div class="glass" style="border-radius:var(--r20);padding:22px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:800;color:var(--deep)">💰 رسوم التوصيل</h2>
+            <p style="font-size:.78rem;color:#888;margin-top:2px">تحديد رسوم التوصيل والحد الأدنى للتوصيل المجاني</p>
+          </div>
+          <button class="btn btn-sky" style="width:auto;padding:8px 18px" onclick="saveDeliveryFeeSettings()">حفظ</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.65);display:block;margin-bottom:6px">🚚 رسوم التوصيل (د.ع)</label>
+            <input type="number" class="fi" id="cfgDeliveryFee" min="0" step="250" placeholder="مثال: 2500">
+            <p style="font-size:.68rem;color:#888;margin-top:4px">المبلغ الذي يُضاف للطلب عند التوصيل</p>
+          </div>
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:rgba(9,50,87,.65);display:block;margin-bottom:6px">🎁 الحد الأدنى للتوصيل المجاني (د.ع)</label>
+            <input type="number" class="fi" id="cfgFreeDeliveryMin" min="0" step="1000" placeholder="مثال: 50000">
+            <p style="font-size:.68rem;color:#888;margin-top:4px">الطلبات التي تساوي أو تتجاوز هذا المبلغ يكون توصيلها مجاناً</p>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px 14px;background:rgba(99,102,241,.07);border-radius:var(--r12);font-size:.78rem;color:#555">
+          💡 مثال: إذا كانت رسوم التوصيل <strong id="previewFee">2,500</strong> د.ع والحد الأدنى <strong id="previewMin">50,000</strong> د.ع — فالطلبات أقل من <strong id="previewMin2">50,000</strong> د.ع تدفع <strong id="previewFee2">2,500</strong> د.ع توصيل، وما فوقها مجاناً.
+        </div>
+      </div>
+
+      <!-- بطاقة المركبات -->
       <div class="glass" style="border-radius:var(--r20);padding:22px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
           <div>

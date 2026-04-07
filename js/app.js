@@ -148,7 +148,7 @@ let _storePage = 1;
 let _storeShown = [];
 let cart={}, selLoc='', curProd=null, pmQtyVal=1, _pmUnitPrice=0, _pmPiecesPerUnit=1, pmUnitLbl='قطعة';
 let leafMap=null, purItems=[];
-let CU=null;
+// CU معرّفة في core.js
 let fbReady=false;
 let buyerMode = localStorage.getItem('bj_buyer_mode') || null; // 'retail' | 'wholesale' | null
 let _uploadedImgUrl = '';

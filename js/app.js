@@ -1892,7 +1892,7 @@ function confirmLoc(){
   if (distEl) distEl.textContent = distTxt;
   if (feeEl)  feeEl.textContent  = feeTxt;
 
-  updateCart();
+  updateCartUI();
   toast(`✅ تم تحديد الموقع — ${distTxt} — توصيل: ${feeTxt}`);
 }
 

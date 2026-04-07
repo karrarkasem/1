@@ -7501,62 +7501,127 @@ function _buildShareText(p) {
 #${(p.cat||'منتجات').replace(/\s/g,'')} #${company.replace(/\s/g,'')} #تسوق_الان`;
 }
 
+// جلب صورة المنتج كـ File (للـ Web Share API)
+async function _fetchImageFile(url, name) {
+  try {
+    const res  = await fetch(url, { mode: 'cors' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const ext  = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+    return new File([blob], `${name}.${ext}`, { type: blob.type });
+  } catch { return null; }
+}
+
 window.openShareModal = function(idx) {
   const p = products[idx];
   if (!p) return;
   _shareProduct = p;
   const text = _buildShareText(p);
-  document.getElementById('shareProdImg').src   = p.img || '';
+  const imgEl = document.getElementById('shareProdImg');
+  imgEl.src = p.img || '';
+  imgEl.style.display = p.img ? 'block' : 'none';
   document.getElementById('shareProdName').textContent  = p.name;
   document.getElementById('shareProdPrice').textContent = '💰 ' + (p.price||0).toLocaleString() + ' د.ع';
   document.getElementById('sharePostText').textContent  = text;
   document.getElementById('copyShareBtn').textContent   = '📋 نسخ النص';
+  document.getElementById('dlImgBtn').textContent       = '⬇️ تنزيل الصورة';
+  // إظهار/إخفاء زر تنزيل الصورة
+  document.getElementById('dlImgBtn').style.display = p.img ? 'flex' : 'none';
+  // إظهار زر المشاركة الذكية إذا كان الجهاز يدعمه
+  const shareAllBtn = document.getElementById('shareAllBtn');
+  if (shareAllBtn) shareAllBtn.style.display = navigator.share ? 'flex' : 'none';
   openModal('shareModal');
 };
 
 window.closeShareModal = function() { closeModal('shareModal'); };
-window.openShareModal  = window.openShareModal; // re-export (already uses openModal)
+
+// مشاركة ذكية — Web Share API (جوال) مع الصورة
+window.shareAll = async function() {
+  if (!_shareProduct) return;
+  const text = _buildShareText(_shareProduct);
+  const storeUrl = SITE_URL || window.location.origin;
+  const shareAllBtn = document.getElementById('shareAllBtn');
+  if (shareAllBtn) { shareAllBtn.textContent = '⏳ جاري التحضير...'; shareAllBtn.disabled = true; }
+  try {
+    let shareData = { title: _shareProduct.name, text, url: storeUrl };
+    if (_shareProduct.img && navigator.canShare) {
+      const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+      if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
+    }
+    await navigator.share(shareData);
+  } catch(e) {
+    if (e.name !== 'AbortError') toast('تعذّرت المشاركة', false);
+  } finally {
+    if (shareAllBtn) { shareAllBtn.textContent = '📤 مشاركة مع صورة'; shareAllBtn.disabled = false; }
+  }
+};
 
 window.shareToFacebook = function() {
   if (!_shareProduct) return;
   const text = _buildShareText(_shareProduct);
   const url  = encodeURIComponent(SITE_URL || window.location.origin);
-  // Facebook لم يعد يقبل نص مسبق — ننسخه للكليب بورد أولاً
   navigator.clipboard.writeText(text).then(() => {
     toast('📋 تم نسخ النص — الصقه في منشور Facebook بعد فتحه');
     setTimeout(() => {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
     }, 800);
   }).catch(() => {
-    // إذا فشل النسخ، نفتح مباشرة
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
   });
 };
 
-window.shareToInstagram = function() {
+window.shareToInstagram = async function() {
   if (!_shareProduct) return;
   const text = _buildShareText(_shareProduct);
-  // Instagram لا يدعم web share API للنشر المباشر
-  // نستخدم Web Share API على الجوال، وإلا ننسخ النص
   if (navigator.share) {
-    navigator.share({
-      title: _shareProduct.name,
-      text: text,
-      url: SITE_URL || window.location.origin
-    }).catch(() => {});
+    try {
+      let shareData = { title: _shareProduct.name, text, url: SITE_URL || window.location.origin };
+      if (_shareProduct.img) {
+        const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+        if (file && navigator.canShare && navigator.canShare({ files: [file] })) shareData.files = [file];
+      }
+      await navigator.share(shareData);
+    } catch(e) { if (e.name !== 'AbortError') toast('تعذّرت المشاركة', false); }
   } else {
     navigator.clipboard.writeText(text).then(() => {
-      toast('✅ تم نسخ النص — افتح Instagram وألصقه في منشور جديد');
-    }).catch(() => {
-      toast('افتح Instagram وانسخ النص يدوياً', false);
-    });
+      toast('✅ تم نسخ النص — افتح Instagram وألصقه مع الصورة');
+    }).catch(() => toast('انسخ النص يدوياً من المعاينة', false));
   }
 };
 
-window.shareToWhatsApp = function() {
+window.shareToWhatsApp = async function() {
   if (!_shareProduct) return;
+  // على الجوال: Web Share API مع الصورة أفضل
+  if (navigator.share && _shareProduct.img) {
+    try {
+      const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: _shareProduct.name, text: _buildShareText(_shareProduct), files: [file] });
+        return;
+      }
+    } catch(e) { if (e.name === 'AbortError') return; }
+  }
+  // fallback: رابط واتساب عادي
   const text = encodeURIComponent(_buildShareText(_shareProduct));
   window.open(`https://wa.me/?text=${text}`, '_blank');
+};
+
+// تنزيل صورة المنتج
+window.downloadProdImage = async function() {
+  if (!_shareProduct?.img) return;
+  const btn = document.getElementById('dlImgBtn');
+  if (btn) { btn.textContent = '⏳ جاري التنزيل...'; btn.disabled = true; }
+  try {
+    const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+    if (!file) { toast('تعذّر تنزيل الصورة', false); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = file.name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    toast('✅ تم تنزيل الصورة — ارفعها مع المنشور على Facebook');
+  } catch { toast('تعذّر تنزيل الصورة', false); }
+  finally { if (btn) { btn.textContent = '⬇️ تنزيل الصورة'; btn.disabled = false; } }
 };
 
 window.copyShareText = function() {

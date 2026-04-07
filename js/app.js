@@ -7487,18 +7487,42 @@ function _initPWAInstall() {
 let _shareProduct = null;
 
 function _buildShareText(p) {
-  const price     = p.price ? p.price.toLocaleString() + ' د.ع' : '';
-  const wholesale = p.wholesalePrice > 0 ? '\n🏷️ سعر الجملة: ' + p.wholesalePrice.toLocaleString() + ' د.ع' : '';
-  const det       = p.det ? '\n📝 ' + p.det : '';
-  const storeUrl  = SITE_URL || window.location.origin;
-  const company   = window.COMPANY?.company_name_ar || 'متجرنا';
-  return `🛍️ ${p.name}
-💰 سعر المفرد: ${price}${wholesale}${det}
+  const storeUrl = SITE_URL || window.location.origin;
+  const company  = window.COMPANY?.company_name_ar || 'متجرنا';
+  const wa       = window.COMPANY?.whatsapp_number || WA || '';
 
-🏪 اطلب الآن من ${company}:
+  // تفاصيل المنتج
+  const det = p.detail || p.det || '';
+
+  // التعبئة
+  const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
+  const pkgLines = pkgEntries.map(([unit, qty]) => `   • ${unit}: ${qty} قطعة`).join('\n');
+  const pkgSection = pkgLines ? `\n📦 التعبئة:\n${pkgLines}` : '';
+
+  // الوزن والحجم الكتلي
+  const weightLine  = p.carton_weight  ? `\n⚖️ وزن الكرتون: ${p.carton_weight} كغ`  : '';
+  const volumeLine  = p.carton_volume  ? `\n📐 الحجم الكتلي: ${p.carton_volume} م³` : '';
+
+  // وزن القطعة الواحدة (إذا وُجد carton_weight والتعبئة)
+  let pieceWeightLine = '';
+  if (p.carton_weight && pkgEntries.length) {
+    const maxQty = Math.max(...pkgEntries.map(([,q]) => q));
+    if (maxQty > 0) {
+      const pw = (p.carton_weight / maxQty).toFixed(3);
+      pieceWeightLine = `\n🔹 وزن القطعة: ~${pw} كغ`;
+    }
+  }
+
+  const detLine = det ? `\n\n📝 ${det}` : '';
+  const waLine  = wa ? `\n📞 واتساب: wa.me/${wa}` : '';
+
+  return `🛍️ ${p.name}${p.cat ? ` — ${p.cat}` : ''}
+${pkgSection}${weightLine}${volumeLine}${pieceWeightLine}${detLine}
+
+💬 للاستفسار عن الأسعار والتوفر تواصل معنا:${waLine}
 🔗 ${storeUrl}
 
-#${(p.cat||'منتجات').replace(/\s/g,'')} #${company.replace(/\s/g,'')} #تسوق_الان`;
+#${(p.cat||'منتجات').replace(/\s+/g,'')} #${company.replace(/\s+/g,'')} #تسوق_الان #العراق`.trim();
 }
 
 // جلب صورة المنتج كـ File (للـ Web Share API)
@@ -7516,18 +7540,20 @@ window.openShareModal = function(idx) {
   const p = products[idx];
   if (!p) return;
   _shareProduct = p;
+  // رابط صفحة المنتج (مع OG tags للصورة)
+  _shareProduct._shareUrl = p._id
+    ? `${SITE_URL || location.origin}/product.html?id=${p._id}`
+    : (SITE_URL || location.origin);
   const text = _buildShareText(p);
   const imgEl = document.getElementById('shareProdImg');
   imgEl.src = p.img || '';
   imgEl.style.display = p.img ? 'block' : 'none';
   document.getElementById('shareProdName').textContent  = p.name;
-  document.getElementById('shareProdPrice').textContent = '💰 ' + (p.price||0).toLocaleString() + ' د.ع';
+  document.getElementById('shareProdPrice').textContent = p.cat ? '🏷️ ' + p.cat : '';
   document.getElementById('sharePostText').textContent  = text;
   document.getElementById('copyShareBtn').textContent   = '📋 نسخ النص';
   document.getElementById('dlImgBtn').textContent       = '⬇️ تنزيل الصورة';
-  // إظهار/إخفاء زر تنزيل الصورة
   document.getElementById('dlImgBtn').style.display = p.img ? 'flex' : 'none';
-  // إظهار زر المشاركة الذكية إذا كان الجهاز يدعمه
   const shareAllBtn = document.getElementById('shareAllBtn');
   if (shareAllBtn) shareAllBtn.style.display = navigator.share ? 'flex' : 'none';
   openModal('shareModal');
@@ -7543,7 +7569,8 @@ window.shareAll = async function() {
   const shareAllBtn = document.getElementById('shareAllBtn');
   if (shareAllBtn) { shareAllBtn.textContent = '⏳ جاري التحضير...'; shareAllBtn.disabled = true; }
   try {
-    let shareData = { title: _shareProduct.name, text, url: storeUrl };
+    const shareUrl = _shareProduct._shareUrl || storeUrl;
+    let shareData = { title: _shareProduct.name, text, url: shareUrl };
     if (_shareProduct.img && navigator.canShare) {
       const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
       if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
@@ -7559,7 +7586,8 @@ window.shareAll = async function() {
 window.shareToFacebook = function() {
   if (!_shareProduct) return;
   const text = _buildShareText(_shareProduct);
-  const url  = encodeURIComponent(SITE_URL || window.location.origin);
+  // نستخدم رابط product.html الذي يحتوي على OG tags بصورة المنتج
+  const url  = encodeURIComponent(_shareProduct._shareUrl || SITE_URL || window.location.origin);
   navigator.clipboard.writeText(text).then(() => {
     toast('📋 تم نسخ النص — الصقه في منشور Facebook بعد فتحه');
     setTimeout(() => {
@@ -7575,7 +7603,7 @@ window.shareToInstagram = async function() {
   const text = _buildShareText(_shareProduct);
   if (navigator.share) {
     try {
-      let shareData = { title: _shareProduct.name, text, url: SITE_URL || window.location.origin };
+      let shareData = { title: _shareProduct.name, text, url: _shareProduct._shareUrl || SITE_URL || window.location.origin };
       if (_shareProduct.img) {
         const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
         if (file && navigator.canShare && navigator.canShare({ files: [file] })) shareData.files = [file];
@@ -7602,7 +7630,8 @@ window.shareToWhatsApp = async function() {
     } catch(e) { if (e.name === 'AbortError') return; }
   }
   // fallback: رابط واتساب عادي
-  const text = encodeURIComponent(_buildShareText(_shareProduct));
+  const shareUrl = _shareProduct._shareUrl || SITE_URL || window.location.origin;
+  const text = encodeURIComponent(_buildShareText(_shareProduct) + '\n🔗 ' + shareUrl);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 };
 

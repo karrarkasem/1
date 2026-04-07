@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- Open Graph — تُحدَّث ديناميكياً بعد تحميل بيانات المنتج -->
+  <meta property="og:type"        content="product">
+  <meta property="og:site_name"   content="برجمان" id="ogSite">
+  <meta property="og:title"       content="برجمان" id="ogTitle">
+  <meta property="og:description" content="تسوق الآن من متجر برجمان" id="ogDesc">
+  <meta property="og:image"       content="" id="ogImage">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height"content="630">
+  <meta property="og:url"         content="" id="ogUrl">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="" id="twTitle">
+  <meta name="twitter:description" content="" id="twDesc">
+  <meta name="twitter:image"       content="" id="twImage">
+
+  <title>برجمان</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:16px}
+    .card{background:white;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.12);max-width:420px;width:100%;overflow:hidden}
+    .card-img{width:100%;height:260px;object-fit:cover;display:block}
+    .card-img.hidden{display:none}
+    .card-body{padding:20px}
+    .cat{font-size:.75rem;font-weight:700;color:#0ea5e9;background:#e0f2fe;padding:3px 10px;border-radius:20px;display:inline-block;margin-bottom:10px}
+    h1{font-size:1.3rem;font-weight:900;color:#0f172a;margin-bottom:8px}
+    .detail{font-size:.85rem;color:#475569;line-height:1.7;margin-bottom:14px}
+    .pkg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+    .pkg-item{background:#f8fafc;border-radius:10px;padding:10px;text-align:center}
+    .pkg-item .val{font-size:1rem;font-weight:800;color:#0f172a}
+    .pkg-item .lbl{font-size:.68rem;color:#94a3b8;margin-top:2px}
+    .contact-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#25d366;color:white;border:none;border-radius:12px;padding:14px;font-size:.95rem;font-weight:800;cursor:pointer;text-decoration:none;margin-bottom:10px}
+    .store-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#0f172a;color:white;border:none;border-radius:12px;padding:12px;font-size:.88rem;font-weight:700;cursor:pointer;text-decoration:none}
+    .loading{text-align:center;padding:40px;color:#94a3b8;font-size:.9rem}
+    .spinner{width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#0ea5e9;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="loading" id="loadingState">
+      <div class="spinner"></div>
+      جاري تحميل المنتج...
+    </div>
+    <div id="prodContent" style="display:none">
+      <img id="prodImg" class="card-img" src="" alt="" onerror="this.classList.add('hidden')">
+      <div class="card-body">
+        <div class="cat" id="prodCat"></div>
+        <h1 id="prodName"></h1>
+        <div class="detail" id="prodDetail"></div>
+        <div class="pkg-grid" id="pkgGrid"></div>
+        <a id="waBtn" class="contact-btn" href="#" target="_blank">
+          💬 استفسر عن السعر عبر واتساب
+        </a>
+        <a id="storeBtn" class="store-btn" href="#">
+          🛍️ تصفح المتجر
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyBMLyYD0U5v3B3CWv80i-1mUGpBpkNKB98",
+      authDomain:        "burjuman-6cb83.firebaseapp.com",
+      projectId:         "burjuman-6cb83",
+      storageBucket:     "burjuman-6cb83.firebasestorage.app",
+      messagingSenderId: "177984721378",
+      appId:             "1:177984721378:web:afb0a673eb1a4f1c1b69bb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const params  = new URLSearchParams(location.search);
+    const prodId  = params.get('id');
+    const storeUrl = location.origin;
+
+    async function loadSettings() {
+      try {
+        const snap = await db.collection('settings').get();
+        const s = {};
+        snap.docs.forEach(d => { const data = d.data(); if (data.key) s[data.key] = data.value; });
+        return s;
+      } catch { return {}; }
+    }
+
+    async function init() {
+      const settings = await loadSettings();
+      const company  = settings.company_name_ar || 'برجمان';
+      const wa       = settings.whatsapp_number  || '';
+      const logo     = settings.company_logo     || '';
+      const siteUrl  = settings.site_url         || storeUrl;
+
+      document.getElementById('ogSite').content = company;
+      document.getElementById('storeBtn').href  = siteUrl;
+
+      if (!prodId) { showError('لم يتم تحديد المنتج'); return; }
+
+      try {
+        const doc = await db.collection('products').doc(prodId).get();
+        if (!doc.exists) { showError('المنتج غير موجود'); return; }
+        const p = doc.data();
+
+        // ── OG Tags ──
+        const ogTitle = `${p.name}${p.cat ? ' — ' + p.cat : ''} | ${company}`;
+        const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
+        const pkgText = pkgEntries.map(([u,q]) => `${u}: ${q} قطعة`).join(' | ');
+        const weightText = p.carton_weight ? `وزن الكرتون: ${p.carton_weight} كغ` : '';
+        const ogDesc = [p.detail, pkgText, weightText, `للاستفسار عن الأسعار تواصل معنا`].filter(Boolean).join(' • ');
+        const ogImg  = p.img || logo || '';
+
+        setMeta('ogTitle', ogTitle);  setMeta('twTitle', ogTitle);
+        setMeta('ogDesc',  ogDesc);   setMeta('twDesc',  ogDesc);
+        setMeta('ogImage', ogImg);    setMeta('twImage', ogImg);
+        setMeta('ogUrl', location.href);
+        document.title = ogTitle;
+
+        // ── بطاقة المنتج ──
+        document.getElementById('prodImg').src    = p.img || '';
+        document.getElementById('prodCat').textContent  = p.cat || '';
+        document.getElementById('prodName').textContent = p.name;
+        document.getElementById('prodDetail').textContent = p.detail || '';
+
+        // شبكة التفاصيل
+        const grid = [];
+        if (pkgEntries.length) {
+          pkgEntries.forEach(([unit, qty]) => {
+            grid.push(`<div class="pkg-item"><div class="val">${qty}</div><div class="lbl">📦 ${unit}</div></div>`);
+          });
+        }
+        if (p.carton_weight) grid.push(`<div class="pkg-item"><div class="val">${p.carton_weight} كغ</div><div class="lbl">⚖️ وزن الكرتون</div></div>`);
+        if (p.carton_volume) grid.push(`<div class="pkg-item"><div class="val">${p.carton_volume} م³</div><div class="lbl">📐 الحجم الكتلي</div></div>`);
+        if (p.carton_weight && pkgEntries.length) {
+          const maxQty = Math.max(...pkgEntries.map(([,q]) => q));
+          if (maxQty > 0) {
+            const pw = (p.carton_weight / maxQty).toFixed(3);
+            grid.push(`<div class="pkg-item"><div class="val">${pw} كغ</div><div class="lbl">🔹 وزن القطعة</div></div>`);
+          }
+        }
+        document.getElementById('pkgGrid').innerHTML = grid.join('');
+        if (!grid.length) document.getElementById('pkgGrid').style.display = 'none';
+
+        // واتساب
+        const waMsg = encodeURIComponent(`مرحباً، أريد الاستفسار عن سعر: ${p.name}\n${location.href}`);
+        document.getElementById('waBtn').href = wa ? `https://wa.me/${wa}?text=${waMsg}` : `https://wa.me/?text=${waMsg}`;
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('prodContent').style.display  = 'block';
+      } catch(e) {
+        showError('حدث خطأ أثناء التحميل');
+        console.error(e);
+      }
+    }
+
+    function setMeta(id, val) { const el = document.getElementById(id); if (el) el.content = val; }
+    function showError(msg) {
+      document.getElementById('loadingState').innerHTML = `<div style="font-size:1.5rem;margin-bottom:8px">⚠️</div>${msg}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

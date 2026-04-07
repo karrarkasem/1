@@ -7525,10 +7525,13 @@ ${pkgSection}${weightLine}${volumeLine}${pieceWeightLine}${detLine}
 #${(p.cat||'منتجات').replace(/\s+/g,'')} #${company.replace(/\s+/g,'')} #تسوق_الان #العراق`.trim();
 }
 
-// جلب صورة المنتج كـ File (للـ Web Share API)
+// جلب صورة المنتج كـ File (للـ Web Share API) — مع timeout 4 ثواني
 async function _fetchImageFile(url, name) {
   try {
-    const res  = await fetch(url, { mode: 'cors' });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { mode: 'cors', signal: controller.signal });
+    clearTimeout(timer);
     if (!res.ok) return null;
     const blob = await res.blob();
     const ext  = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
@@ -7561,18 +7564,30 @@ window.openShareModal = function(idx) {
 
 window.closeShareModal = function() { closeModal('shareModal'); };
 
-// مشاركة ذكية — Web Share API (جوال) مع الصورة
+// مشاركة ذكية — Web Share API (جوال)
 window.shareAll = async function() {
   if (!_shareProduct) return;
-  const text = _buildShareText(_shareProduct);
-  const storeUrl = SITE_URL || window.location.origin;
+  const text      = _buildShareText(_shareProduct);
+  const shareUrl  = _shareProduct._shareUrl || SITE_URL || window.location.origin;
   const shareAllBtn = document.getElementById('shareAllBtn');
-  if (shareAllBtn) { shareAllBtn.textContent = '⏳ جاري التحضير...'; shareAllBtn.disabled = true; }
+
+  // شارك النص والرابط فوراً بدون انتظار الصورة
+  const shareData = { title: _shareProduct.name, text, url: shareUrl };
+
+  // حاول إضافة الصورة في الخلفية — إذا نجح قبل اكتمال الـ share نستخدمها
+  let filePromise = null;
+  if (_shareProduct.img && navigator.canShare) {
+    filePromise = _fetchImageFile(_shareProduct.img, _shareProduct.name);
+  }
+
+  if (shareAllBtn) { shareAllBtn.textContent = '⏳ جاري...'; shareAllBtn.disabled = true; }
   try {
-    const shareUrl = _shareProduct._shareUrl || storeUrl;
-    let shareData = { title: _shareProduct.name, text, url: shareUrl };
-    if (_shareProduct.img && navigator.canShare) {
-      const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+    // انتظر الصورة ثانيتين فقط
+    if (filePromise) {
+      const file = await Promise.race([
+        filePromise,
+        new Promise(r => setTimeout(() => r(null), 2000))
+      ]);
       if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
     }
     await navigator.share(shareData);

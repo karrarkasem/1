@@ -7515,6 +7515,7 @@ window.openShareModal = function(idx) {
 };
 
 window.closeShareModal = function() { closeModal('shareModal'); };
+window.openShareModal  = window.openShareModal; // re-export (already uses openModal)
 
 window.shareToFacebook = function() {
   if (!_shareProduct) return;

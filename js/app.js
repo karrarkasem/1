@@ -7519,9 +7519,18 @@ window.openShareModal  = window.openShareModal; // re-export (already uses openM
 
 window.shareToFacebook = function() {
   if (!_shareProduct) return;
+  const text = _buildShareText(_shareProduct);
   const url  = encodeURIComponent(SITE_URL || window.location.origin);
-  const text = encodeURIComponent(_buildShareText(_shareProduct));
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank', 'width=600,height=500');
+  // Facebook لم يعد يقبل نص مسبق — ننسخه للكليب بورد أولاً
+  navigator.clipboard.writeText(text).then(() => {
+    toast('📋 تم نسخ النص — الصقه في منشور Facebook بعد فتحه');
+    setTimeout(() => {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
+    }, 800);
+  }).catch(() => {
+    // إذا فشل النسخ، نفتح مباشرة
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
+  });
 };
 
 window.shareToInstagram = function() {

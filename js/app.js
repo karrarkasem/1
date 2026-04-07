@@ -1870,6 +1870,24 @@ async function sendOrder(){
   if(!CU&&!/^\d{11}$/.test(visPhone)){document.getElementById('visitorPhone')?.classList.add('err');hasErr=true;}
   if(hasErr){toast('⚠️ أكمل الحقول المطلوبة — رقم الهاتف 11 رقم بالضبط',false);return;}
   if(CU?.type==='rep'&&!selLoc){toast('⚠️ المندوب مطلوب منه تحديد الموقع',false);return;}
+
+  // حساب المجموع الفرعي مبكراً للتحقق من شرط الموقع والهاتف
+  let _earlySubtotal = 0;
+  for(const k in cart) _earlySubtotal += cart[k].qty * cart[k].price;
+  if(_earlySubtotal < FREE_DELIVERY_MIN && _earlySubtotal > 0) {
+    // رقم الهاتف إلزامي (07XXXXXXXXX)
+    const phoneVal = (CU?.phone || visPhone || '').replace(/\s/g,'');
+    if(!/^07\d{9}$/.test(phoneVal)){
+      document.getElementById('visitorPhone')?.classList.add('err');
+      toast('⚠️ رقم الهاتف مطلوب ويجب أن يبدأ بـ 07 ويتكون من 11 رقم', false);
+      return;
+    }
+    // الموقع إلزامي لاحتساب رسوم التوصيل
+    if(!selLoc){
+      toast('⚠️ يرجى تحديد موقعك على الخريطة لاحتساب رسوم التوصيل', false);
+      return;
+    }
+  }
   _sendingOrder = true;
   const sendBtn = document.querySelector('#cartFormView .btn-full.btn-lg');
   if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='⏳ جاري الإرسال...';}

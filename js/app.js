@@ -133,6 +133,13 @@ async function loadProtectedKeys() {
 
 // (push notifications → push.js | config → config.js)
 
+// ═══ تشفير كلمة المرور (SHA-256) ══════════════════════
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+function isHashed(pw) { return /^[a-f0-9]{64}$/.test(pw); }
+
 // ═══ UTILS ════════════════════════════════════════════
 function debounce(fn, ms=300){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
 const _debouncedSearch    = debounce(q=>doSearch(q),250);

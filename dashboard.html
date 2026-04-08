@@ -1631,15 +1631,17 @@
     <!-- المحتوى القابل للتمرير -->
     <div style="overflow-y:auto;flex:1">
 
-      <!-- الصورة كاملة العرض -->
-      <div style="position:relative;background:#0f172a">
-        <img id="shareProdImg" src="" style="width:100%;max-height:220px;object-fit:contain;display:block" onerror="this.parentElement.style.display='none'">
+      <!-- معاينة المنتج: صورة + اسم جنباً لجنب -->
+      <div style="padding:14px 16px;display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid #e2e8f0">
+        <img id="shareProdImg" src="" style="width:90px;height:90px;object-fit:cover;border-radius:12px;border:1px solid #e2e8f0;flex-shrink:0" onerror="this.style.display='none'">
+        <div style="flex:1;min-width:0">
+          <div id="shareProdName" style="font-weight:800;font-size:.95rem;color:#0f172a;margin-bottom:4px"></div>
+          <div id="shareProdPrice" style="font-size:.82rem;color:#0ea5e9;font-weight:700;margin-bottom:0"></div>
+        </div><!-- end flex -->
       </div>
 
-      <!-- معلومات المنتج -->
-      <div style="padding:14px 16px;border-bottom:1px solid #e2e8f0">
-        <div id="shareProdName" style="font-weight:800;font-size:1rem;color:#0f172a;margin-bottom:4px"></div>
-        <div id="shareProdPrice" style="font-size:.82rem;color:#0ea5e9;font-weight:700;margin-bottom:10px"></div>
+      <!-- نص المنشور -->
+      <div style="padding:0 16px 14px;border-bottom:1px solid #e2e8f0">
         <div style="font-size:.7rem;font-weight:700;color:#94a3b8;margin-bottom:6px">نص المنشور</div>
         <div id="sharePostText" style="font-size:.77rem;color:#475569;line-height:1.7;white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px;border:1px solid #e2e8f0"></div>
       </div>

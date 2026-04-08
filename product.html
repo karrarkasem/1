@@ -279,9 +279,18 @@
       const price     = parseFloat(p.price)          || 0;
       const wPrice    = parseFloat(p.wholesalePrice) || 0;
 
+      // ── التعبئة: دعم النظامين القديم (packaging) والجديد (productUnits) ──
+      let pkgEntries = [];
+      if (p.packaging && Object.keys(p.packaging).length) {
+        pkgEntries = Object.entries(p.packaging); // [{unit, qty}]
+      } else if (Array.isArray(p.productUnits) && p.productUnits.length) {
+        pkgEntries = p.productUnits
+          .filter(u => u.name && u.fill > 0)
+          .map(u => [u.name, u.fill]);
+      }
+
       // ── OG Tags ──
       const ogTitle = `${name}${cat ? ' — ' + cat : ''} | ${company}`;
-      const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
       const pkgText = pkgEntries.map(([u,q]) => `${u}: ${q} قطعة`).join(' | ');
       const priceDesc = price > 0 ? `سعر المفرد: ${price.toLocaleString()} د.ع` : 'استفسر عن السعر';
       const ogDesc = [priceDesc, detail, pkgText, 'للاستفسار والطلب تواصل معنا'].filter(Boolean).join(' • ');
@@ -332,7 +341,10 @@
       }
 
       // ── التفاصيل ──
-      if (detail) document.getElementById('prodDetail').textContent = detail;
+      if (detail) {
+        document.getElementById('prodDetail').textContent = detail;
+        document.getElementById('prodDetail').style.display = 'block';
+      }
 
       // ── شبكة التعبئة ──
       const grid = [];
@@ -342,7 +354,7 @@
       if (p.carton_weight) grid.push(`<div class="pkg-item"><div class="val">${p.carton_weight} كغ</div><div class="lbl">⚖️ وزن الكرتون</div></div>`);
       if (p.carton_volume) grid.push(`<div class="pkg-item"><div class="val">${p.carton_volume} م³</div><div class="lbl">📐 الحجم الكتلي</div></div>`);
       if (p.carton_weight && pkgEntries.length) {
-        const maxQty = Math.max(...pkgEntries.map(([,q]) => q));
+        const maxQty = Math.max(...pkgEntries.map(([,q]) => Number(q)));
         if (maxQty > 0) {
           const pw = (p.carton_weight / maxQty).toFixed(3);
           grid.push(`<div class="pkg-item"><div class="val">${pw} كغ</div><div class="lbl">🔹 وزن القطعة</div></div>`);

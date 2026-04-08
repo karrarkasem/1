@@ -7720,8 +7720,9 @@ window.shareToFacebook = async function() {
         setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       }
     }
-    // 2. نسخ النص
-    const text = _buildShareText(_shareProduct);
+    // 2. نسخ النص + الرابط
+    const shareUrl = _shareProduct._shareUrl || SITE_URL || window.location.origin;
+    const text = _buildShareText(_shareProduct) + '\n🔗 ' + shareUrl;
     await navigator.clipboard.writeText(text).catch(() => {});
     // 3. فتح Facebook لإنشاء منشور جديد
     setTimeout(() => {
@@ -7738,7 +7739,8 @@ window.shareToInstagram = async function() {
   if (!_shareProduct) return;
   const btn = document.querySelector('[onclick="shareToInstagram()"]');
   if (btn) { btn.textContent = '⏳ جاري...'; btn.disabled = true; }
-  const text = _buildShareText(_shareProduct);
+  const shareUrl = _shareProduct._shareUrl || SITE_URL || window.location.origin;
+  const text = _buildShareText(_shareProduct) + '\n🔗 ' + shareUrl;
   try {
     // جوال: Web Share مع صورة مباشرة
     if (navigator.share && navigator.canShare) {
@@ -7751,7 +7753,7 @@ window.shareToInstagram = async function() {
       await navigator.share(shareData);
       return;
     }
-    // كمبيوتر: تنزيل الصورة + نسخ النص + فتح Instagram
+    // كمبيوتر: تنزيل الصورة + نسخ النص + الرابط + فتح Instagram
     if (_shareProduct.img) {
       const file = await Promise.race([
         _fetchImageFile(_shareProduct.img, _shareProduct.name),
@@ -7841,7 +7843,8 @@ window.downloadProdImage = async function() {
 
 window.copyShareText = function() {
   if (!_shareProduct) return;
-  const text = _buildShareText(_shareProduct);
+  const shareUrl = _shareProduct._shareUrl || SITE_URL || window.location.origin;
+  const text = _buildShareText(_shareProduct) + '\n🔗 ' + shareUrl;
   navigator.clipboard.writeText(text).then(() => {
     const btn = document.getElementById('copyShareBtn');
     btn.textContent = '✅ تم النسخ!';

@@ -311,7 +311,31 @@ async function init() {
   const _cachedOffers = _cacheGet('bj_offers', CACHE_TTL);
   if (_cachedOffers && _cachedOffers.length) { offers = _cachedOffers; }
   const _cachedComp = _cacheGet('bj_company', CACHE_TTL * 12);
-  if (_cachedComp) { window.COMPANY = _cachedComp; }
+  if (_cachedComp) {
+    window.COMPANY = _cachedComp;
+    // تطبيق الاسم والشعار فوراً من الكاش بدون انتظار Firebase
+    const _cn = _cachedComp.company_name_ar;
+    const _ce = _cachedComp.company_name_en;
+    const _cl = _cachedComp.company_logo;
+    if (_cn) {
+      document.querySelectorAll('.sb-logo-text h2').forEach(el => el.textContent = _cn);
+      document.querySelectorAll('.login-hd h2').forEach(el => el.textContent = _cn);
+      document.querySelectorAll('.loading-txt').forEach(el => el.textContent = _cn);
+      const _bt = document.getElementById('btBrandName');
+      if (_bt) _bt.textContent = _cn;
+    }
+    if (_ce) {
+      document.querySelectorAll('.sb-logo-text span').forEach(el => el.textContent = _ce);
+      document.querySelectorAll('.ls-brand-en').forEach(el => el.textContent = _ce);
+    }
+    if (_cl) {
+      document.querySelectorAll('.sb-logo-gem').forEach(el => {
+        el.innerHTML = `<img src="${_cl}" style="width:36px;height:36px;object-fit:cover;border-radius:8px">`;
+      });
+      const _btg = document.querySelector('.bt-logo-gem');
+      if (_btg) _btg.innerHTML = `<img src="${_cl}" style="width:50px;height:50px;object-fit:cover;border-radius:14px">`;
+    }
+  }
 
   try {
     await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadAllSettings(), loadAds()]);

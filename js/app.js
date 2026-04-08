@@ -1825,36 +1825,61 @@ window.locateMe = function() {
   }, () => toast('تعذّر تحديد موقعك الحالي', false));
 };
 
+let _leafletLoading = false;
+let _leafletLoaded  = false;
+function _loadLeaflet() {
+  return new Promise((resolve) => {
+    if (_leafletLoaded) { resolve(); return; }
+    if (_leafletLoading) {
+      const wait = setInterval(() => { if (_leafletLoaded) { clearInterval(wait); resolve(); } }, 50);
+      return;
+    }
+    _leafletLoading = true;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload = () => { _leafletLoaded = true; _leafletLoading = false; resolve(); };
+    script.onerror = () => { _leafletLoading = false; resolve(); };
+    document.head.appendChild(script);
+  });
+}
+
 function toggleMap(){
   const c = document.getElementById('mapContainer');
   const isHidden = c.style.display === 'none' || c.style.display === '';
   c.style.display = isHidden ? 'block' : 'none';
   document.getElementById('locOk').style.display = 'none';
   if (isHidden && !leafMap) {
-    setTimeout(() => {
-      leafMap = L.map('map', { zoomControl: false }).setView(HQ, 14);
-      // خريطة احترافية داكنة
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 19
-      }).addTo(leafMap);
-      // زر zoom في الزاوية اليمنى
-      L.control.zoom({ position: 'bottomright' }).addTo(leafMap);
-      // علامة المقر الرئيسي
-      L.marker(HQ, {
-        icon: L.divIcon({
-          className: '',
-          html: '<div style="font-size:1.6rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))">🏢</div>',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(leafMap).bindPopup('<b>🏢 الموقع الرئيسي</b>').openPopup();
-      // تحديث المعلومات عند تحريك الخريطة
-      leafMap.on('move', updateMapInfoBar);
-      leafMap.on('moveend', updateMapInfoBar);
-      updateMapInfoBar();
-      c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
+    _loadLeaflet().then(() => {
+      if (!window.L) { toast('❌ تعذر تحميل الخريطة، تحقق من الاتصال'); return; }
+      setTimeout(() => {
+        leafMap = L.map('map', { zoomControl: false }).setView(HQ, 14);
+        // خريطة احترافية
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          attribution: '© OpenStreetMap',
+          maxZoom: 19
+        }).addTo(leafMap);
+        // زر zoom في الزاوية اليمنى
+        L.control.zoom({ position: 'bottomright' }).addTo(leafMap);
+        // علامة المقر الرئيسي
+        L.marker(HQ, {
+          icon: L.divIcon({
+            className: '',
+            html: '<div style="font-size:1.6rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))">🏢</div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+          })
+        }).addTo(leafMap).bindPopup('<b>🏢 الموقع الرئيسي</b>').openPopup();
+        // تحديث المعلومات عند تحريك الخريطة
+        leafMap.on('move', updateMapInfoBar);
+        leafMap.on('moveend', updateMapInfoBar);
+        updateMapInfoBar();
+        c.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 200);
+    });
   } else if (isHidden) {
     leafMap?.invalidateSize();
     updateMapInfoBar();

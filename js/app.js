@@ -7596,14 +7596,41 @@ ${pkgSection}${weightLine}${volumeLine}${pieceWeightLine}${detLine}
 
 // جلب صورة المنتج كـ File (للـ Web Share API) — مع timeout 4 ثواني
 async function _fetchImageFile(url, name) {
+  // الطريقة 1: Canvas (تعمل مع أغلب الصور)
+  try {
+    const file = await new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      const timer = setTimeout(() => { img.src = ''; resolve(null); }, 5000);
+      img.onload = () => {
+        clearTimeout(timer);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.naturalWidth  || 800;
+          canvas.height = img.naturalHeight || 800;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          canvas.toBlob(blob => {
+            if (!blob) { resolve(null); return; }
+            resolve(new File([blob], `${name}.jpg`, { type: 'image/jpeg' }));
+          }, 'image/jpeg', 0.92);
+        } catch { resolve(null); }
+      };
+      img.onerror = () => { clearTimeout(timer); resolve(null); };
+      img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    });
+    if (file) return file;
+  } catch {}
+
+  // الطريقة 2: fetch مباشر (fallback)
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(url, { mode: 'cors', signal: controller.signal });
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) return null;
     const blob = await res.blob();
-    const ext  = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+    if (!blob.size) return null;
+    const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
     return new File([blob], `${name}.${ext}`, { type: blob.type });
   } catch { return null; }
 }
@@ -7661,7 +7688,7 @@ window.shareAll = async function() {
     if (filePromise) {
       const file = await Promise.race([
         filePromise,
-        new Promise(r => setTimeout(() => r(null), 2000))
+        new Promise(r => setTimeout(() => r(null), 5000))
       ]);
       if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
     }

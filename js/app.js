@@ -7591,43 +7591,53 @@ ${pkgSection}${weightLine}${volumeLine}${pieceWeightLine}${detLine}
 
 // جلب صورة المنتج كـ File (للـ Web Share API) — مع timeout 4 ثواني
 async function _fetchImageFile(url, name) {
-  // الطريقة 1: Canvas (تعمل مع أغلب الصور)
+  const safeName = (name || 'product').replace(/[^\w\u0600-\u06FF]/g, '_');
+
+  // الطريقة 1: fetch مع CORS
+  try {
+    const ctrl = new AbortController();
+    const t1 = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t1);
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob && blob.size > 1000) {
+        const ext = blob.type.split('/')[1]?.replace('jpeg','jpg') || 'jpg';
+        return new File([blob], `${safeName}.${ext}`, { type: blob.type || 'image/jpeg' });
+      }
+    }
+  } catch {}
+
+  // الطريقة 2: Canvas — تحميل عبر <img> بدون CORS ثم رسم على canvas
   try {
     const file = await new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
-      const timer = setTimeout(() => { img.src = ''; resolve(null); }, 5000);
+      // بدون crossOrigin أولاً (يعمل مع روابط مباشرة)
+      const timer = setTimeout(() => resolve(null), 7000);
       img.onload = () => {
         clearTimeout(timer);
         try {
           const canvas = document.createElement('canvas');
-          canvas.width  = img.naturalWidth  || 800;
-          canvas.height = img.naturalHeight || 800;
-          canvas.getContext('2d').drawImage(img, 0, 0);
+          const MAX = 1200;
+          let w = img.naturalWidth  || 800;
+          let h = img.naturalHeight || 800;
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
           canvas.toBlob(blob => {
-            if (!blob) { resolve(null); return; }
-            resolve(new File([blob], `${name}.jpg`, { type: 'image/jpeg' }));
-          }, 'image/jpeg', 0.92);
+            if (blob && blob.size > 1000)
+              resolve(new File([blob], `${safeName}.jpg`, { type: 'image/jpeg' }));
+            else resolve(null);
+          }, 'image/jpeg', 0.9);
         } catch { resolve(null); }
       };
       img.onerror = () => { clearTimeout(timer); resolve(null); };
-      img.src = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+      img.src = url;
     });
     if (file) return file;
   } catch {}
 
-  // الطريقة 2: fetch مباشر (fallback)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    if (!blob.size) return null;
-    const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
-    return new File([blob], `${name}.${ext}`, { type: blob.type });
-  } catch { return null; }
+  return null;
 }
 
 window.openShareModal = function(idx) {
@@ -7793,11 +7803,14 @@ window.shareToWhatsApp = async function() {
     if (navigator.share) {
       const shareData = { title: _shareProduct.name, text: fullText };
       if (_shareProduct.img && navigator.canShare) {
-        const file = await Promise.race([
-          _fetchImageFile(_shareProduct.img, _shareProduct.name),
-          new Promise(r => setTimeout(() => r(null), 5000))
-        ]);
-        if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
+        if (btn) btn.textContent = '⏳ جاري تحميل الصورة...';
+        const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
+        if (file && navigator.canShare({ files: [file] })) {
+          shareData.files = [file];
+        } else {
+          // الصورة فشلت — أخبر المستخدم وشارك بدونها
+          toast('⚠️ تعذّر إرفاق الصورة — سيُشارك النص والرابط فقط', false, 3000);
+        }
       }
       await navigator.share(shareData);
       return;

@@ -3385,7 +3385,7 @@ function renderManageProds(){
       <td><span class="badge ${p.status==='active'?'b-green':'b-red'}">${p.status==='active'?'🟢 متوفر':'🔴 متوقف'}</span></td>
       <td style="display:flex;gap:4px;align-items:center">
         <button class="btn btn-ghost btn-sm" onclick="openEditProd(${i})">تعديل</button>
-        <button class="btn btn-sm" style="background:linear-gradient(135deg,#1877f2,#25d366);color:white;border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;cursor:pointer" onclick="openShareModal('${p._id||i}')" title="نشر على السوشيال ميديا">📢 نشر</button>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#1877f2,#25d366);color:white;border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;cursor:pointer" onclick="openShareModal(${i})" title="نشر على السوشيال ميديا">📢 نشر</button>
       </td>
     </tr>`;
   }).join('');
@@ -7609,10 +7609,13 @@ async function _fetchImageFile(url, name) {
 }
 
 window.openShareModal = function(idx) {
-  // idx قد يكون index المصفوفة أو _id للمنتج
-  const p = (typeof idx === 'string' && idx.length > 4)
-    ? products.find(x => x._id === idx)
-    : products[idx];
+  // idx إما _id نصي أو index رقمي
+  let p;
+  if (typeof idx === 'string' && isNaN(idx)) {
+    p = products.find(x => x._id === idx);
+  } else {
+    p = products[parseInt(idx)];
+  }
   if (!p) return;
   _shareProduct = p;
   // رابط صفحة المنتج (مع OG tags للصورة)

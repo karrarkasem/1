@@ -249,7 +249,6 @@
     const wa       = (s.whatsapp_number || '').replace(/\D/g,''); // أرقام فقط
     const logo     = s.company_logo     || '';
     const siteUrl  = s.site_url         || storeUrl;
-    const showWholesale = s.show_wholesale_price === true || s.show_wholesale_price === 'true';
 
     // تحديث الهيدر والفوتر
     document.getElementById('lsBrand').textContent    = company;
@@ -312,15 +311,21 @@
       // ── السعر ──
       if (price > 0) {
         document.getElementById('retailPrice').textContent = price.toLocaleString();
-        if (wPrice > 0 && showWholesale) {
+        if (wPrice > 0) {
           document.getElementById('wholesalePrice').textContent = wPrice.toLocaleString();
           document.getElementById('wholesalePriceBox').style.display = 'block';
           document.getElementById('priceDivider').style.display = 'block';
         } else {
           document.getElementById('priceDivider').style.display = 'none';
         }
+      } else if (wPrice > 0) {
+        // فقط سعر جملة بدون مفرد
+        document.getElementById('retailPriceBox').style.display = 'none';
+        document.getElementById('priceDivider').style.display = 'none';
+        document.getElementById('wholesalePrice').textContent = wPrice.toLocaleString();
+        document.getElementById('wholesalePriceBox').style.display = 'block';
       } else {
-        // بدون سعر — اعرض "استفسر"
+        // لا يوجد سعر — اعرض "استفسر"
         document.getElementById('retailPriceBox').style.display = 'none';
         document.getElementById('priceDivider').style.display = 'none';
         document.getElementById('priceAsk').style.display = 'block';

@@ -345,14 +345,9 @@ async function init() {
     }
   }
 
-  // ── تحميل البيانات الأساسية أولاً (منتجات + إعدادات + مستخدمون للتحقق) ──
   try {
-    await Promise.all([loadProducts(), loadAllSettings(), loadOffers(), loadUsers(), loadAds()]);
-  } catch(e) { console.warn('data load (primary):', e); }
-  // ── الطلبات والإشعارات في الخلفية — لا تحتاجها الواجهة الأولى ──
-  Promise.all([loadOrders(), loadNotifications()]).then(() => {
-    try { renderOrders(); renderNotifications(); buildDashboard(); } catch(e){}
-  }).catch(e => console.warn('data load (secondary):', e));
+    await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadAllSettings(), loadAds()]);
+  } catch(e) { console.warn('data load error:', e); }
   try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {

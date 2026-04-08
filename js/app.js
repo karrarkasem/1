@@ -7700,55 +7700,102 @@ window.shareAll = async function() {
   }
 };
 
-window.shareToFacebook = function() {
+// ── Facebook: ينزّل الصورة + ينسخ النص + يفتح إنشاء منشور جديد ──
+window.shareToFacebook = async function() {
   if (!_shareProduct) return;
-  const text = _buildShareText(_shareProduct);
-  // نستخدم رابط product.html الذي يحتوي على OG tags بصورة المنتج
-  const url  = encodeURIComponent(_shareProduct._shareUrl || SITE_URL || window.location.origin);
-  navigator.clipboard.writeText(text).then(() => {
-    toast('📋 تم نسخ النص — الصقه في منشور Facebook بعد فتحه');
+  const btn = document.querySelector('[onclick="shareToFacebook()"]');
+  if (btn) { btn.textContent = '⏳ جاري...'; btn.disabled = true; }
+  try {
+    // 1. تنزيل الصورة أولاً إن وُجدت
+    if (_shareProduct.img) {
+      const file = await Promise.race([
+        _fetchImageFile(_shareProduct.img, _shareProduct.name),
+        new Promise(r => setTimeout(() => r(null), 5000))
+      ]);
+      if (file) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(file);
+        a.download = file.name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+    }
+    // 2. نسخ النص
+    const text = _buildShareText(_shareProduct);
+    await navigator.clipboard.writeText(text).catch(() => {});
+    // 3. فتح Facebook لإنشاء منشور جديد
     setTimeout(() => {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
-    }, 800);
-  }).catch(() => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
-  });
+      window.open('https://www.facebook.com/', '_blank');
+      toast('✅ تم تنزيل الصورة ونسخ النص — افتح Facebook وأنشئ منشوراً جديداً والصق النص وارفع الصورة');
+    }, 600);
+  } finally {
+    if (btn) { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> Facebook'; btn.disabled = false; }
+  }
 };
 
+// ── Instagram: جوال → Web Share مع صورة | كمبيوتر → تنزيل + نسخ + فتح IG ──
 window.shareToInstagram = async function() {
   if (!_shareProduct) return;
+  const btn = document.querySelector('[onclick="shareToInstagram()"]');
+  if (btn) { btn.textContent = '⏳ جاري...'; btn.disabled = true; }
   const text = _buildShareText(_shareProduct);
-  if (navigator.share) {
-    try {
-      let shareData = { title: _shareProduct.name, text, url: _shareProduct._shareUrl || SITE_URL || window.location.origin };
-      if (_shareProduct.img) {
-        const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
-        if (file && navigator.canShare && navigator.canShare({ files: [file] })) shareData.files = [file];
-      }
+  try {
+    // جوال: Web Share مع صورة مباشرة
+    if (navigator.share && navigator.canShare) {
+      const file = _shareProduct.img ? await Promise.race([
+        _fetchImageFile(_shareProduct.img, _shareProduct.name),
+        new Promise(r => setTimeout(() => r(null), 5000))
+      ]) : null;
+      const shareData = { title: _shareProduct.name, text };
+      if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
       await navigator.share(shareData);
-    } catch(e) { if (e.name !== 'AbortError') toast('تعذّرت المشاركة', false); }
-  } else {
-    navigator.clipboard.writeText(text).then(() => {
-      toast('✅ تم نسخ النص — افتح Instagram وألصقه مع الصورة');
-    }).catch(() => toast('انسخ النص يدوياً من المعاينة', false));
+      return;
+    }
+    // كمبيوتر: تنزيل الصورة + نسخ النص + فتح Instagram
+    if (_shareProduct.img) {
+      const file = await Promise.race([
+        _fetchImageFile(_shareProduct.img, _shareProduct.name),
+        new Promise(r => setTimeout(() => r(null), 5000))
+      ]);
+      if (file) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(file);
+        a.download = file.name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }
+    }
+    await navigator.clipboard.writeText(text).catch(() => {});
+    setTimeout(() => {
+      window.open('https://www.instagram.com/', '_blank');
+      toast('✅ تم تنزيل الصورة ونسخ النص — افتح Instagram وأنشئ منشوراً جديداً');
+    }, 600);
+  } catch(e) {
+    if (e.name !== 'AbortError') toast('تعذّرت المشاركة', false);
+  } finally {
+    if (btn) { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg> Instagram'; btn.disabled = false; }
   }
 };
 
+// ── WhatsApp: يفتح محادثة جاهزة بالنص والرابط ──
 window.shareToWhatsApp = async function() {
   if (!_shareProduct) return;
-  // على الجوال: Web Share API مع الصورة أفضل
-  if (navigator.share && _shareProduct.img) {
-    try {
-      const file = await _fetchImageFile(_shareProduct.img, _shareProduct.name);
-      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: _shareProduct.name, text: _buildShareText(_shareProduct), files: [file] });
-        return;
-      }
-    } catch(e) { if (e.name === 'AbortError') return; }
-  }
-  // fallback: رابط واتساب عادي
   const shareUrl = _shareProduct._shareUrl || SITE_URL || window.location.origin;
   const text = encodeURIComponent(_buildShareText(_shareProduct) + '\n🔗 ' + shareUrl);
+  // جوال: Web Share مع صورة
+  if (navigator.share && navigator.canShare && _shareProduct.img) {
+    try {
+      const file = await Promise.race([
+        _fetchImageFile(_shareProduct.img, _shareProduct.name),
+        new Promise(r => setTimeout(() => r(null), 5000))
+      ]);
+      const shareData = { title: _shareProduct.name, text: _buildShareText(_shareProduct) + '\n🔗 ' + shareUrl };
+      if (file && navigator.canShare({ files: [file] })) shareData.files = [file];
+      await navigator.share(shareData);
+      return;
+    } catch(e) { if (e.name === 'AbortError') return; }
+  }
+  // فتح واتساب مباشرة بالنص
   window.open(`https://wa.me/?text=${text}`, '_blank');
 };
 

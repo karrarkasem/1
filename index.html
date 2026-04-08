@@ -10,6 +10,32 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="برجمان">
 <title>برجمان — للمفرد والجملة</title>
+<script>
+(function(){
+  try {
+    var c = localStorage.getItem('bj_company_quick');
+    if (c) { c = JSON.parse(c);
+      document.addEventListener('DOMContentLoaded', function() {
+        if (c.ar) {
+          var els = document.querySelectorAll('.loading-txt, #btBrandName, .sb-logo-text h2, .login-hd h2');
+          els.forEach(function(el){ el.textContent = c.ar; });
+          document.title = c.ar + ' — للمفرد والجملة';
+        }
+        if (c.en) {
+          document.querySelectorAll('.ls-brand-en, .sb-logo-text span').forEach(function(el){ el.textContent = c.en; });
+        }
+        if (c.logo) {
+          document.querySelectorAll('.sb-logo-gem').forEach(function(el){
+            el.innerHTML = '<img src="'+c.logo+'" style="width:36px;height:36px;object-fit:cover;border-radius:8px">';
+          });
+          var btg = document.querySelector('.bt-logo-gem');
+          if (btg) btg.innerHTML = '<img src="'+c.logo+'" style="width:50px;height:50px;object-fit:cover;border-radius:14px">';
+        }
+      });
+    }
+  } catch(e){}
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <script src="js/config.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230d9488'/><text y='.9em' font-size='80'>🏪</text></svg>">

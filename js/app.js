@@ -25,6 +25,14 @@ async function loadAllSettings() {
     snap.docs.forEach(d => { const data = d.data(); if (data.key && !data.protected) s[data.key] = data.value; });
     window.COMPANY = s;
     _cacheSet('bj_company', s);
+    // حفظ الاسم والشعار بمفتاح سريع لتطبيقه فوراً في الزيارة القادمة
+    try {
+      localStorage.setItem('bj_company_quick', JSON.stringify({
+        ar:   s.company_name_ar || '',
+        en:   s.company_name_en || '',
+        logo: s.company_logo   || ''
+      }));
+    } catch(e){}
 
     // إعدادات المجهز والسائق
     preparerWhatsApp = s.preparer_whatsapp || '';
@@ -337,9 +345,14 @@ async function init() {
     }
   }
 
+  // ── تحميل البيانات الأساسية أولاً (منتجات + إعدادات + مستخدمون للتحقق) ──
   try {
-    await Promise.all([loadUsers(), loadProducts(), loadOrders(), loadOffers(), loadNotifications(), loadAllSettings(), loadAds()]);
-  } catch(e) { console.warn('data load error:', e); }
+    await Promise.all([loadProducts(), loadAllSettings(), loadOffers(), loadUsers(), loadAds()]);
+  } catch(e) { console.warn('data load (primary):', e); }
+  // ── الطلبات والإشعارات في الخلفية — لا تحتاجها الواجهة الأولى ──
+  Promise.all([loadOrders(), loadNotifications()]).then(() => {
+    try { renderOrders(); renderNotifications(); buildDashboard(); } catch(e){}
+  }).catch(e => console.warn('data load (secondary):', e));
   try {
     const saved = localStorage.getItem('bjUser');
     if (saved) {

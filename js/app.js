@@ -609,7 +609,8 @@ const activeOffers = offers.filter(o => o.status==='active' && !isOfferExpired(o
       const newOnes = activeOffers.filter(o => !prev.has(o._id));
       renderOffersBanner();
       renderOffers();
-      if (activeOffers.length && (prev.size === 0 || newOnes.length > 0)) {
+      const isAdmin = CU && (CU.type === 'admin' || CU.type === 'sales_manager');
+      if (!isAdmin && activeOffers.length && (prev.size === 0 || newOnes.length > 0)) {
         setTimeout(() => showBannerModal(activeOffers), prev.size === 0 ? 1200 : 600);
       }
       activeOffers.forEach(o => _bmShownOfferIds.add(o._id));
@@ -3384,7 +3385,7 @@ function renderManageProds(){
       <td><span class="badge ${p.status==='active'?'b-green':'b-red'}">${p.status==='active'?'🟢 متوفر':'🔴 متوقف'}</span></td>
       <td style="display:flex;gap:4px;align-items:center">
         <button class="btn btn-ghost btn-sm" onclick="openEditProd(${i})">تعديل</button>
-        <button class="btn btn-sm" style="background:linear-gradient(135deg,#1877f2,#25d366);color:white;border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;cursor:pointer" onclick="openShareModal(${i})" title="نشر على السوشيال ميديا">📢 نشر</button>
+        <button class="btn btn-sm" style="background:linear-gradient(135deg,#1877f2,#25d366);color:white;border:none;padding:4px 8px;border-radius:6px;font-size:.72rem;cursor:pointer" onclick="openShareModal('${p._id||i}')" title="نشر على السوشيال ميديا">📢 نشر</button>
       </td>
     </tr>`;
   }).join('');
@@ -3745,19 +3746,23 @@ function getOfferTypeName(type) {
 
 /* هل العرض متاح للمستخدم الحالي؟ */
 function isOfferForMe(o) {
-  if(!CU) return false;
+  // الأدمن والمشرف لا يرون العروض
+  if (CU && (CU.type === 'admin' || CU.type === 'sales_manager')) return false;
+
   // ── فحص وضع الشراء (مفرد/جملة) ──
   const bt = o.buyerTarget || 'both';
   if (bt !== 'both') {
     const curMode = buyerMode || 'retail';
     if (bt !== curMode) return false;
   }
-  // ── فحص نوع المستخدم ──
-  const t = o.targetType||'all';
-  if(t==='all') return true;
-  if(t==='all_reps')    return CU.type==='rep';
-  if(t==='all_markets') return CU.type==='market_owner';
-  if(t==='specific')    return (o.targetUsers||[]).includes(CU.username||CU._id);
+  // ── فحص نوع الجمهور المستهدف ──
+  const t = o.targetType || 'all';
+  if (t === 'all')          return true;  // الجميع (زوار + مسجلون)
+  if (t === 'visitors')     return !CU;   // الزوار فقط (غير مسجلين)
+  if (t === 'registered')   return !!CU;  // المسجلون فقط
+  if (t === 'all_reps')     return CU?.type === 'rep';
+  if (t === 'all_markets')  return CU?.type === 'market_owner';
+  if (t === 'specific')     return (o.targetUsers || []).includes(CU?.username || CU?._id);
   return false;
 }
 
@@ -7604,7 +7609,10 @@ async function _fetchImageFile(url, name) {
 }
 
 window.openShareModal = function(idx) {
-  const p = products[idx];
+  // idx قد يكون index المصفوفة أو _id للمنتج
+  const p = (typeof idx === 'string' && idx.length > 4)
+    ? products.find(x => x._id === idx)
+    : products[idx];
   if (!p) return;
   _shareProduct = p;
   // رابط صفحة المنتج (مع OG tags للصورة)

@@ -2399,6 +2399,7 @@ function buildDashboard(){
       { icon:'🚚', lbl:'إعدادات التوصيل',  sub:'مناطق ورسوم التوصيل',                                                     page:'pageDeliverySettings',color:'#6366f1' },
       { icon:'📍', lbl:'تتبع المندوبين',   sub:'نشاط المندوبين',                                                          page:'pageRepTracking',     color:'#10b981' },
       { icon:'📣', lbl:'التسويق',           sub:'حملات وقواعد بيانات',                                                     page:null, url:'marketing.html',    color:'#f59e0b' },
+      { icon:'🤖', lbl:'النشر التلقائي',   sub:'جدولة المنشورات تلقائياً',                                                 page:null, url:'auto-post.html',    color:'#8b5cf6' },
       { icon:'⚙️', lbl:'إعدادات الموقع',   sub:'API، الإشعارات، التصميم',                                                 page:null, url:'setup.html',         color:'#6366f1' },
       { icon:'🔔', lbl:'إعدادات الإشعارات',sub:'تيليغرام، واتساب، إيميل',                                                  page:null, url:'notif-settings.html',color:'#0ea5e9' },
     ].filter(t => t.page ? !!document.getElementById(t.page) : true);

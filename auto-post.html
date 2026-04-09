@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>النشر التلقائي — برجمان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cairo',sans-serif;background:#f0f4f8;color:#1e293b;direction:rtl}
+
+/* ── Header ── */
+.ap-header{background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.ap-header .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;display:flex;align-items:center;gap:6px;text-decoration:none}
+.ap-header .back-btn:hover{background:rgba(255,255,255,.25)}
+.ap-header h1{font-size:20px;font-weight:700;flex:1}
+.ap-header .icon{font-size:28px}
+
+/* ── Layout ── */
+.ap-container{max-width:900px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1fr 340px;gap:20px}
+@media(max-width:768px){.ap-container{grid-template-columns:1fr}}
+
+/* ── Card ── */
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:24px}
+.card-title{font-size:16px;font-weight:700;color:#1e3a5f;margin-bottom:18px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #e2e8f0;padding-bottom:12px}
+
+/* ── Form elements ── */
+.fgroup{margin-bottom:18px}
+.fgroup label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
+.fsel,.finput{width:100%;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#1e293b;background:#f8fafc;outline:none;transition:border-color .2s}
+.fsel:focus,.finput:focus{border-color:#2d6a9f;background:#fff}
+.finput[type=datetime-local]{direction:ltr;text-align:left}
+
+/* ── Product preview ── */
+.prod-preview{border:1.5px dashed #cbd5e1;border-radius:12px;padding:16px;background:#f8fafc;min-height:100px;display:flex;align-items:center;gap:14px;transition:all .3s}
+.prod-preview.loaded{border-color:#2d6a9f;background:#eff6ff}
+.prod-preview img{width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#e2e8f0}
+.prod-preview .info{flex:1}
+.prod-preview .info h3{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:4px}
+.prod-preview .info .price{color:#16a34a;font-weight:700;font-size:14px}
+.prod-preview .info .cat{color:#64748b;font-size:12px;margin-top:2px}
+.prod-preview .placeholder{color:#94a3b8;font-size:13px;text-align:center;width:100%}
+
+/* ── Platform toggles ── */
+.platforms{display:flex;flex-wrap:wrap;gap:10px}
+.platform-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;background:#fff;color:#64748b;transition:all .2s;user-select:none}
+.platform-btn.active{border-color:transparent;color:#fff}
+.platform-btn[data-p=facebook].active{background:#1877f2;border-color:#1877f2}
+.platform-btn[data-p=instagram].active{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-color:#dc2743}
+.platform-btn[data-p=telegram].active{background:#0088cc;border-color:#0088cc}
+.platform-btn[data-p=whatsapp].active{background:#25d366;border-color:#25d366}
+
+/* ── Post text ── */
+.post-text-area{width:100%;min-height:120px;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#1e293b;background:#f8fafc;resize:vertical;outline:none;transition:border-color .2s}
+.post-text-area:focus{border-color:#2d6a9f;background:#fff}
+.char-count{font-size:11px;color:#94a3b8;text-align:left;margin-top:4px}
+
+/* ── Submit ── */
+.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{opacity:.9}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Queue list ── */
+.queue-list{display:flex;flex-direction:column;gap:12px}
+.q-item{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;gap:12px;align-items:flex-start;border-right:4px solid #e2e8f0;position:relative}
+.q-item.pending{border-right-color:#f59e0b}
+.q-item.posted{border-right-color:#22c55e}
+.q-item.failed{border-right-color:#ef4444}
+.q-item img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#e2e8f0}
+.q-item .q-info{flex:1;min-width:0}
+.q-item .q-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-item .q-meta{font-size:12px;color:#64748b;margin-top:3px}
+.q-item .q-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.q-item.pending .q-status{background:#fef3c7;color:#92400e}
+.q-item.posted .q-status{background:#dcfce7;color:#166534}
+.q-item.failed .q-status{background:#fee2e2;color:#991b1b}
+.q-item .q-del{position:absolute;top:10px;left:10px;background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:16px;line-height:1;padding:2px}
+.q-item .q-del:hover{color:#ef4444}
+.q-platforms{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.q-plat-tag{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600}
+.q-plat-tag.facebook{background:#e7f0fd;color:#1877f2}
+.q-plat-tag.instagram{background:#fce7f3;color:#dc2743}
+.q-plat-tag.telegram{background:#e0f2fe;color:#0088cc}
+.q-plat-tag.whatsapp{background:#dcfce7;color:#15803d}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;transition:transform .3s;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:#16a34a}
+.toast.error{background:#dc2626}
+
+/* ── Loading ── */
+.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px;height:60px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ── Empty ── */
+.empty-state{text-align:center;padding:32px 16px;color:#94a3b8}
+.empty-state .icon{font-size:40px;margin-bottom:8px}
+.empty-state p{font-size:14px}
+
+/* ── Section header ── */
+.section-hd{font-size:16px;font-weight:700;color:#1e3a5f;margin:0 0 14px;display:flex;align-items:center;gap:8px}
+
+/* ── Full-width section ── */
+.full-row{grid-column:1/-1}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="ap-header">
+  <a href="index.html" class="back-btn">← رجوع</a>
+  <h1>📢 النشر التلقائي</h1>
+  <span class="icon">🤖</span>
+</div>
+
+<!-- Main -->
+<div class="ap-container">
+
+  <!-- LEFT: Form -->
+  <div>
+    <!-- Product selection -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">🛍️ اختيار المنتج</div>
+
+      <div class="fgroup">
+        <label>الفئة</label>
+        <select id="selCategory" class="fsel" onchange="filterByCategory()">
+          <option value="">⏳ جاري التحميل...</option>
+        </select>
+      </div>
+
+      <div class="fgroup">
+        <label>المنتج</label>
+        <select id="selProduct" class="fsel" onchange="onProductSelect()">
+          <option value="">— اختر منتجاً —</option>
+        </select>
+      </div>
+
+      <!-- Preview -->
+      <div class="prod-preview" id="prodPreview">
+        <span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>
+      </div>
+    </div>
+
+    <!-- Post content -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">✍️ نص المنشور</div>
+
+      <div class="fgroup">
+        <label>نص المنشور (يُعبأ تلقائياً)</label>
+        <textarea id="postText" class="post-text-area" placeholder="سيُعبأ النص تلقائياً بعد اختيار المنتج..." oninput="updateCharCount()"></textarea>
+        <div class="char-count" id="charCount">0 حرف</div>
+      </div>
+    </div>
+
+    <!-- Platform + schedule -->
+    <div class="card">
+      <div class="card-title">⚙️ إعدادات النشر</div>
+
+      <div class="fgroup">
+        <label>المنصات</label>
+        <div class="platforms">
+          <button class="platform-btn active" data-p="facebook" onclick="togglePlatform(this)">
+            <span>📘</span> فيسبوك
+          </button>
+          <button class="platform-btn" data-p="instagram" onclick="togglePlatform(this)">
+            <span>📸</span> إنستجرام
+          </button>
+          <button class="platform-btn" data-p="telegram" onclick="togglePlatform(this)">
+            <span>✈️</span> تلجرام
+          </button>
+          <button class="platform-btn" data-p="whatsapp" onclick="togglePlatform(this)">
+            <span>💬</span> واتساب
+          </button>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <label>موعد النشر</label>
+        <input type="datetime-local" id="scheduleTime" class="finput"/>
+      </div>
+
+      <button class="submit-btn" id="saveBtn" onclick="saveToQueue()">
+        <span>💾</span> جدولة المنشور
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Queue -->
+  <div>
+    <div class="card">
+      <div class="card-title">🗓️ قائمة الجدولة</div>
+      <div class="queue-list" id="queueList">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="card" style="margin-top:20px;background:linear-gradient(135deg,#eff6ff,#e0f2fe)">
+      <div class="card-title" style="border-color:#bfdbfe;color:#1d4ed8">ℹ️ كيف يعمل النشر التلقائي؟</div>
+      <p style="font-size:13px;color:#1e40af;line-height:1.7">
+        يقوم نظام GitHub Actions بفحص المنشورات المجدولة كل <strong>15 دقيقة</strong>.<br/>
+        عند حلول موعد المنشور، يتم إرساله تلقائياً إلى المنصات المحددة.<br/>
+        <br/>
+        <strong>⚠️ تنبيه:</strong> المنصات التي تعمل بالنشر التلقائي عبر API:<br/>
+        📘 فيسبوك — ✈️ تلجرام<br/>
+        <br/>
+        إنستجرام وواتساب تتطلب تطبيق مخصص.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import './js/firebase.js';
+
+// ── State ──────────────────────────────────────────────
+let allProducts = [];
+let filteredProducts = [];
+let selectedProduct = null;
+let queueUnsub = null;
+
+// ── Init ───────────────────────────────────────────────
+document.addEventListener('fbReady', async () => {
+  await Promise.all([loadProducts(), listenQueue()]);
+});
+// fallback if fbReady already fired
+if (window._fbReady) {
+  loadProducts();
+  listenQueue();
+}
+
+// Set default schedule time (1 hour from now)
+(function setDefaultTime() {
+  const now = new Date();
+  now.setHours(now.getHours() + 1);
+  const iso = now.toISOString().slice(0, 16);
+  document.getElementById('scheduleTime').value = iso;
+})();
+
+// ── Load products ──────────────────────────────────────
+async function loadProducts() {
+  try {
+    const { getDocs, collection, query, orderBy } = window._fb;
+    const db = window._db;
+    const snap = await getDocs(query(collection(db, 'products'), orderBy('name_ar', 'asc')));
+    allProducts = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    buildCategorySelect();
+  } catch (e) {
+    console.error(e);
+    showToast('خطأ في تحميل المنتجات', 'error');
+  }
+}
+
+function buildCategorySelect() {
+  const cats = [...new Set(allProducts.map(p => p.category || p.cat || 'عام').filter(Boolean))].sort();
+  const sel = document.getElementById('selCategory');
+  sel.innerHTML = `<option value="">🌐 كل الفئات</option>` +
+    cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  filterByCategory();
+}
+
+window.filterByCategory = function () {
+  const cat = document.getElementById('selCategory').value;
+  filteredProducts = cat ? allProducts.filter(p => (p.category || p.cat || 'عام') === cat) : [...allProducts];
+  const selP = document.getElementById('selProduct');
+  selP.innerHTML = `<option value="">— اختر منتجاً —</option>` +
+    filteredProducts.map(p => `<option value="${p._id}">${esc(p.name_ar || p.name || p._id)}</option>`).join('');
+  selectedProduct = null;
+  document.getElementById('prodPreview').innerHTML = `<span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>`;
+  document.getElementById('prodPreview').className = 'prod-preview';
+  document.getElementById('postText').value = '';
+  document.getElementById('charCount').textContent = '0 حرف';
+};
+
+window.onProductSelect = function () {
+  const id = document.getElementById('selProduct').value;
+  if (!id) return;
+  selectedProduct = filteredProducts.find(p => p._id === id) || null;
+  if (!selectedProduct) return;
+  renderPreview(selectedProduct);
+  autoFillText(selectedProduct);
+};
+
+function renderPreview(p) {
+  const img = p.image || p.img || '';
+  const name = p.name_ar || p.name || '';
+  const price = p.retail_price || p.price || '';
+  const cat = p.category || p.cat || '';
+  const preview = document.getElementById('prodPreview');
+  preview.className = 'prod-preview loaded';
+  preview.innerHTML = `
+    ${img ? `<img src="${esc(img)}" onerror="this.style.display='none'" alt=""/>` : ''}
+    <div class="info">
+      <h3>${esc(name)}</h3>
+      ${price ? `<div class="price">💰 ${price} د.ع</div>` : ''}
+      ${cat ? `<div class="cat">📂 ${esc(cat)}</div>` : ''}
+    </div>`;
+}
+
+function autoFillText(p) {
+  const name = p.name_ar || p.name || '';
+  const price = p.retail_price || p.price || '';
+  const wholesale = p.wholesale_price || '';
+  const detail = p.detail || p.description || '';
+  const cat = p.category || p.cat || '';
+  const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
+  const prodUrl = `${siteUrl}/product.html?id=${p._id}`;
+
+  let txt = `🛍️ ${name}\n`;
+  if (cat)       txt += `📂 ${cat}\n`;
+  if (price)     txt += `💰 المفرد: ${price} د.ع\n`;
+  if (wholesale) txt += `📦 الجملة: ${wholesale} د.ع\n`;
+  if (detail)    txt += `\n${detail}\n`;
+  txt += `\n🔗 ${prodUrl}`;
+
+  document.getElementById('postText').value = txt;
+  updateCharCount();
+}
+
+window.updateCharCount = function () {
+  const n = document.getElementById('postText').value.length;
+  document.getElementById('charCount').textContent = `${n} حرف`;
+};
+
+// ── Platform toggle ────────────────────────────────────
+window.togglePlatform = function (btn) {
+  btn.classList.toggle('active');
+};
+
+function getSelectedPlatforms() {
+  return [...document.querySelectorAll('.platform-btn.active')].map(b => b.dataset.p);
+}
+
+// ── Save to queue ──────────────────────────────────────
+window.saveToQueue = async function () {
+  if (!selectedProduct) return showToast('اختر منتجاً أولاً', 'error');
+  const platforms = getSelectedPlatforms();
+  if (!platforms.length) return showToast('اختر منصة واحدة على الأقل', 'error');
+  const schedStr = document.getElementById('scheduleTime').value;
+  if (!schedStr) return showToast('حدد موعد النشر', 'error');
+  const schedDate = new Date(schedStr);
+  if (schedDate <= new Date()) return showToast('يجب أن يكون الموعد في المستقبل', 'error');
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> جاري الحفظ...';
+
+  try {
+    const { addDoc, collection, Timestamp } = window._fb;
+    const db = window._db;
+    const p = selectedProduct;
+    const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
+
+    await addDoc(collection(db, 'automated_queue'), {
+      productId:    p._id,
+      productName:  p.name_ar || p.name || '',
+      productImage: p.image || p.img || '',
+      productPrice: p.retail_price || p.price || '',
+      productUrl:   `${siteUrl}/product.html?id=${p._id}`,
+      postText:     document.getElementById('postText').value.trim(),
+      platforms,
+      scheduledAt:  Timestamp.fromDate(schedDate),
+      status:       'pending',
+      createdAt:    Timestamp.now(),
+      attempts:     0
+    });
+    showToast('تم جدولة المنشور بنجاح ✅', 'success');
+    // reset
+    document.getElementById('selProduct').value = '';
+    document.getElementById('prodPreview').innerHTML = `<span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>`;
+    document.getElementById('prodPreview').className = 'prod-preview';
+    document.getElementById('postText').value = '';
+    document.getElementById('charCount').textContent = '0 حرف';
+    selectedProduct = null;
+  } catch (e) {
+    console.error(e);
+    showToast('فشل الحفظ: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>💾</span> جدولة المنشور';
+  }
+};
+
+// ── Listen queue ───────────────────────────────────────
+async function listenQueue() {
+  const { collection, query, orderBy, onSnapshot } = window._fb;
+  const db = window._db;
+  if (queueUnsub) queueUnsub();
+  queueUnsub = onSnapshot(
+    query(collection(db, 'automated_queue'), orderBy('scheduledAt', 'desc')),
+    snap => renderQueue(snap.docs.map(d => ({ _id: d.id, ...d.data() }))),
+    err => console.error('queue listen:', err)
+  );
+}
+
+function renderQueue(items) {
+  const list = document.getElementById('queueList');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>لا توجد منشورات مجدولة</p></div>`;
+    return;
+  }
+  list.innerHTML = items.map(item => {
+    const sched = item.scheduledAt?.toDate ? item.scheduledAt.toDate() : new Date(item.scheduledAt);
+    const schedStr = sched.toLocaleString('ar-IQ', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const platforms = (item.platforms || []).map(p =>
+      `<span class="q-plat-tag ${p}">${platLabel(p)}</span>`).join('');
+    return `
+      <div class="q-item ${item.status || 'pending'}">
+        ${item.productImage ? `<img src="${esc(item.productImage)}" onerror="this.style.display='none'" alt=""/>` : ''}
+        <div class="q-info">
+          <div class="q-name">${esc(item.productName || item.productId)}</div>
+          <div class="q-meta">🗓️ ${schedStr}</div>
+          <div class="q-platforms">${platforms}</div>
+        </div>
+        <span class="q-status">${statusLabel(item.status)}</span>
+        <button class="q-del" onclick="deleteQueueItem('${item._id}')" title="حذف">✕</button>
+      </div>`;
+  }).join('');
+}
+
+window.deleteQueueItem = async function (id) {
+  if (!confirm('حذف هذا المنشور المجدول؟')) return;
+  try {
+    const { doc, deleteDoc } = window._fb;
+    await deleteDoc(doc(window._db, 'automated_queue', id));
+    showToast('تم الحذف', 'success');
+  } catch (e) {
+    showToast('فشل الحذف', 'error');
+  }
+};
+
+// ── Helpers ────────────────────────────────────────────
+function platLabel(p) {
+  return { facebook:'📘 فيسبوك', instagram:'📸 إنستجرام', telegram:'✈️ تلجرام', whatsapp:'💬 واتساب' }[p] || p;
+}
+function statusLabel(s) {
+  return { pending:'⏳ منتظر', posted:'✅ نُشر', failed:'❌ فشل', processing:'🔄 جاري' }[s] || s;
+}
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Toast ──────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => { t.className = `toast ${type}`; }, 3000);
+}
+</script>
+</body>
+</html>

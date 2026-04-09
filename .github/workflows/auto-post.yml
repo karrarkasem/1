@@ -1,0 +1,44 @@
+name: 🤖 Auto Post — برجمان
+
+on:
+  schedule:
+    # كل 15 دقيقة
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'تجربة بدون نشر فعلي (dry run)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  auto-post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm init -y
+          npm install firebase-admin node-fetch@2
+
+      - name: 🤖 Run auto-post script
+        env:
+          FIREBASE_PROJECT_ID:      ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL:    ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY:     ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FB_PAGE_ACCESS_TOKEN:     ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID:               ${{ secrets.FB_PAGE_ID }}
+          TG_BOT_TOKEN:             ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHANNEL_ID:            ${{ secrets.TG_CHANNEL_ID }}
+          DRY_RUN:                  ${{ github.event.inputs.dry_run || 'false' }}
+        run: node .github/scripts/auto-post.js

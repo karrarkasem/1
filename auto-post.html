@@ -1,778 +1,734 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>النشر التلقائي — برجمان</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🤖 النشر التلقائي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="js/config.js"></script>
+<script src="js/theme.js"></script>
+<script type="module" src="js/firebase.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cairo',sans-serif;background:#0f172a;color:#e2e8f0;direction:rtl;min-height:100vh}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;--surface3:#f0f7ff;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.11);
+  --text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --teal:#0d9488;--teal2:#0f766e;--teal3:rgba(13,148,136,.10);
+  --sky:#0ea5e9;--sky2:#0284c7;--sky3:rgba(14,165,233,.10);
+  --mint:#10b981;--mint2:#059669;--mint3:rgba(16,185,129,.10);
+  --gold:#f59e0b;--gold2:#d97706;--gold3:rgba(245,158,11,.12);
+  --rose:#f43f5e;--rose2:#e11d48;--rose3:rgba(244,63,94,.10);
+  --violet:#8b5cf6;--violet3:rgba(139,92,246,.10);
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px;
+  --shadow:0 4px 16px rgba(0,0,0,.08);--shadow-sm:0 2px 8px rgba(0,0,0,.06);
+}
+[data-mode="dark"]{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#0f172a;--surface3:#1a2540;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.13);
+  --text:#f1f5f9;--muted:#94a3b8;--muted2:#64748b;
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s}
 
-/* ══ Header ══════════════════════════════════════ */
-.header{background:linear-gradient(135deg,#1e3a5f 0%,#1e293b 100%);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px)}
-.back-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;text-decoration:none;transition:.2s}
-.back-btn:hover{background:rgba(255,255,255,.2)}
-.header h1{font-size:18px;font-weight:700;color:#fff;flex:1}
-.header .badge{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+/* ══ TOPBAR ══ */
+.topbar{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-sm)}
+.tb-back{width:38px;height:38px;border-radius:var(--r8);border:1.5px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--muted);flex-shrink:0;text-decoration:none;transition:all .15s}
+.tb-back:hover{border-color:var(--teal);color:var(--teal)}
+.tb-title{flex:1;font-size:1rem;font-weight:900;color:var(--text)}
+.tb-title span{font-size:.75rem;font-weight:600;color:var(--muted);display:block}
 
-/* ══ Layout ══════════════════════════════════════ */
-.wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
+/* ══ LAYOUT ══ */
+.wrap{max-width:960px;margin:0 auto;padding:20px 16px 80px}
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:780px){.two-col{grid-template-columns:1fr}}
 
-/* ══ Section title ═══════════════════════════════ */
-.sec-title{font-size:14px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
-.sec-title::before{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+/* ══ CARD ══ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r20);padding:20px;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:.92rem;font-weight:900;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 
-/* ══ Platform cards ══════════════════════════════ */
-.platforms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
-@media(max-width:900px){.platforms-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:500px){.platforms-grid{grid-template-columns:repeat(2,1fr)}}
+/* ══ FORM ══ */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-size:.78rem;font-weight:700;color:var(--muted)}
+.fi,.fsel,.fta{background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r12);padding:10px 12px;color:var(--text);font-family:'Cairo',sans-serif;font-size:.88rem;outline:none;transition:border-color .18s,box-shadow .18s;width:100%}
+.fi:focus,.fsel:focus,.fta:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal3)}
+.fsel option{background:var(--surface)}
+.fta{resize:vertical;min-height:100px;line-height:1.7}
+.fi[type=datetime-local]{direction:ltr;text-align:right}
 
-.plat-card{background:#1e293b;border:2px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 12px;cursor:pointer;transition:all .25s;text-align:center;position:relative;user-select:none}
-.plat-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.15)}
-.plat-card.connected{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 4px 20px color-mix(in srgb,var(--c) 20%,transparent)}
-.plat-card.selected{background:color-mix(in srgb,var(--c) 15%,#1e293b)}
-.plat-card.unavailable{opacity:.45;cursor:not-allowed}
-.plat-card .plat-icon{font-size:30px;margin-bottom:6px;display:block}
-.plat-card .plat-name{font-size:12px;font-weight:700;color:#e2e8f0}
-.plat-card .plat-status{font-size:10px;margin-top:4px;font-weight:600}
-.plat-card.connected .plat-status{color:#4ade80}
-.plat-card:not(.connected):not(.unavailable) .plat-status{color:#64748b}
-.plat-card.unavailable .plat-status{color:#64748b}
-.plat-card .check-mark{position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:50%;background:var(--c);color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;font-weight:700}
-.plat-card.selected .check-mark{display:flex}
-.plat-card .settings-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
-.plat-card .settings-btn:hover{background:rgba(255,255,255,.15);color:#e2e8f0}
+/* ══ PLATFORMS GRID ══ */
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+@media(max-width:480px){.plat-grid{grid-template-columns:repeat(3,1fr)}}
+.plat-card{
+  position:relative;background:var(--surface2);border:2px solid var(--border2);
+  border-radius:var(--r16);padding:14px 8px 12px;cursor:pointer;
+  transition:all .2s;text-align:center;user-select:none;
+}
+.plat-card:hover{border-color:var(--c,var(--teal));transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.plat-card.connected{border-color:var(--c,var(--teal));background:color-mix(in srgb,var(--c,var(--teal)) 8%,var(--surface2))}
+.plat-card.selected{border-color:var(--c,var(--teal));background:color-mix(in srgb,var(--c,var(--teal)) 14%,var(--surface2));box-shadow:0 0 0 3px color-mix(in srgb,var(--c,var(--teal)) 20%,transparent)}
+.plat-card .p-icon{font-size:1.8rem;display:block;margin-bottom:5px}
+.plat-card .p-name{font-size:.72rem;font-weight:800;color:var(--text)}
+.plat-card .p-st{font-size:.62rem;font-weight:700;margin-top:3px}
+.plat-card.connected .p-st{color:var(--mint)}
+.plat-card:not(.connected) .p-st{color:var(--muted2)}
+.plat-card .p-check{position:absolute;top:6px;left:6px;width:18px;height:18px;border-radius:50%;background:var(--c,var(--teal));color:#fff;font-size:10px;display:none;align-items:center;justify-content:center;font-weight:900}
+.plat-card.selected .p-check{display:flex}
+.plat-card .p-cfg{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.06);border:none;border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:.2s}
+.plat-card .p-cfg:hover{background:var(--border2);color:var(--text)}
+[data-mode="dark"] .plat-card .p-cfg{background:rgba(255,255,255,.08)}
 
-/* ══ Main grid ═══════════════════════════════════ */
-.main-grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
-@media(max-width:800px){.main-grid{grid-template-columns:1fr}}
+/* ══ PRODUCT PREVIEW ══ */
+.prod-prev{border:1.5px dashed var(--border2);border-radius:var(--r12);padding:12px;background:var(--surface2);min-height:80px;display:flex;align-items:center;gap:12px;transition:.3s}
+.prod-prev.loaded{border-color:var(--teal);border-style:solid}
+.prod-prev img{width:64px;height:64px;object-fit:cover;border-radius:var(--r8);flex-shrink:0}
+.prod-prev .pi-name{font-size:.88rem;font-weight:800;color:var(--text)}
+.prod-prev .pi-price{font-size:.8rem;font-weight:700;color:var(--mint2);margin-top:2px}
+.prod-prev .pi-cat{font-size:.72rem;color:var(--muted);margin-top:1px}
+.ph-txt{color:var(--muted2);font-size:.8rem;text-align:center;width:100%}
 
-/* ══ Card ════════════════════════════════════════ */
-.card{background:#1e293b;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;margin-bottom:16px}
-.card-title{font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
-
-/* ══ Form ════════════════════════════════════════ */
-.fgroup{margin-bottom:14px}
-.fgroup label{display:block;font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
-.fsel,.finput{width:100%;padding:10px 14px;border:1.5px solid rgba(255,255,255,.08);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#e2e8f0;background:#0f172a;outline:none;transition:.2s}
-.fsel:focus,.finput:focus{border-color:#3b82f6;background:#0f1f35}
-.fsel option{background:#1e293b}
-.ftextarea{width:100%;min-height:110px;padding:11px 14px;border:1.5px solid rgba(255,255,255,.08);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#e2e8f0;background:#0f172a;resize:vertical;outline:none;transition:.2s;line-height:1.6}
-.ftextarea:focus{border-color:#3b82f6}
-.char-count{font-size:11px;color:#475569;text-align:left;margin-top:4px}
-
-/* ══ Product preview ══════════════════════════════ */
-.prod-preview{border:1.5px dashed rgba(255,255,255,.1);border-radius:12px;padding:14px;background:#0f172a;min-height:90px;display:flex;align-items:center;gap:12px;transition:.3s}
-.prod-preview.loaded{border-color:#3b82f6;background:#0f1f35}
-.prod-preview img{width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#334155}
-.prod-preview .info h3{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:3px}
-.prod-preview .info .price{color:#4ade80;font-weight:700;font-size:13px}
-.prod-preview .info .cat{color:#64748b;font-size:12px}
-.placeholder-txt{color:#475569;font-size:13px;text-align:center;width:100%}
-
-/* ══ Schedule rows ════════════════════════════════ */
+/* ══ SCHEDULE ROWS ══ */
 .sched-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.sched-row .finput{flex:1}
-.sched-row .del-btn{background:#7f1d1d;border:none;color:#fca5a5;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;transition:.2s}
-.sched-row .del-btn:hover{background:#991b1b}
-.add-sched-btn{width:100%;padding:8px;background:rgba(59,130,246,.1);border:1.5px dashed rgba(59,130,246,.3);border-radius:8px;color:#60a5fa;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
-.add-sched-btn:hover{background:rgba(59,130,246,.2)}
+.sched-row .fi{flex:1}
+.del-sched{background:var(--rose3);border:1px solid transparent;color:var(--rose2);padding:9px 10px;border-radius:var(--r8);cursor:pointer;font-size:.9rem;flex-shrink:0;transition:.2s}
+.del-sched:hover{background:var(--rose);color:#fff}
+.add-sched-btn{width:100%;padding:9px;background:var(--teal3);border:1.5px dashed var(--teal);border-radius:var(--r8);color:var(--teal2);font-family:'Cairo',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
+.add-sched-btn:hover{background:var(--teal);color:#fff}
 
-/* ══ Repeat select ════════════════════════════════ */
-.repeat-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
-.repeat-row label{font-size:12px;color:#64748b;font-weight:600;white-space:nowrap}
-.repeat-chip{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:#94a3b8;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
-.repeat-chip.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+/* ══ REPEAT CHIPS ══ */
+.repeat-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.repeat-lbl{font-size:.75rem;font-weight:700;color:var(--muted)}
+.rep-chip{padding:5px 12px;border-radius:99px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'Cairo',sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;transition:.2s}
+.rep-chip.on{background:var(--violet);border-color:var(--violet);color:#fff}
 
-/* ══ Submit ═══════════════════════════════════════ */
-.submit-btn{width:100%;padding:13px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.submit-btn:hover{opacity:.9;transform:translateY(-1px)}
-.submit-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+/* ══ SUBMIT ══ */
+.submit-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;border:none;border-radius:var(--r16);font-family:'Cairo',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(13,148,136,.3)}
+.submit-btn:hover:not(:disabled){opacity:.92;transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 
-/* ══ Queue ════════════════════════════════════════ */
-.q-item{background:#0f172a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;border-right:3px solid #334155;position:relative;transition:.2s}
-.q-item.pending{border-right-color:#f59e0b}
-.q-item.posted{border-right-color:#22c55e}
-.q-item.failed{border-right-color:#ef4444}
-.q-item.processing{border-right-color:#3b82f6}
-.q-item img{width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#334155}
+/* ══ STATS ══ */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat-c{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:12px 8px;text-align:center}
+.stat-c .sn{font-size:1.4rem;font-weight:900;line-height:1}
+.stat-c .sl{font-size:.66rem;color:var(--muted);margin-top:3px;font-weight:700}
+.stat-c.tot .sn{color:var(--sky)}
+.stat-c.pen .sn{color:var(--gold)}
+.stat-c.pos .sn{color:var(--mint)}
+.stat-c.fai .sn{color:var(--rose)}
+
+/* ══ QUEUE ══ */
+.q-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r12);padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;border-right:3px solid var(--border2);position:relative;transition:.2s}
+.q-item.pending{border-right-color:var(--gold)}
+.q-item.posted{border-right-color:var(--mint)}
+.q-item.failed{border-right-color:var(--rose)}
+.q-item.processing{border-right-color:var(--sky)}
+.q-item img{width:44px;height:44px;object-fit:cover;border-radius:var(--r8);flex-shrink:0}
+.q-name{font-size:.82rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-meta{font-size:.7rem;color:var(--muted);margin-top:2px}
+.q-tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
+.q-tag{font-size:.62rem;padding:2px 7px;border-radius:99px;background:var(--teal3);color:var(--teal2);font-weight:700}
+.q-badge{font-size:.65rem;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap;flex-shrink:0;align-self:center}
+.q-item.pending .q-badge{background:var(--gold3);color:var(--gold2)}
+.q-item.posted  .q-badge{background:var(--mint3);color:var(--mint2)}
+.q-item.failed  .q-badge{background:var(--rose3);color:var(--rose2)}
+.q-item.processing .q-badge{background:var(--sky3);color:var(--sky2)}
+.q-del{position:absolute;top:8px;left:8px;background:none;border:none;color:var(--border2);cursor:pointer;font-size:.9rem;padding:2px;transition:.2s}
+.q-del:hover{color:var(--rose)}
 .q-info{flex:1;min-width:0}
-.q-name{font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.q-meta{font-size:11px;color:#64748b;margin-top:2px}
-.q-platforms{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
-.q-plat{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600;background:rgba(255,255,255,.07);color:#94a3b8}
-.q-status-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-.q-item.pending  .q-status-badge{background:#78350f33;color:#fbbf24}
-.q-item.posted   .q-status-badge{background:#14532d33;color:#4ade80}
-.q-item.failed   .q-status-badge{background:#7f1d1d33;color:#f87171}
-.q-item.processing .q-status-badge{background:#1e3a5f;color:#60a5fa}
-.q-del{position:absolute;top:8px;left:8px;background:none;border:none;color:#334155;font-size:15px;cursor:pointer;padding:2px;line-height:1;transition:.2s}
-.q-del:hover{color:#ef4444}
 
-/* ══ Stats ════════════════════════════════════════ */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.stat-box{background:#0f172a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;text-align:center}
-.stat-box .num{font-size:22px;font-weight:900;margin-bottom:2px}
-.stat-box .lbl{font-size:11px;color:#64748b;font-weight:600}
-.stat-box.pending .num{color:#fbbf24}
-.stat-box.posted  .num{color:#4ade80}
-.stat-box.failed  .num{color:#f87171}
-.stat-box.total   .num{color:#60a5fa}
-
-/* ══ Credentials Modal ════════════════════════════ */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
-.modal-overlay.hidden{display:none}
-.modal{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
-.modal-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07)}
-.modal-header .icon{font-size:28px}
-.modal-header h2{font-size:17px;font-weight:700;color:#e2e8f0;flex:1}
-.modal-close{background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
-.modal-close:hover{background:rgba(255,255,255,.15);color:#e2e8f0}
-.modal-note{background:rgba(255,255,255,.04);border-radius:10px;padding:12px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:16px;border-right:3px solid #3b82f6}
-.modal-note a{color:#60a5fa;text-decoration:none}
-.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-.btn-save{padding:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+/* ══ MODAL ══ */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-ov.hidden{display:none}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r20);padding:22px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
+.modal-hd{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.modal-hd h2{font-size:.95rem;font-weight:900;flex:1;color:var(--text)}
+.modal-x{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);width:30px;height:30px;border-radius:var(--r8);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+.modal-x:hover{background:var(--rose3);color:var(--rose)}
+.modal-note{background:var(--surface2);border-radius:var(--r12);padding:11px 13px;font-size:.76rem;color:var(--muted);line-height:1.7;margin-bottom:14px;border-right:3px solid var(--teal)}
+.modal-note a{color:var(--sky);text-decoration:none}
+.modal-note b{color:var(--text)}
+.modal-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.btn-save{padding:10px;background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;border:none;border-radius:var(--r12);font-family:'Cairo',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;transition:.2s}
 .btn-save:hover{opacity:.9}
-.btn-cancel{padding:10px;background:rgba(255,255,255,.07);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
-.btn-cancel:hover{background:rgba(255,255,255,.12)}
-.btn-disconnect{padding:10px;background:#7f1d1d33;color:#f87171;border:1px solid #7f1d1d;border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;grid-column:1/-1;transition:.2s}
-.btn-disconnect:hover{background:#7f1d1d66}
+.btn-cancel{padding:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border2);border-radius:var(--r12);font-family:'Cairo',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:.2s}
+.btn-cancel:hover{border-color:var(--border2);background:var(--border2)}
+.btn-disc{padding:9px;background:var(--rose3);color:var(--rose2);border:1px solid var(--rose3);border-radius:var(--r12);font-family:'Cairo',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;grid-column:1/-1;transition:.2s}
+.btn-disc:hover{background:var(--rose);color:#fff}
 
-/* ══ Input with eye toggle ════════════════════════ */
-.input-wrap{position:relative}
-.input-wrap .finput{padding-left:38px}
-.input-wrap .eye-btn{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1}
+/* ══ EYE INPUT ══ */
+.eye-wrap{position:relative}
+.eye-wrap .fi{padding-left:36px}
+.eye-btn{position:absolute;left:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:.9rem}
 
-/* ══ Toast ════════════════════════════════════════ */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#1e293b;border:1px solid rgba(255,255,255,.1);color:#e2e8f0;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+/* ══ SKELETON ══ */
+.skel{background:linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:var(--r12);height:60px;margin-bottom:8px}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ══ EMPTY ══ */
+.empty{text-align:center;padding:28px;color:var(--muted2)}
+.empty .ei{font-size:2rem;margin-bottom:8px}
+.empty p{font-size:.8rem}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--text);color:var(--bg);padding:11px 22px;border-radius:var(--r16);font-size:.85rem;font-weight:700;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:var(--shadow)}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.success{border-color:#16a34a;background:#14532d}
-.toast.error{border-color:#dc2626;background:#7f1d1d}
+.toast.ok{background:var(--mint2);color:#fff}
+.toast.err{background:var(--rose2);color:#fff}
 
-/* ══ Spinner ══════════════════════════════════════ */
-.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ══ SPINNER ══ */
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* ══ Empty ════════════════════════════════════════ */
-.empty{text-align:center;padding:32px;color:#334155}
-.empty .e-icon{font-size:36px;margin-bottom:8px}
-.empty p{font-size:13px}
-
-/* ══ Availability note ════════════════════════════ */
-.avail-note{font-size:10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:8px 12px;color:#fbbf24;margin-bottom:14px;line-height:1.6}
+/* ══ INFO BOX ══ */
+.info-box{background:var(--gold3);border:1px solid var(--gold);border-radius:var(--r12);padding:12px 14px;font-size:.76rem;color:var(--gold2);line-height:1.7;margin-bottom:14px}
+.info-box b{color:var(--gold2)}
 </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <a href="index.html" class="back-btn">← رجوع</a>
-  <h1>🤖 النشر التلقائي</h1>
-  <span class="badge">Auto Post</span>
+<!-- Topbar -->
+<div class="topbar">
+  <a href="index.html" class="tb-back">←</a>
+  <div class="tb-title">🤖 النشر التلقائي <span>Auto Post Scheduler</span></div>
 </div>
 
 <div class="wrap">
+<div class="two-col">
 
-  <!-- ══ Section 1: Platforms ══ -->
-  <div class="sec-title">المنصات المتصلة</div>
+<!-- ══ LEFT ═════════════════════════════════════════════ -->
+<div>
 
-  <div class="platforms-grid" id="platformsGrid">
+  <!-- Platforms -->
+  <div class="card">
+    <div class="card-title">📡 اختر المنصات</div>
 
-    <!-- Facebook -->
-    <div class="plat-card" id="pc-facebook" style="--c:#1877f2" onclick="selectPlatform('facebook')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('facebook')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">📘</span>
-      <div class="plat-name">فيسبوك</div>
-      <div class="plat-status" id="ps-facebook">غير متصل</div>
+    <div class="plat-grid">
+      <div class="plat-card" id="pc-facebook"  style="--c:#1877f2" onclick="selectPlat('facebook')"  data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('facebook')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">📘</span>
+        <div class="p-name">فيسبوك</div>
+        <div class="p-st" id="ps-facebook">غير متصل</div>
+      </div>
+      <div class="plat-card" id="pc-instagram" style="--c:#e1306c" onclick="selectPlat('instagram')" data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('instagram')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">📸</span>
+        <div class="p-name">إنستجرام</div>
+        <div class="p-st" id="ps-instagram">غير متصل</div>
+      </div>
+      <div class="plat-card" id="pc-tiktok"    style="--c:#ff0050" onclick="selectPlat('tiktok')"    data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('tiktok')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">🎵</span>
+        <div class="p-name">تيك توك</div>
+        <div class="p-st" id="ps-tiktok">غير متصل</div>
+      </div>
+      <div class="plat-card" id="pc-telegram"  style="--c:#0088cc" onclick="selectPlat('telegram')"  data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('telegram')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">✈️</span>
+        <div class="p-name">تلجرام</div>
+        <div class="p-st" id="ps-telegram">غير متصل</div>
+      </div>
+      <div class="plat-card" id="pc-whatsapp"  style="--c:#25d366" onclick="selectPlat('whatsapp')"  data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('whatsapp')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">💬</span>
+        <div class="p-name">واتساب</div>
+        <div class="p-st" id="ps-whatsapp">غير متصل</div>
+      </div>
+      <div class="plat-card" id="pc-snapchat"  style="--c:#ffb300" onclick="selectPlat('snapchat')"  data-con="0">
+        <button class="p-cfg" onclick="event.stopPropagation();openModal('snapchat')">⚙️</button>
+        <div class="p-check">✓</div>
+        <span class="p-icon">👻</span>
+        <div class="p-name">سناب شات</div>
+        <div class="p-st" id="ps-snapchat">غير متصل</div>
+      </div>
     </div>
-
-    <!-- Instagram -->
-    <div class="plat-card" id="pc-instagram" style="--c:#e1306c" onclick="selectPlatform('instagram')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('instagram')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">📸</span>
-      <div class="plat-name">إنستجرام</div>
-      <div class="plat-status" id="ps-instagram">غير متصل</div>
-    </div>
-
-    <!-- TikTok -->
-    <div class="plat-card" id="pc-tiktok" style="--c:#ff0050" onclick="selectPlatform('tiktok')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('tiktok')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">🎵</span>
-      <div class="plat-name">تيك توك</div>
-      <div class="plat-status" id="ps-tiktok">غير متصل</div>
-    </div>
-
-    <!-- Telegram -->
-    <div class="plat-card" id="pc-telegram" style="--c:#0088cc" onclick="selectPlatform('telegram')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('telegram')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">✈️</span>
-      <div class="plat-name">تلجرام</div>
-      <div class="plat-status" id="ps-telegram">غير متصل</div>
-    </div>
-
-    <!-- WhatsApp -->
-    <div class="plat-card" id="pc-whatsapp" style="--c:#25d366" onclick="selectPlatform('whatsapp')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('whatsapp')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">💬</span>
-      <div class="plat-name">واتساب</div>
-      <div class="plat-status" id="ps-whatsapp">غير متصل</div>
-    </div>
-
-    <!-- Snapchat -->
-    <div class="plat-card" id="pc-snapchat" style="--c:#fffc00" onclick="selectPlatform('snapchat')" data-connected="false">
-      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('snapchat')">⚙️</button>
-      <div class="check-mark">✓</div>
-      <span class="plat-icon">👻</span>
-      <div class="plat-name">سناب شات</div>
-      <div class="plat-status" id="ps-snapchat">غير متصل</div>
-    </div>
-
+    <p style="font-size:.7rem;color:var(--muted2);margin-top:8px">اضغط ⚙️ لإدخال مفاتيح الربط • اضغط البطاقة لتحديد المنصة للنشر</p>
   </div>
 
-  <!-- ══ Section 2: Create post ══ -->
-  <div class="sec-title">إنشاء منشور</div>
-
-  <div class="main-grid">
-    <div>
-
-      <!-- Product picker -->
-      <div class="card">
-        <div class="card-title">🛍️ اختيار المنتج</div>
-        <div class="fgroup">
-          <label>الفئة</label>
-          <select id="selCat" class="fsel" onchange="filterByCat()">
-            <option value="">⏳ جاري التحميل...</option>
-          </select>
-        </div>
-        <div class="fgroup">
-          <label>المنتج</label>
-          <select id="selProd" class="fsel" onchange="onProdSelect()">
-            <option value="">— اختر منتجاً —</option>
-          </select>
-        </div>
-        <div class="prod-preview" id="prodPreview">
-          <span class="placeholder-txt">اختر منتجاً لرؤية المعاينة</span>
-        </div>
-      </div>
-
-      <!-- Post text -->
-      <div class="card">
-        <div class="card-title">✍️ نص المنشور</div>
-        <textarea id="postText" class="ftextarea" placeholder="يُعبأ تلقائياً بعد اختيار المنتج..." oninput="updateCC()"></textarea>
-        <div class="char-count" id="charCount">0 حرف</div>
-      </div>
-
-      <!-- Schedule -->
-      <div class="card">
-        <div class="card-title">🗓️ مواعيد النشر</div>
-        <div id="schedRows"></div>
-        <button class="add-sched-btn" onclick="addScheduleRow()">+ إضافة موعد آخر</button>
-
-        <div class="repeat-row">
-          <label>التكرار:</label>
-          <button class="repeat-chip active" data-r="none"   onclick="setRepeat(this)">مرة واحدة</button>
-          <button class="repeat-chip"        data-r="daily"  onclick="setRepeat(this)">يومي</button>
-          <button class="repeat-chip"        data-r="weekly" onclick="setRepeat(this)">أسبوعي</button>
-          <button class="repeat-chip"        data-r="monthly"onclick="setRepeat(this)">شهري</button>
-        </div>
-      </div>
-
-      <button class="submit-btn" id="saveBtn" onclick="saveToQueue()">
-        <span>💾</span> جدولة المنشور
-      </button>
-
+  <!-- Product picker -->
+  <div class="card">
+    <div class="card-title">🛍️ اختيار المنتج</div>
+    <div class="fg">
+      <label class="fl">الفئة</label>
+      <select id="selCat" class="fsel" onchange="filterByCat()">
+        <option value="">⏳ جاري تحميل الفئات...</option>
+      </select>
     </div>
-
-    <!-- Right: Queue -->
-    <div>
-      <!-- Stats -->
-      <div class="stats-row">
-        <div class="stat-box total">  <div class="num" id="stTotal">—</div><div class="lbl">إجمالي</div></div>
-        <div class="stat-box pending"><div class="num" id="stPending">—</div><div class="lbl">منتظر</div></div>
-        <div class="stat-box posted"> <div class="num" id="stPosted">—</div><div class="lbl">نُشر</div></div>
-        <div class="stat-box failed"> <div class="num" id="stFailed">—</div><div class="lbl">فشل</div></div>
-      </div>
-
-      <div class="card" style="padding:16px">
-        <div class="card-title" style="margin-bottom:12px">📋 قائمة الجدولة</div>
-        <div id="queueList"><div class="empty"><div class="e-icon">📭</div><p>لا توجد منشورات</p></div></div>
-      </div>
+    <div class="fg">
+      <label class="fl">المنتج</label>
+      <select id="selProd" class="fsel" onchange="onProdSelect()">
+        <option value="">— اختر منتجاً —</option>
+      </select>
+    </div>
+    <div class="prod-prev" id="prodPrev">
+      <span class="ph-txt">اختر منتجاً لرؤية المعاينة</span>
     </div>
   </div>
+
+  <!-- Post text -->
+  <div class="card">
+    <div class="card-title">✍️ نص المنشور</div>
+    <textarea id="postText" class="fta" placeholder="يُعبأ تلقائياً بعد اختيار المنتج، ويمكنك التعديل..." oninput="updateCC()"></textarea>
+    <div style="font-size:.7rem;color:var(--muted2);text-align:left;margin-top:4px" id="charCount">0 حرف</div>
+  </div>
+
+  <!-- Schedule -->
+  <div class="card">
+    <div class="card-title">🗓️ مواعيد النشر</div>
+    <div id="schedRows"></div>
+    <button class="add-sched-btn" onclick="addSchedRow()">＋ إضافة موعد آخر</button>
+
+    <div class="repeat-row">
+      <span class="repeat-lbl">التكرار:</span>
+      <button class="rep-chip on"  data-r="none"    onclick="setRepeat(this)">مرة واحدة</button>
+      <button class="rep-chip"     data-r="daily"   onclick="setRepeat(this)">يومي</button>
+      <button class="rep-chip"     data-r="weekly"  onclick="setRepeat(this)">أسبوعي</button>
+      <button class="rep-chip"     data-r="monthly" onclick="setRepeat(this)">شهري</button>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="saveBtn" onclick="saveQueue()">
+    💾 جدولة المنشور
+  </button>
 
 </div>
 
-<!-- ══ Credentials Modal ══════════════════════════════════════ -->
-<div class="modal-overlay hidden" id="credModal" onclick="if(event.target===this)closeModal()">
+<!-- ══ RIGHT ════════════════════════════════════════════ -->
+<div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-c tot"><div class="sn" id="stTot">—</div><div class="sl">الإجمالي</div></div>
+    <div class="stat-c pen"><div class="sn" id="stPen">—</div><div class="sl">منتظر</div></div>
+    <div class="stat-c pos"><div class="sn" id="stPos">—</div><div class="sl">نُشر</div></div>
+    <div class="stat-c fai"><div class="sn" id="stFai">—</div><div class="sl">فشل</div></div>
+  </div>
+
+  <!-- Queue -->
+  <div class="card" style="padding:16px">
+    <div class="card-title">📋 قائمة الجدولة</div>
+    <div id="queueList">
+      <div class="skel"></div>
+      <div class="skel" style="height:44px"></div>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="info-box">
+    ⚙️ يعمل GitHub Actions كل <b>15 دقيقة</b> للفحص والنشر.<br>
+    📘 فيسبوك و ✈️ تلجرام يعملان بالكامل عبر API.<br>
+    ⚠️ تيك توك: فيديو فقط. سناب شات: إعلانات فقط.
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- ══ Credentials Modal ══════════════════════════════ -->
+<div class="modal-ov hidden" id="credModal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
-    <div class="modal-header">
-      <span class="plat-icon" id="mIcon">📘</span>
+    <div class="modal-hd">
+      <span id="mIcon" style="font-size:1.5rem"></span>
       <h2 id="mTitle">إعدادات المنصة</h2>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-x" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-note" id="mNote"></div>
     <div id="mFields"></div>
-    <div class="modal-actions" id="mActions">
-      <button class="btn-save" onclick="saveCredentials()">💾 حفظ</button>
-      <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
-    </div>
+    <div class="modal-acts" id="mActs"></div>
   </div>
 </div>
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script type="module">
-import './js/firebase.js';
-
-// ══ Platform definitions ══════════════════════════
-const PLATFORMS = {
-  facebook: {
-    icon:'📘', name:'فيسبوك', color:'#1877f2',
+<script>
+// ══ Platform definitions ══════════════════════════════
+var PLATS = {
+  facebook:{
+    icon:'📘',name:'فيسبوك',
     fields:[
-      { id:'fb_page_id',      label:'Page ID',           type:'text',     ph:'123456789',  help:'من About صفحة الفيسبوك' },
-      { id:'fb_access_token', label:'Page Access Token', type:'password', ph:'EAAG...',    help:'من Meta Developer → Graph API Explorer' }
+      {id:'fb_page_id',     label:'Page ID',           type:'text',    ph:'123456789'},
+      {id:'fb_access_token',label:'Page Access Token', type:'password',ph:'EAAG...'}
     ],
-    note:`1️⃣ اذهب إلى <a href="https://developers.facebook.com/tools/explorer" target="_blank">Graph API Explorer</a><br>
-          2️⃣ اختر تطبيقك وصفحتك<br>
-          3️⃣ أضف صلاحيات: <b>pages_manage_posts, pages_read_engagement</b><br>
-          4️⃣ انسخ الـ Page ID من قسم About في صفحتك`
+    note:'1️⃣ اذهب إلى <a href="https://developers.facebook.com/tools/explorer" target="_blank">Graph API Explorer</a><br>2️⃣ اختر تطبيقك وصفحتك<br>3️⃣ أضف صلاحيات: <b>pages_manage_posts</b><br>4️⃣ انسخ الـ Page ID من About الصفحة'
   },
-  instagram: {
-    icon:'📸', name:'إنستجرام', color:'#e1306c',
+  instagram:{
+    icon:'📸',name:'إنستجرام',
     fields:[
-      { id:'ig_account_id',   label:'Instagram Account ID', type:'text',     ph:'17841...',   help:'من Meta Business Suite' },
-      { id:'ig_access_token', label:'Access Token',         type:'password', ph:'EAAG...',    help:'نفس توكن فيسبوك (مرتبط)' }
+      {id:'ig_account_id',  label:'Instagram Account ID',type:'text',   ph:'17841...'},
+      {id:'ig_access_token',label:'Access Token',        type:'password',ph:'EAAG...'}
     ],
-    note:`يتطلب <b>حساب Business أو Creator</b> مرتبط بصفحة فيسبوك.<br>
-          1️⃣ Meta Business Suite → الحسابات → إنستجرام<br>
-          2️⃣ انسخ الـ Account ID من الإعدادات<br>
-          3️⃣ استخدم نفس Access Token من فيسبوك مع صلاحية <b>instagram_content_publish</b>`
+    note:'يتطلب حساب <b>Business أو Creator</b> مرتبط بصفحة فيسبوك.<br>انسخ Account ID من Meta Business Suite → إنستجرام → الإعدادات'
   },
-  tiktok: {
-    icon:'🎵', name:'تيك توك', color:'#ff0050',
+  tiktok:{
+    icon:'🎵',name:'تيك توك',
     fields:[
-      { id:'tt_open_id',      label:'Open ID',        type:'text',     ph:'...',         help:'من TikTok Developer Portal' },
-      { id:'tt_access_token', label:'Access Token',   type:'password', ph:'att_...',     help:'بعد إتمام OAuth' }
+      {id:'tt_open_id',     label:'Open ID',      type:'text',    ph:'...'},
+      {id:'tt_access_token',label:'Access Token', type:'password',ph:'att_...'}
     ],
-    note:`⚠️ تيك توك يدعم نشر <b>الفيديو فقط</b> عبر API.<br>
-          1️⃣ اذهب إلى <a href="https://developers.tiktok.com" target="_blank">developers.tiktok.com</a><br>
-          2️⃣ أنشئ تطبيق → اطلب صلاحية Content Posting API<br>
-          3️⃣ أكمل OAuth للحصول على الـ Open ID و Access Token`
+    note:'⚠️ تيك توك يدعم <b>الفيديو فقط</b> عبر API.<br>اذهب إلى <a href="https://developers.tiktok.com" target="_blank">developers.tiktok.com</a> لإنشاء تطبيق والحصول على الـ tokens'
   },
-  telegram: {
-    icon:'✈️', name:'تلجرام', color:'#0088cc',
+  telegram:{
+    icon:'✈️',name:'تلجرام',
     fields:[
-      { id:'tg_bot_token',  label:'Bot Token',    type:'password', ph:'123456:ABC...', help:'من @BotFather' },
-      { id:'tg_channel_id', label:'Channel ID',   type:'text',     ph:'@mychannel',    help:'اسم القناة أو الـ ID السالب' }
+      {id:'tg_bot_token', label:'Bot Token',   type:'password',ph:'123456:ABC...'},
+      {id:'tg_channel_id',label:'Channel ID',  type:'text',    ph:'@mychannel'}
     ],
-    note:`1️⃣ ابحث عن <b>@BotFather</b> في تيليجرام<br>
-          2️⃣ أرسل /newbot واتبع الخطوات<br>
-          3️⃣ أضف البوت مشرفاً في القناة<br>
-          4️⃣ Channel ID: للقنوات العامة استخدم @اسم_القناة`
+    note:'1️⃣ ابحث عن <b>@BotFather</b> في تيليجرام<br>2️⃣ أرسل /newbot واحصل على الـ Token<br>3️⃣ أضف البوت مشرفاً في قناتك'
   },
-  whatsapp: {
-    icon:'💬', name:'واتساب', color:'#25d366',
+  whatsapp:{
+    icon:'💬',name:'واتساب',
     fields:[
-      { id:'wa_phone_id',     label:'Phone Number ID', type:'text',     ph:'11628...',     help:'من Meta Business → WhatsApp' },
-      { id:'wa_access_token', label:'Access Token',    type:'password', ph:'EAAG...',      help:'من Meta Developer' },
-      { id:'wa_to_number',    label:'رقم المستلم',     type:'text',     ph:'9647700000000',help:'رقم واتساب كامل مع كود الدولة' }
+      {id:'wa_phone_id',    label:'Phone Number ID',type:'text',    ph:'11628...'},
+      {id:'wa_access_token',label:'Access Token',   type:'password',ph:'EAAG...'},
+      {id:'wa_to_number',   label:'رقم المستلم',    type:'text',    ph:'9647700000000'}
     ],
-    note:`⚠️ WhatsApp Business API يتطلب <b>رقماً مسجلاً في Meta</b>.<br>
-          يُرسل رسالة نصية (لا يدعم البث العام بل رسائل للعملاء).<br>
-          1️⃣ Meta Business → WhatsApp → Getting Started<br>
-          2️⃣ انسخ Phone Number ID والـ Access Token`
+    note:'⚠️ يُرسل رسائل للعملاء (لا يدعم البث العام).<br>Meta Business → WhatsApp → Getting Started'
   },
-  snapchat: {
-    icon:'👻', name:'سناب شات', color:'#fffc00',
+  snapchat:{
+    icon:'👻',name:'سناب شات',
     fields:[
-      { id:'snap_client_id',     label:'Client ID',      type:'text',     ph:'...', help:'من Snap Kit Developer' },
-      { id:'snap_access_token',  label:'Access Token',   type:'password', ph:'...', help:'بعد OAuth' }
+      {id:'snap_client_id',    label:'Client ID',    type:'text',    ph:'...'},
+      {id:'snap_access_token', label:'Access Token', type:'password',ph:'...'}
     ],
-    note:`⚠️ Snapchat <b>لا يوفر API</b> للنشر العضوي (Organic Posts).<br>
-          المتاح فقط هو Snap Ads API للإعلانات المدفوعة.<br>
-          يمكن حفظ البيانات هنا للمستقبل عند توفر API رسمي.`
+    note:'⚠️ سناب شات <b>لا يدعم النشر العضوي</b> عبر API. المتاح فقط Snap Ads API للإعلانات المدفوعة.'
   }
 };
 
-// ══ State ════════════════════════════════════════
-let allProducts = [], filteredProducts = [];
-let selectedProduct = null;
-let credentials = {};     // loaded from Firestore
-let repeatMode = 'none';
-let currentModalPlat = null;
-let queueUnsub = null;
+// ══ State ════════════════════════════════════════════
+var allProds=[], filteredProds=[], selProd=null, creds={}, repeatMode='none', curModal=null, queueUnsub=null, schedIdx=0;
 
-// ══ Init ══════════════════════════════════════════
-const waitFb = () => new Promise(r => {
-  if (window._fbReady) { r(); return; }
-  document.addEventListener('fbReady', r, { once: true });
+// ══ Firebase wait ══════════════════════════════════════
+function waitFb(){
+  return new Promise(function(r){
+    if(window._fbReady){r();return;}
+    document.addEventListener('fbReady',r,{once:true});
+  });
+}
+
+// ══ Init ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  addSchedRow(); // add first row immediately
+  waitFb().then(function(){
+    return Promise.all([loadCreds(), loadProds(), listenQueue()]);
+  }).catch(function(e){ console.error(e); });
 });
 
-(async () => {
-  addScheduleRow();
-  await waitFb();
-  await Promise.all([loadCredentials(), loadProducts(), listenQueue()]);
-})();
-
-// ══ Credentials ═══════════════════════════════════
-async function loadCredentials() {
-  try {
-    const { doc, getDoc } = window._fb;
-    const snap = await getDoc(doc(window._db, 'settings', 'social_accounts'));
-    if (snap.exists()) {
-      credentials = snap.data() || {};
-      updatePlatformCards();
-    }
-  } catch (e) { console.warn('cred load:', e); }
+// ══ Credentials ═══════════════════════════════════════
+function loadCreds(){
+  var doc=window._fb.doc, getDoc=window._fb.getDoc;
+  return getDoc(doc(window._db,'settings','social_accounts')).then(function(snap){
+    creds = snap.exists() ? (snap.data()||{}) : {};
+    updatePlatCards();
+  }).catch(function(e){console.warn('creds:',e);});
 }
 
-function updatePlatformCards() {
-  Object.keys(PLATFORMS).forEach(p => {
-    const card = document.getElementById(`pc-${p}`);
-    const status = document.getElementById(`ps-${p}`);
-    const plat = PLATFORMS[p];
-    // Check if at least one field is filled
-    const hasData = plat.fields.some(f => credentials[f.id] && credentials[f.id].trim());
-    card.dataset.connected = hasData ? 'true' : 'false';
-    card.classList.toggle('connected', hasData);
-    status.textContent = hasData ? '✅ متصل' : 'غير متصل';
+function updatePlatCards(){
+  Object.keys(PLATS).forEach(function(p){
+    var plat=PLATS[p];
+    var hasData=plat.fields.some(function(f){return creds[f.id]&&creds[f.id].trim();});
+    var card=document.getElementById('pc-'+p);
+    var st=document.getElementById('ps-'+p);
+    card.dataset.con = hasData?'1':'0';
+    card.classList.toggle('connected',hasData);
+    st.textContent = hasData ? '✅ متصل' : 'غير متصل';
   });
 }
 
-// ══ Platform selection ════════════════════════════
-window.selectPlatform = (p) => {
-  const card = document.getElementById(`pc-${p}`);
-  if (card.dataset.connected !== 'true') {
-    openCredModal(p);
-    return;
-  }
+// ══ Platform select ════════════════════════════════════
+function selectPlat(p){
+  var card=document.getElementById('pc-'+p);
+  if(card.dataset.con!=='1'){ openModal(p); return; }
   card.classList.toggle('selected');
-};
-
-function getSelectedPlatforms() {
-  return Object.keys(PLATFORMS).filter(p =>
-    document.getElementById(`pc-${p}`)?.classList.contains('selected')
-  );
 }
 
-// ══ Credentials modal ═════════════════════════════
-window.openCredModal = (p) => {
-  currentModalPlat = p;
-  const plat = PLATFORMS[p];
-  document.getElementById('mIcon').textContent = plat.icon;
-  document.getElementById('mTitle').textContent = `ربط ${plat.name}`;
-  document.getElementById('mNote').innerHTML = plat.note;
-
-  // Build fields
-  document.getElementById('mFields').innerHTML = plat.fields.map(f => `
-    <div class="fgroup">
-      <label>${f.label} <span style="color:#475569;font-size:10px">(${f.help})</span></label>
-      <div class="input-wrap">
-        <input id="cf_${f.id}" class="finput" type="${f.type}" placeholder="${f.ph}"
-               value="${esc(credentials[f.id] || '')}" autocomplete="off"/>
-        ${f.type==='password'?`<button class="eye-btn" type="button" onclick="toggleEye('cf_${f.id}',this)">👁</button>`:''}
-      </div>
-    </div>`).join('');
-
-  // Disconnect button if connected
-  const hasData = plat.fields.some(f => credentials[f.id] && credentials[f.id].trim());
-  const acts = document.getElementById('mActions');
-  acts.innerHTML = `
-    <button class="btn-save" onclick="saveCredentials()">💾 حفظ</button>
-    <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
-    ${hasData ? `<button class="btn-disconnect" onclick="disconnectPlatform('${p}')">🔌 قطع الاتصال بـ ${plat.name}</button>` : ''}`;
-
-  document.getElementById('credModal').classList.remove('hidden');
-};
-
-window.closeModal = () => {
-  document.getElementById('credModal').classList.add('hidden');
-  currentModalPlat = null;
-};
-
-window.toggleEye = (id, btn) => {
-  const inp = document.getElementById(id);
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
-};
-
-window.saveCredentials = async () => {
-  if (!currentModalPlat) return;
-  const plat = PLATFORMS[currentModalPlat];
-  const update = {};
-  plat.fields.forEach(f => {
-    update[f.id] = (document.getElementById(`cf_${f.id}`)?.value || '').trim();
+function getSelectedPlats(){
+  return Object.keys(PLATS).filter(function(p){
+    return document.getElementById('pc-'+p).classList.contains('selected');
   });
-  Object.assign(credentials, update);
-  try {
-    const { doc, setDoc } = window._fb;
-    await setDoc(doc(window._db, 'settings', 'social_accounts'), credentials, { merge: true });
-    updatePlatformCards();
-    closeModal();
-    showToast(`تم حفظ إعدادات ${plat.name} ✅`, 'success');
-  } catch (e) {
-    showToast('خطأ في الحفظ: ' + e.message, 'error');
-  }
-};
-
-window.disconnectPlatform = async (p) => {
-  if (!confirm(`قطع الاتصال بـ ${PLATFORMS[p].name}؟`)) return;
-  const plat = PLATFORMS[p];
-  plat.fields.forEach(f => { credentials[f.id] = ''; });
-  try {
-    const { doc, setDoc } = window._fb;
-    await setDoc(doc(window._db, 'settings', 'social_accounts'), credentials, { merge: true });
-    document.getElementById(`pc-${p}`).classList.remove('selected');
-    updatePlatformCards();
-    closeModal();
-    showToast(`تم قطع الاتصال بـ ${PLATFORMS[p].name}`, 'success');
-  } catch (e) {
-    showToast('خطأ: ' + e.message, 'error');
-  }
-};
-
-// ══ Products ══════════════════════════════════════
-async function loadProducts() {
-  try {
-    const { getDocs, collection, query, orderBy } = window._fb;
-    const snap = await getDocs(query(collection(window._db, 'products'), orderBy('name_ar', 'asc')));
-    allProducts = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-    buildCatSelect();
-  } catch (e) { showToast('خطأ في تحميل المنتجات', 'error'); }
 }
 
-function buildCatSelect() {
-  const cats = [...new Set(allProducts.map(p => p.category || p.cat || 'عام'))].sort();
-  const sel = document.getElementById('selCat');
-  sel.innerHTML = `<option value="">🌐 كل الفئات</option>` + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+// ══ Modal ══════════════════════════════════════════════
+function openModal(p){
+  curModal=p;
+  var plat=PLATS[p];
+  document.getElementById('mIcon').textContent=plat.icon;
+  document.getElementById('mTitle').textContent='ربط '+plat.name;
+  document.getElementById('mNote').innerHTML=plat.note;
+  document.getElementById('mFields').innerHTML=plat.fields.map(function(f){
+    var val=esc(creds[f.id]||'');
+    var eyeBtn=f.type==='password'?'<button class="eye-btn" type="button" onclick="toggleEye(\'cf_'+f.id+'\',this)">👁</button>':'';
+    return '<div class="fg"><label class="fl">'+f.label+'</label><div class="eye-wrap"><input id="cf_'+f.id+'" class="fi" type="'+f.type+'" placeholder="'+f.ph+'" value="'+val+'" autocomplete="off"/>'+eyeBtn+'</div></div>';
+  }).join('');
+  var hasData=plat.fields.some(function(f){return creds[f.id]&&creds[f.id].trim();});
+  document.getElementById('mActs').innerHTML=
+    '<button class="btn-save" onclick="saveCreds()">💾 حفظ</button>'+
+    '<button class="btn-cancel" onclick="closeModal()">إلغاء</button>'+
+    (hasData?'<button class="btn-disc" onclick="disconnectPlat(\''+p+'\')">🔌 قطع الاتصال بـ '+plat.name+'</button>':'');
+  document.getElementById('credModal').classList.remove('hidden');
+}
+
+function closeModal(){
+  document.getElementById('credModal').classList.add('hidden');
+  curModal=null;
+}
+
+function toggleEye(id,btn){
+  var inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+
+function saveCreds(){
+  if(!curModal)return;
+  var plat=PLATS[curModal];
+  plat.fields.forEach(function(f){
+    creds[f.id]=(document.getElementById('cf_'+f.id)||{value:''}).value.trim();
+  });
+  var setDoc=window._fb.setDoc, docFn=window._fb.doc;
+  setDoc(docFn(window._db,'settings','social_accounts'),creds,{merge:true}).then(function(){
+    updatePlatCards();
+    closeModal();
+    toast('تم حفظ الإعدادات ✅','ok');
+  }).catch(function(e){ toast('خطأ: '+e.message,'err'); });
+}
+
+function disconnectPlat(p){
+  if(!confirm('قطع الاتصال بـ '+PLATS[p].name+'؟'))return;
+  PLATS[p].fields.forEach(function(f){creds[f.id]='';});
+  var setDoc=window._fb.setDoc, docFn=window._fb.doc;
+  setDoc(docFn(window._db,'settings','social_accounts'),creds,{merge:true}).then(function(){
+    document.getElementById('pc-'+p).classList.remove('selected');
+    updatePlatCards();
+    closeModal();
+    toast('تم قطع الاتصال','ok');
+  }).catch(function(e){ toast('خطأ: '+e.message,'err'); });
+}
+
+// ══ Products ═══════════════════════════════════════════
+function loadProds(){
+  var getDocs=window._fb.getDocs, col=window._fb.collection, q=window._fb.query, orderBy=window._fb.orderBy;
+  return getDocs(q(col(window._db,'products'),orderBy('name_ar','asc'))).then(function(snap){
+    allProds=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data());});
+    buildCatSel();
+  }).catch(function(e){ toast('خطأ في تحميل المنتجات','err'); console.error(e); });
+}
+
+function buildCatSel(){
+  var cats=[...new Set(allProds.map(function(p){return p.category||p.cat||'عام';}))].sort();
+  var sel=document.getElementById('selCat');
+  sel.innerHTML='<option value="">🌐 كل الفئات</option>'+cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
   filterByCat();
 }
 
-window.filterByCat = () => {
-  const cat = document.getElementById('selCat').value;
-  filteredProducts = cat ? allProducts.filter(p => (p.category || p.cat || 'عام') === cat) : [...allProducts];
-  document.getElementById('selProd').innerHTML =
-    `<option value="">— اختر منتجاً —</option>` +
-    filteredProducts.map(p => `<option value="${p._id}">${esc(p.name_ar || p.name || p._id)}</option>`).join('');
-  selectedProduct = null;
-  resetPreview();
-};
+function filterByCat(){
+  var cat=document.getElementById('selCat').value;
+  filteredProds=cat?allProds.filter(function(p){return (p.category||p.cat||'عام')===cat;}):allProds.slice();
+  document.getElementById('selProd').innerHTML=
+    '<option value="">— اختر منتجاً —</option>'+
+    filteredProds.map(function(p){return '<option value="'+p._id+'">'+esc(p.name_ar||p.name||p._id)+'</option>';}).join('');
+  selProd=null;
+  resetPrev();
+}
 
-window.onProdSelect = () => {
-  const id = document.getElementById('selProd').value;
-  selectedProduct = filteredProducts.find(p => p._id === id) || null;
-  if (!selectedProduct) { resetPreview(); return; }
-  renderPreview(selectedProduct);
-  autoFillText(selectedProduct);
-};
+function onProdSelect(){
+  var id=document.getElementById('selProd').value;
+  selProd=filteredProds.find(function(p){return p._id===id;})||null;
+  if(!selProd){resetPrev();return;}
+  renderPrev(selProd);
+  autoFill(selProd);
+}
 
-function resetPreview() {
-  const pv = document.getElementById('prodPreview');
-  pv.className = 'prod-preview';
-  pv.innerHTML = `<span class="placeholder-txt">اختر منتجاً لرؤية المعاينة</span>`;
-  document.getElementById('postText').value = '';
+function resetPrev(){
+  var pv=document.getElementById('prodPrev');
+  pv.className='prod-prev';
+  pv.innerHTML='<span class="ph-txt">اختر منتجاً لرؤية المعاينة</span>';
+  document.getElementById('postText').value='';
   updateCC();
 }
 
-function renderPreview(p) {
-  const img = p.image || p.img || '';
-  const pv = document.getElementById('prodPreview');
-  pv.className = 'prod-preview loaded';
-  pv.innerHTML = `
-    ${img ? `<img src="${esc(img)}" onerror="this.style.display='none'" alt=""/>` : ''}
-    <div class="info">
-      <h3>${esc(p.name_ar || p.name || '')}</h3>
-      ${p.retail_price || p.price ? `<div class="price">💰 ${p.retail_price || p.price} د.ع</div>` : ''}
-      ${p.category || p.cat ? `<div class="cat">📂 ${esc(p.category || p.cat)}</div>` : ''}
-    </div>`;
+function renderPrev(p){
+  var img=p.image||p.img||'';
+  var pv=document.getElementById('prodPrev');
+  pv.className='prod-prev loaded';
+  pv.innerHTML=(img?'<img src="'+esc(img)+'" onerror="this.style.display=\'none\'" alt=""/>':'')+
+    '<div><div class="pi-name">'+esc(p.name_ar||p.name||'')+'</div>'+
+    ((p.retail_price||p.price)?'<div class="pi-price">💰 '+(p.retail_price||p.price)+' د.ع</div>':'')+
+    ((p.category||p.cat)?'<div class="pi-cat">📂 '+esc(p.category||p.cat)+'</div>':'')+
+    '</div>';
 }
 
-function autoFillText(p) {
-  const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
-  const url = `${siteUrl}/product.html?id=${p._id}`;
-  let t = `🛍️ ${p.name_ar || p.name || ''}\n`;
-  if (p.category || p.cat) t += `📂 ${p.category || p.cat}\n`;
-  if (p.retail_price || p.price)  t += `💰 المفرد: ${p.retail_price || p.price} د.ع\n`;
-  if (p.wholesale_price) t += `📦 الجملة: ${p.wholesale_price} د.ع\n`;
-  if (p.detail || p.description) t += `\n${p.detail || p.description}\n`;
-  t += `\n🔗 ${url}`;
-  document.getElementById('postText').value = t;
+function autoFill(p){
+  var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
+  var url=siteUrl+'/product.html?id='+p._id;
+  var t='🛍️ '+(p.name_ar||p.name||'')+'\n';
+  if(p.category||p.cat) t+='📂 '+(p.category||p.cat)+'\n';
+  if(p.retail_price||p.price) t+='💰 المفرد: '+(p.retail_price||p.price)+' د.ع\n';
+  if(p.wholesale_price) t+='📦 الجملة: '+p.wholesale_price+' د.ع\n';
+  if(p.detail||p.description) t+='\n'+(p.detail||p.description)+'\n';
+  t+='\n🔗 '+url;
+  document.getElementById('postText').value=t;
   updateCC();
 }
 
-window.updateCC = () => {
-  document.getElementById('charCount').textContent = `${document.getElementById('postText').value.length} حرف`;
-};
+function updateCC(){
+  document.getElementById('charCount').textContent=document.getElementById('postText').value.length+' حرف';
+}
 
-// ══ Schedule rows ══════════════════════════════════
-let schedCount = 0;
-
-window.addScheduleRow = () => {
-  schedCount++;
-  const id = `sr_${schedCount}`;
-  const now = new Date(); now.setHours(now.getHours() + schedCount);
-  const iso = now.toISOString().slice(0, 16);
-  const div = document.createElement('div');
-  div.className = 'sched-row';
-  div.id = id;
-  div.innerHTML = `
-    <input type="datetime-local" class="finput sched-input" value="${iso}" min="${new Date().toISOString().slice(0,16)}"/>
-    <button class="del-btn" onclick="removeSchedRow('${id}')">✕</button>`;
+// ══ Schedule rows ══════════════════════════════════════
+function addSchedRow(){
+  schedIdx++;
+  var id='sr'+schedIdx;
+  var now=new Date(); now.setHours(now.getHours()+schedIdx);
+  var iso=now.toISOString().slice(0,16);
+  var min=new Date().toISOString().slice(0,16);
+  var div=document.createElement('div');
+  div.className='sched-row';
+  div.id=id;
+  div.innerHTML='<input type="datetime-local" class="fi sched-inp" value="'+iso+'" min="'+min+'"/>'+
+    '<button class="del-sched" onclick="delSchedRow(\''+id+'\')">✕</button>';
   document.getElementById('schedRows').appendChild(div);
-};
-
-window.removeSchedRow = (id) => {
-  const el = document.getElementById(id);
-  if (el) el.remove();
-};
-
-window.setRepeat = (btn) => {
-  document.querySelectorAll('.repeat-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  repeatMode = btn.dataset.r;
-};
-
-function getScheduleTimes() {
-  return [...document.querySelectorAll('.sched-input')]
-    .map(inp => inp.value)
-    .filter(v => v && new Date(v) > new Date());
 }
 
-// ══ Save to queue ══════════════════════════════════
-window.saveToQueue = async () => {
-  if (!selectedProduct) return showToast('اختر منتجاً أولاً', 'error');
-  const platforms = getSelectedPlatforms();
-  if (!platforms.length) return showToast('اختر منصة واحدة على الأقل', 'error');
-  const times = getScheduleTimes();
-  if (!times.length) return showToast('حدد موعداً مستقبلياً على الأقل', 'error');
+function delSchedRow(id){
+  var el=document.getElementById(id);
+  if(el) el.remove();
+}
 
-  const btn = document.getElementById('saveBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> جاري الحفظ...';
+function setRepeat(btn){
+  document.querySelectorAll('.rep-chip').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  repeatMode=btn.dataset.r;
+}
 
-  try {
-    const { addDoc, collection, Timestamp } = window._fb;
-    const p = selectedProduct;
-    const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
+function getSchedTimes(){
+  var now=new Date();
+  return Array.from(document.querySelectorAll('.sched-inp'))
+    .map(function(i){return i.value;})
+    .filter(function(v){return v&&new Date(v)>now;});
+}
 
-    for (const timeStr of times) {
-      await addDoc(collection(window._db, 'automated_queue'), {
-        productId:    p._id,
-        productName:  p.name_ar || p.name || '',
-        productImage: p.image || p.img || '',
-        productPrice: p.retail_price || p.price || '',
-        productUrl:   `${siteUrl}/product.html?id=${p._id}`,
-        postText:     document.getElementById('postText').value.trim(),
-        platforms,
-        scheduledAt:  Timestamp.fromDate(new Date(timeStr)),
-        repeat:       repeatMode,
-        status:       'pending',
-        createdAt:    Timestamp.now(),
-        attempts:     0
-      });
-    }
+// ══ Save to queue ══════════════════════════════════════
+function saveQueue(){
+  if(!selProd)return toast('اختر منتجاً أولاً','err');
+  var plats=getSelectedPlats();
+  if(!plats.length)return toast('اختر منصة واحدة على الأقل','err');
+  var times=getSchedTimes();
+  if(!times.length)return toast('حدد موعداً مستقبلياً','err');
 
-    showToast(`تم جدولة ${times.length} منشور ✅`, 'success');
-    // reset
-    document.getElementById('selProd').value = '';
-    resetPreview();
-    // deselect platforms
-    document.querySelectorAll('.plat-card.selected').forEach(c => c.classList.remove('selected'));
-    // reset schedules
-    document.getElementById('schedRows').innerHTML = '';
-    schedCount = 0;
-    addScheduleRow();
-    repeatMode = 'none';
-    document.querySelectorAll('.repeat-chip').forEach((b,i) => b.classList.toggle('active', i===0));
-  } catch (e) {
-    showToast('فشل الحفظ: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span>💾</span> جدولة المنشور';
-  }
-};
+  var btn=document.getElementById('saveBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> جاري الحفظ...';
 
-// ══ Queue listener ══════════════════════════════════
-async function listenQueue() {
-  const { collection, query, orderBy, onSnapshot } = window._fb;
-  if (queueUnsub) queueUnsub();
-  queueUnsub = onSnapshot(
-    query(collection(window._db, 'automated_queue'), orderBy('scheduledAt', 'desc')),
-    snap => {
-      const items = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+  var addDoc=window._fb.addDoc, col=window._fb.collection, Ts=window._fb.Timestamp;
+  var p=selProd;
+  var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
+  var promises=times.map(function(t){
+    return addDoc(col(window._db,'automated_queue'),{
+      productId:p._id,
+      productName:p.name_ar||p.name||'',
+      productImage:p.image||p.img||'',
+      productPrice:p.retail_price||p.price||'',
+      productUrl:siteUrl+'/product.html?id='+p._id,
+      postText:document.getElementById('postText').value.trim(),
+      platforms:plats,
+      scheduledAt:Ts.fromDate(new Date(t)),
+      repeat:repeatMode,
+      status:'pending',
+      createdAt:Ts.now(),
+      attempts:0
+    });
+  });
+
+  Promise.all(promises).then(function(){
+    toast('تم جدولة '+times.length+' منشور ✅','ok');
+    // reset form
+    document.getElementById('selProd').value='';
+    resetPrev();
+    document.querySelectorAll('.plat-card.selected').forEach(function(c){c.classList.remove('selected');});
+    document.getElementById('schedRows').innerHTML='';
+    schedIdx=0;
+    addSchedRow();
+    repeatMode='none';
+    document.querySelectorAll('.rep-chip').forEach(function(b,i){b.classList.toggle('on',i===0);});
+  }).catch(function(e){
+    toast('فشل الحفظ: '+e.message,'err');
+  }).finally(function(){
+    btn.disabled=false;
+    btn.innerHTML='💾 جدولة المنشور';
+  });
+}
+
+// ══ Queue listener ══════════════════════════════════════
+function listenQueue(){
+  var col=window._fb.collection, q=window._fb.query, orderBy=window._fb.orderBy, onSnapshot=window._fb.onSnapshot;
+  if(queueUnsub) queueUnsub();
+  queueUnsub=onSnapshot(
+    q(col(window._db,'automated_queue'),orderBy('scheduledAt','desc')),
+    function(snap){
+      var items=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data());});
       renderQueue(items);
       renderStats(items);
     },
-    err => console.error(err)
+    function(err){console.error(err);}
   );
 }
 
-function renderStats(items) {
-  document.getElementById('stTotal').textContent   = items.length;
-  document.getElementById('stPending').textContent = items.filter(i => i.status==='pending').length;
-  document.getElementById('stPosted').textContent  = items.filter(i => i.status==='posted').length;
-  document.getElementById('stFailed').textContent  = items.filter(i => i.status==='failed').length;
+function renderStats(items){
+  document.getElementById('stTot').textContent=items.length||'0';
+  document.getElementById('stPen').textContent=items.filter(function(i){return i.status==='pending';}).length;
+  document.getElementById('stPos').textContent=items.filter(function(i){return i.status==='posted';}).length;
+  document.getElementById('stFai').textContent=items.filter(function(i){return i.status==='failed';}).length;
 }
 
-function renderQueue(items) {
-  const list = document.getElementById('queueList');
-  if (!items.length) {
-    list.innerHTML = `<div class="empty"><div class="e-icon">📭</div><p>لا توجد منشورات مجدولة</p></div>`;
+function renderQueue(items){
+  var list=document.getElementById('queueList');
+  if(!items.length){
+    list.innerHTML='<div class="empty"><div class="ei">📭</div><p>لا توجد منشورات مجدولة</p></div>';
     return;
   }
-  list.innerHTML = items.slice(0, 30).map(item => {
-    const sched = item.scheduledAt?.toDate ? item.scheduledAt.toDate() : new Date(item.scheduledAt);
-    const schedStr = sched.toLocaleString('ar-IQ', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const platsHtml = (item.platforms || []).map(p =>
-      `<span class="q-plat">${PLATFORMS[p]?.icon || ''} ${PLATFORMS[p]?.name || p}</span>`).join('');
-    const repeatLbl = item.repeat && item.repeat !== 'none'
-      ? `<span style="color:#a78bfa;font-size:10px"> 🔄 ${{daily:'يومي',weekly:'أسبوعي',monthly:'شهري'}[item.repeat]||''}</span>` : '';
-    return `
-      <div class="q-item ${item.status||'pending'}">
-        ${item.productImage ? `<img src="${esc(item.productImage)}" onerror="this.style.display='none'" alt=""/>` : ''}
-        <div class="q-info">
-          <div class="q-name">${esc(item.productName || item.productId)}</div>
-          <div class="q-meta">🗓️ ${schedStr}${repeatLbl}</div>
-          <div class="q-platforms">${platsHtml}</div>
-        </div>
-        <span class="q-status-badge">${statusLabel(item.status)}</span>
-        <button class="q-del" onclick="delItem('${item._id}')" title="حذف">✕</button>
-      </div>`;
+  list.innerHTML=items.slice(0,30).map(function(item){
+    var sched=item.scheduledAt&&item.scheduledAt.toDate?item.scheduledAt.toDate():new Date(item.scheduledAt);
+    var schedStr=sched.toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    var rep=item.repeat&&item.repeat!=='none'?(' 🔄 '+({daily:'يومي',weekly:'أسبوعي',monthly:'شهري'}[item.repeat]||'')):'';
+    var tags=(item.platforms||[]).map(function(p){return '<span class="q-tag">'+(PLATS[p]?PLATS[p].icon:'')+' '+(PLATS[p]?PLATS[p].name:p)+'</span>';}).join('');
+    var img=item.productImage?'<img src="'+esc(item.productImage)+'" onerror="this.style.display=\'none\'" alt=""/>':'';
+    return '<div class="q-item '+(item.status||'pending')+'">'+img+
+      '<div class="q-info"><div class="q-name">'+esc(item.productName||item.productId)+'</div>'+
+      '<div class="q-meta">🗓️ '+schedStr+rep+'</div>'+
+      '<div class="q-tags">'+tags+'</div></div>'+
+      '<span class="q-badge">'+stLbl(item.status)+'</span>'+
+      '<button class="q-del" onclick="delItem(\''+item._id+'\')" title="حذف">✕</button>'+
+      '</div>';
   }).join('');
 }
 
-window.delItem = async (id) => {
-  if (!confirm('حذف هذا المنشور؟')) return;
-  try {
-    const { doc, deleteDoc } = window._fb;
-    await deleteDoc(doc(window._db, 'automated_queue', id));
-    showToast('تم الحذف', 'success');
-  } catch { showToast('فشل الحذف', 'error'); }
-};
-
-// ══ Helpers ════════════════════════════════════════
-function statusLabel(s) {
-  return { pending:'⏳ منتظر', posted:'✅ نُشر', failed:'❌ فشل', processing:'🔄 جاري' }[s] || (s || 'منتظر');
+function delItem(id){
+  if(!confirm('حذف هذا المنشور؟'))return;
+  var docFn=window._fb.doc, deleteDoc=window._fb.deleteDoc;
+  deleteDoc(docFn(window._db,'automated_queue',id)).then(function(){
+    toast('تم الحذف','ok');
+  }).catch(function(){toast('فشل الحذف','err');});
 }
-function esc(s) {
+
+// ══ Helpers ════════════════════════════════════════════
+function stLbl(s){
+  return {pending:'⏳ منتظر',posted:'✅ نُشر',failed:'❌ فشل',processing:'🔄 جاري'}[s]||(s||'منتظر');
+}
+function esc(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ══ Toast ══════════════════════════════════════════
-function showToast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast ${type} show`;
+// ══ Toast ══════════════════════════════════════════════
+function toast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(type||'')+' show';
   clearTimeout(t._tm);
-  t._tm = setTimeout(() => { t.className = `toast ${type}`; }, 3500);
+  t._tm=setTimeout(function(){t.className='toast '+(type||'');},3500);
 }
 </script>
 </body>

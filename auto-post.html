@@ -401,29 +401,43 @@ var PLATS = {
 // ══ State ════════════════════════════════════════════
 var allProds=[], filteredProds=[], selProd=null, creds={}, repeatMode='none', curModal=null, queueUnsub=null, schedIdx=0;
 
-// ══ Firebase wait ══════════════════════════════════════
-function waitFb(){
-  return new Promise(function(r){
-    if(window._fbReady){r();return;}
-    document.addEventListener('fbReady',r,{once:true});
-  });
-}
+// ══ Helpers for Firebase access (same pattern as app.js) ══
+function fb(){ return window._fb; }
+function db(){ return window._db; }
 
 // ══ Init ══════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded',function(){
-  addSchedRow(); // add first row immediately
-  waitFb().then(function(){
-    return Promise.all([loadCreds(), loadProds(), listenQueue()]);
-  }).catch(function(e){ console.error(e); });
+document.addEventListener('DOMContentLoaded', function(){
+  addSchedRow(); // add first schedule row immediately (no Firebase needed)
+
+  // نفس آلية app.js: نتحقق أولاً ثم ننتظر مع timeout
+  if (window._fbReady) {
+    startLoad();
+  } else {
+    Promise.race([
+      new Promise(function(res){ document.addEventListener('fbReady', res, {once:true}); }),
+      new Promise(function(res){ setTimeout(res, 8000); }) // timeout 8s
+    ]).then(function(){
+      if (window._fbReady) {
+        startLoad();
+      } else {
+        document.getElementById('selCat').innerHTML = '<option value="">⚠️ تعذر الاتصال</option>';
+      }
+    });
+  }
 });
+
+function startLoad(){
+  loadCreds();
+  loadProds();
+  listenQueue();
+}
 
 // ══ Credentials ═══════════════════════════════════════
 function loadCreds(){
-  var doc=window._fb.doc, getDoc=window._fb.getDoc;
-  return getDoc(doc(window._db,'settings','social_accounts')).then(function(snap){
+  return fb().getDoc(fb().doc(db(),'settings','social_accounts')).then(function(snap){
     creds = snap.exists() ? (snap.data()||{}) : {};
     updatePlatCards();
-  }).catch(function(e){console.warn('creds:',e);});
+  }).catch(function(e){ console.warn('creds:', e); });
 }
 
 function updatePlatCards(){
@@ -488,8 +502,7 @@ function saveCreds(){
   plat.fields.forEach(function(f){
     creds[f.id]=(document.getElementById('cf_'+f.id)||{value:''}).value.trim();
   });
-  var setDoc=window._fb.setDoc, docFn=window._fb.doc;
-  setDoc(docFn(window._db,'settings','social_accounts'),creds,{merge:true}).then(function(){
+  fb().setDoc(fb().doc(db(),'settings','social_accounts'),creds,{merge:true}).then(function(){
     updatePlatCards();
     closeModal();
     toast('تم حفظ الإعدادات ✅','ok');
@@ -499,8 +512,7 @@ function saveCreds(){
 function disconnectPlat(p){
   if(!confirm('قطع الاتصال بـ '+PLATS[p].name+'؟'))return;
   PLATS[p].fields.forEach(function(f){creds[f.id]='';});
-  var setDoc=window._fb.setDoc, docFn=window._fb.doc;
-  setDoc(docFn(window._db,'settings','social_accounts'),creds,{merge:true}).then(function(){
+  fb().setDoc(fb().doc(db(),'settings','social_accounts'),creds,{merge:true}).then(function(){
     document.getElementById('pc-'+p).classList.remove('selected');
     updatePlatCards();
     closeModal();
@@ -509,27 +521,56 @@ function disconnectPlat(p){
 }
 
 // ══ Products ═══════════════════════════════════════════
+// نفس آلية fbGet في app.js: بدون orderBy، ترتيب من جهة العميل
 function loadProds(){
-  var getDocs=window._fb.getDocs, col=window._fb.collection, q=window._fb.query, orderBy=window._fb.orderBy;
-  return getDocs(q(col(window._db,'products'),orderBy('name_ar','asc'))).then(function(snap){
-    allProds=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data());});
+  document.getElementById('selCat').innerHTML='<option value="">⏳ جاري التحميل...</option>';
+  return fb().getDocs(fb().collection(db(),'products')).then(function(snap){
+    allProds = snap.docs.map(function(d){
+      var data = d.data();
+      return {
+        _id:            d.id,
+        name:           data.name || '',                        // الحقل الأصلي في Firestore
+        category:       data.category || 'عام',                // الحقل الأصلي
+        image:          data.image || '',                       // الحقل الأصلي
+        price:          parseFloat(data.price) || 0,           // المفرد
+        wholesalePrice: parseFloat(data.wholesalePrice) || 0,  // الجملة (كما في app.js)
+        detail:         data.detail || '',
+        status:         data.status || 'active'
+      };
+    }).filter(function(p){ return p.name && p.price > 0 && p.status !== 'hidden'; });
+
+    // ترتيب أبجدي من جهة العميل — لا يحتاج index
+    allProds.sort(function(a,b){ return a.name.localeCompare(b.name,'ar'); });
+
     buildCatSel();
-  }).catch(function(e){ toast('خطأ في تحميل المنتجات','err'); console.error(e); });
+  }).catch(function(e){
+    console.error('loadProds error:', e);
+    document.getElementById('selCat').innerHTML='<option value="">❌ خطأ في التحميل</option>';
+    toast('خطأ في تحميل المنتجات: '+e.message,'err');
+  });
 }
 
 function buildCatSel(){
-  var cats=[...new Set(allProds.map(function(p){return p.category||p.cat||'عام';}))].sort();
+  var cats=[...new Set(allProds.map(function(p){return p.category||'عام';}))].sort();
   var sel=document.getElementById('selCat');
-  sel.innerHTML='<option value="">🌐 كل الفئات</option>'+cats.map(function(c){return '<option value="'+esc(c)+'">'+esc(c)+'</option>';}).join('');
+  sel.innerHTML='<option value="">🌐 كل الفئات ('+allProds.length+')</option>'+
+    cats.map(function(c){
+      var cnt=allProds.filter(function(p){return (p.category||'عام')===c;}).length;
+      return '<option value="'+esc(c)+'">'+esc(c)+' ('+cnt+')</option>';
+    }).join('');
   filterByCat();
 }
 
 function filterByCat(){
   var cat=document.getElementById('selCat').value;
-  filteredProds=cat?allProds.filter(function(p){return (p.category||p.cat||'عام')===cat;}):allProds.slice();
+  filteredProds = cat
+    ? allProds.filter(function(p){ return (p.category||'عام')===cat; })
+    : allProds.slice();
   document.getElementById('selProd').innerHTML=
-    '<option value="">— اختر منتجاً —</option>'+
-    filteredProds.map(function(p){return '<option value="'+p._id+'">'+esc(p.name_ar||p.name||p._id)+'</option>';}).join('');
+    '<option value="">— اختر منتجاً ('+filteredProds.length+') —</option>'+
+    filteredProds.map(function(p){
+      return '<option value="'+p._id+'">'+esc(p.name)+'</option>';
+    }).join('');
   selProd=null;
   resetPrev();
 }
@@ -551,24 +592,25 @@ function resetPrev(){
 }
 
 function renderPrev(p){
-  var img=p.image||p.img||'';
   var pv=document.getElementById('prodPrev');
   pv.className='prod-prev loaded';
-  pv.innerHTML=(img?'<img src="'+esc(img)+'" onerror="this.style.display=\'none\'" alt=""/>':'')+
-    '<div><div class="pi-name">'+esc(p.name_ar||p.name||'')+'</div>'+
-    ((p.retail_price||p.price)?'<div class="pi-price">💰 '+(p.retail_price||p.price)+' د.ع</div>':'')+
-    ((p.category||p.cat)?'<div class="pi-cat">📂 '+esc(p.category||p.cat)+'</div>':'')+
+  pv.innerHTML=
+    (p.image?'<img src="'+esc(p.image)+'" onerror="this.style.display=\'none\'" alt=""/>':'')+
+    '<div>'+
+      '<div class="pi-name">'+esc(p.name)+'</div>'+
+      (p.price?'<div class="pi-price">💰 '+p.price+' د.ع</div>':'')+
+      (p.category?'<div class="pi-cat">📂 '+esc(p.category)+'</div>':'')+
     '</div>';
 }
 
 function autoFill(p){
   var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
   var url=siteUrl+'/product.html?id='+p._id;
-  var t='🛍️ '+(p.name_ar||p.name||'')+'\n';
-  if(p.category||p.cat) t+='📂 '+(p.category||p.cat)+'\n';
-  if(p.retail_price||p.price) t+='💰 المفرد: '+(p.retail_price||p.price)+' د.ع\n';
-  if(p.wholesale_price) t+='📦 الجملة: '+p.wholesale_price+' د.ع\n';
-  if(p.detail||p.description) t+='\n'+(p.detail||p.description)+'\n';
+  var t='🛍️ '+p.name+'\n';
+  if(p.category) t+='📂 '+p.category+'\n';
+  if(p.price)          t+='💰 المفرد: '+p.price+' د.ع\n';
+  if(p.wholesalePrice) t+='📦 الجملة: '+p.wholesalePrice+' د.ع\n';
+  if(p.detail)         t+='\n'+p.detail+'\n';
   t+='\n🔗 '+url;
   document.getElementById('postText').value=t;
   updateCC();
@@ -623,23 +665,22 @@ function saveQueue(){
   btn.disabled=true;
   btn.innerHTML='<span class="spin"></span> جاري الحفظ...';
 
-  var addDoc=window._fb.addDoc, col=window._fb.collection, Ts=window._fb.Timestamp;
   var p=selProd;
   var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
   var promises=times.map(function(t){
-    return addDoc(col(window._db,'automated_queue'),{
-      productId:p._id,
-      productName:p.name_ar||p.name||'',
-      productImage:p.image||p.img||'',
-      productPrice:p.retail_price||p.price||'',
-      productUrl:siteUrl+'/product.html?id='+p._id,
+    return fb().addDoc(fb().collection(db(),'automated_queue'),{
+      productId:    p._id,
+      productName:  p.name||'',
+      productImage: p.image||'',
+      productPrice: p.price||'',
+      productUrl:   siteUrl+'/product.html?id='+p._id,
       postText:document.getElementById('postText').value.trim(),
       platforms:plats,
-      scheduledAt:Ts.fromDate(new Date(t)),
-      repeat:repeatMode,
-      status:'pending',
-      createdAt:Ts.now(),
-      attempts:0
+      scheduledAt: fb().Timestamp.fromDate(new Date(t)),
+      repeat:      repeatMode,
+      status:      'pending',
+      createdAt:   fb().Timestamp.now(),
+      attempts:    0
     });
   });
 
@@ -664,10 +705,9 @@ function saveQueue(){
 
 // ══ Queue listener ══════════════════════════════════════
 function listenQueue(){
-  var col=window._fb.collection, q=window._fb.query, orderBy=window._fb.orderBy, onSnapshot=window._fb.onSnapshot;
   if(queueUnsub) queueUnsub();
-  queueUnsub=onSnapshot(
-    q(col(window._db,'automated_queue'),orderBy('scheduledAt','desc')),
+  queueUnsub=fb().onSnapshot(
+    fb().query(fb().collection(db(),'automated_queue'), fb().orderBy('scheduledAt','desc')),
     function(snap){
       var items=snap.docs.map(function(d){return Object.assign({_id:d.id},d.data());});
       renderQueue(items);
@@ -708,8 +748,7 @@ function renderQueue(items){
 
 function delItem(id){
   if(!confirm('حذف هذا المنشور؟'))return;
-  var docFn=window._fb.doc, deleteDoc=window._fb.deleteDoc;
-  deleteDoc(docFn(window._db,'automated_queue',id)).then(function(){
+  fb().deleteDoc(fb().doc(db(),'automated_queue',id)).then(function(){
     toast('تم الحذف','ok');
   }).catch(function(){toast('فشل الحذف','err');});
 }

@@ -8,213 +8,322 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cairo',sans-serif;background:#f0f4f8;color:#1e293b;direction:rtl}
+body{font-family:'Cairo',sans-serif;background:#0f172a;color:#e2e8f0;direction:rtl;min-height:100vh}
 
-/* ── Header ── */
-.ap-header{background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;padding:16px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-.ap-header .back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;padding:8px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:14px;display:flex;align-items:center;gap:6px;text-decoration:none}
-.ap-header .back-btn:hover{background:rgba(255,255,255,.25)}
-.ap-header h1{font-size:20px;font-weight:700;flex:1}
-.ap-header .icon{font-size:28px}
+/* ══ Header ══════════════════════════════════════ */
+.header{background:linear-gradient(135deg,#1e3a5f 0%,#1e293b 100%);padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;border-bottom:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px)}
+.back-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;text-decoration:none;transition:.2s}
+.back-btn:hover{background:rgba(255,255,255,.2)}
+.header h1{font-size:18px;font-weight:700;color:#fff;flex:1}
+.header .badge{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
 
-/* ── Layout ── */
-.ap-container{max-width:900px;margin:24px auto;padding:0 16px;display:grid;grid-template-columns:1fr 340px;gap:20px}
-@media(max-width:768px){.ap-container{grid-template-columns:1fr}}
+/* ══ Layout ══════════════════════════════════════ */
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
 
-/* ── Card ── */
-.card{background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.07);padding:24px}
-.card-title{font-size:16px;font-weight:700;color:#1e3a5f;margin-bottom:18px;display:flex;align-items:center;gap:8px;border-bottom:2px solid #e2e8f0;padding-bottom:12px}
+/* ══ Section title ═══════════════════════════════ */
+.sec-title{font-size:14px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.sec-title::before{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
 
-/* ── Form elements ── */
-.fgroup{margin-bottom:18px}
-.fgroup label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:6px}
-.fsel,.finput{width:100%;padding:10px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#1e293b;background:#f8fafc;outline:none;transition:border-color .2s}
-.fsel:focus,.finput:focus{border-color:#2d6a9f;background:#fff}
-.finput[type=datetime-local]{direction:ltr;text-align:left}
+/* ══ Platform cards ══════════════════════════════ */
+.platforms-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+@media(max-width:900px){.platforms-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:500px){.platforms-grid{grid-template-columns:repeat(2,1fr)}}
 
-/* ── Product preview ── */
-.prod-preview{border:1.5px dashed #cbd5e1;border-radius:12px;padding:16px;background:#f8fafc;min-height:100px;display:flex;align-items:center;gap:14px;transition:all .3s}
-.prod-preview.loaded{border-color:#2d6a9f;background:#eff6ff}
-.prod-preview img{width:80px;height:80px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#e2e8f0}
-.prod-preview .info{flex:1}
-.prod-preview .info h3{font-size:15px;font-weight:700;color:#1e293b;margin-bottom:4px}
-.prod-preview .info .price{color:#16a34a;font-weight:700;font-size:14px}
-.prod-preview .info .cat{color:#64748b;font-size:12px;margin-top:2px}
-.prod-preview .placeholder{color:#94a3b8;font-size:13px;text-align:center;width:100%}
+.plat-card{background:#1e293b;border:2px solid rgba(255,255,255,.07);border-radius:16px;padding:16px 12px;cursor:pointer;transition:all .25s;text-align:center;position:relative;user-select:none}
+.plat-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.15)}
+.plat-card.connected{border-color:var(--c);box-shadow:0 0 0 1px var(--c),0 4px 20px color-mix(in srgb,var(--c) 20%,transparent)}
+.plat-card.selected{background:color-mix(in srgb,var(--c) 15%,#1e293b)}
+.plat-card.unavailable{opacity:.45;cursor:not-allowed}
+.plat-card .plat-icon{font-size:30px;margin-bottom:6px;display:block}
+.plat-card .plat-name{font-size:12px;font-weight:700;color:#e2e8f0}
+.plat-card .plat-status{font-size:10px;margin-top:4px;font-weight:600}
+.plat-card.connected .plat-status{color:#4ade80}
+.plat-card:not(.connected):not(.unavailable) .plat-status{color:#64748b}
+.plat-card.unavailable .plat-status{color:#64748b}
+.plat-card .check-mark{position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:50%;background:var(--c);color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;font-weight:700}
+.plat-card.selected .check-mark{display:flex}
+.plat-card .settings-btn{position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.08);border:none;color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.plat-card .settings-btn:hover{background:rgba(255,255,255,.15);color:#e2e8f0}
 
-/* ── Platform toggles ── */
-.platforms{display:flex;flex-wrap:wrap;gap:10px}
-.platform-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;background:#fff;color:#64748b;transition:all .2s;user-select:none}
-.platform-btn.active{border-color:transparent;color:#fff}
-.platform-btn[data-p=facebook].active{background:#1877f2;border-color:#1877f2}
-.platform-btn[data-p=instagram].active{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);border-color:#dc2743}
-.platform-btn[data-p=telegram].active{background:#0088cc;border-color:#0088cc}
-.platform-btn[data-p=whatsapp].active{background:#25d366;border-color:#25d366}
+/* ══ Main grid ═══════════════════════════════════ */
+.main-grid{display:grid;grid-template-columns:1fr 360px;gap:20px}
+@media(max-width:800px){.main-grid{grid-template-columns:1fr}}
 
-/* ── Post text ── */
-.post-text-area{width:100%;min-height:120px;padding:12px 14px;border:1.5px solid #cbd5e1;border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#1e293b;background:#f8fafc;resize:vertical;outline:none;transition:border-color .2s}
-.post-text-area:focus{border-color:#2d6a9f;background:#fff}
-.char-count{font-size:11px;color:#94a3b8;text-align:left;margin-top:4px}
+/* ══ Card ════════════════════════════════════════ */
+.card{background:#1e293b;border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:20px;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 
-/* ── Submit ── */
-.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#1e3a5f,#2d6a9f);color:#fff;border:none;border-radius:12px;font-family:'Cairo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px}
-.submit-btn:hover{opacity:.9}
-.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+/* ══ Form ════════════════════════════════════════ */
+.fgroup{margin-bottom:14px}
+.fgroup label{display:block;font-size:12px;font-weight:600;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+.fsel,.finput{width:100%;padding:10px 14px;border:1.5px solid rgba(255,255,255,.08);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#e2e8f0;background:#0f172a;outline:none;transition:.2s}
+.fsel:focus,.finput:focus{border-color:#3b82f6;background:#0f1f35}
+.fsel option{background:#1e293b}
+.ftextarea{width:100%;min-height:110px;padding:11px 14px;border:1.5px solid rgba(255,255,255,.08);border-radius:10px;font-family:'Cairo',sans-serif;font-size:14px;color:#e2e8f0;background:#0f172a;resize:vertical;outline:none;transition:.2s;line-height:1.6}
+.ftextarea:focus{border-color:#3b82f6}
+.char-count{font-size:11px;color:#475569;text-align:left;margin-top:4px}
 
-/* ── Queue list ── */
-.queue-list{display:flex;flex-direction:column;gap:12px}
-.q-item{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;gap:12px;align-items:flex-start;border-right:4px solid #e2e8f0;position:relative}
+/* ══ Product preview ══════════════════════════════ */
+.prod-preview{border:1.5px dashed rgba(255,255,255,.1);border-radius:12px;padding:14px;background:#0f172a;min-height:90px;display:flex;align-items:center;gap:12px;transition:.3s}
+.prod-preview.loaded{border-color:#3b82f6;background:#0f1f35}
+.prod-preview img{width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#334155}
+.prod-preview .info h3{font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:3px}
+.prod-preview .info .price{color:#4ade80;font-weight:700;font-size:13px}
+.prod-preview .info .cat{color:#64748b;font-size:12px}
+.placeholder-txt{color:#475569;font-size:13px;text-align:center;width:100%}
+
+/* ══ Schedule rows ════════════════════════════════ */
+.sched-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.sched-row .finput{flex:1}
+.sched-row .del-btn{background:#7f1d1d;border:none;color:#fca5a5;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:14px;flex-shrink:0;transition:.2s}
+.sched-row .del-btn:hover{background:#991b1b}
+.add-sched-btn{width:100%;padding:8px;background:rgba(59,130,246,.1);border:1.5px dashed rgba(59,130,246,.3);border-radius:8px;color:#60a5fa;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.add-sched-btn:hover{background:rgba(59,130,246,.2)}
+
+/* ══ Repeat select ════════════════════════════════ */
+.repeat-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.repeat-row label{font-size:12px;color:#64748b;font-weight:600;white-space:nowrap}
+.repeat-chip{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.1);background:transparent;color:#94a3b8;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:.2s}
+.repeat-chip.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+
+/* ══ Submit ═══════════════════════════════════════ */
+.submit-btn{width:100%;padding:13px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{opacity:.9;transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ══ Queue ════════════════════════════════════════ */
+.q-item{background:#0f172a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;border-right:3px solid #334155;position:relative;transition:.2s}
 .q-item.pending{border-right-color:#f59e0b}
 .q-item.posted{border-right-color:#22c55e}
 .q-item.failed{border-right-color:#ef4444}
-.q-item img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#e2e8f0}
-.q-item .q-info{flex:1;min-width:0}
-.q-item .q-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.q-item .q-meta{font-size:12px;color:#64748b;margin-top:3px}
-.q-item .q-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
-.q-item.pending .q-status{background:#fef3c7;color:#92400e}
-.q-item.posted .q-status{background:#dcfce7;color:#166534}
-.q-item.failed .q-status{background:#fee2e2;color:#991b1b}
-.q-item .q-del{position:absolute;top:10px;left:10px;background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:16px;line-height:1;padding:2px}
-.q-item .q-del:hover{color:#ef4444}
-.q-platforms{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-.q-plat-tag{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600}
-.q-plat-tag.facebook{background:#e7f0fd;color:#1877f2}
-.q-plat-tag.instagram{background:#fce7f3;color:#dc2743}
-.q-plat-tag.telegram{background:#e0f2fe;color:#0088cc}
-.q-plat-tag.whatsapp{background:#dcfce7;color:#15803d}
+.q-item.processing{border-right-color:#3b82f6}
+.q-item img{width:48px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#334155}
+.q-info{flex:1;min-width:0}
+.q-name{font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-meta{font-size:11px;color:#64748b;margin-top:2px}
+.q-platforms{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.q-plat{font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600;background:rgba(255,255,255,.07);color:#94a3b8}
+.q-status-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.q-item.pending  .q-status-badge{background:#78350f33;color:#fbbf24}
+.q-item.posted   .q-status-badge{background:#14532d33;color:#4ade80}
+.q-item.failed   .q-status-badge{background:#7f1d1d33;color:#f87171}
+.q-item.processing .q-status-badge{background:#1e3a5f;color:#60a5fa}
+.q-del{position:absolute;top:8px;left:8px;background:none;border:none;color:#334155;font-size:15px;cursor:pointer;padding:2px;line-height:1;transition:.2s}
+.q-del:hover{color:#ef4444}
 
-/* ── Toast ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:#1e293b;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;transition:transform .3s;white-space:nowrap}
+/* ══ Stats ════════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat-box{background:#0f172a;border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px;text-align:center}
+.stat-box .num{font-size:22px;font-weight:900;margin-bottom:2px}
+.stat-box .lbl{font-size:11px;color:#64748b;font-weight:600}
+.stat-box.pending .num{color:#fbbf24}
+.stat-box.posted  .num{color:#4ade80}
+.stat-box.failed  .num{color:#f87171}
+.stat-box.total   .num{color:#60a5fa}
+
+/* ══ Credentials Modal ════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.modal-overlay.hidden{display:none}
+.modal{background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.modal-header .icon{font-size:28px}
+.modal-header h2{font-size:17px;font-weight:700;color:#e2e8f0;flex:1}
+.modal-close{background:rgba(255,255,255,.08);border:none;color:#94a3b8;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:rgba(255,255,255,.15);color:#e2e8f0}
+.modal-note{background:rgba(255,255,255,.04);border-radius:10px;padding:12px;font-size:12px;color:#64748b;line-height:1.7;margin-bottom:16px;border-right:3px solid #3b82f6}
+.modal-note a{color:#60a5fa;text-decoration:none}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.btn-save{padding:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-save:hover{opacity:.9}
+.btn-cancel{padding:10px;background:rgba(255,255,255,.07);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-cancel:hover{background:rgba(255,255,255,.12)}
+.btn-disconnect{padding:10px;background:#7f1d1d33;color:#f87171;border:1px solid #7f1d1d;border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;grid-column:1/-1;transition:.2s}
+.btn-disconnect:hover{background:#7f1d1d66}
+
+/* ══ Input with eye toggle ════════════════════════ */
+.input-wrap{position:relative}
+.input-wrap .finput{padding-left:38px}
+.input-wrap .eye-btn{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1}
+
+/* ══ Toast ════════════════════════════════════════ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#1e293b;border:1px solid rgba(255,255,255,.1);color:#e2e8f0;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast.success{background:#16a34a}
-.toast.error{background:#dc2626}
+.toast.success{border-color:#16a34a;background:#14532d}
+.toast.error{border-color:#dc2626;background:#7f1d1d}
 
-/* ── Loading ── */
-.loading-spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+/* ══ Spinner ══════════════════════════════════════ */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px;height:60px}
-@keyframes shimmer{to{background-position:-200% 0}}
 
-/* ── Empty ── */
-.empty-state{text-align:center;padding:32px 16px;color:#94a3b8}
-.empty-state .icon{font-size:40px;margin-bottom:8px}
-.empty-state p{font-size:14px}
+/* ══ Empty ════════════════════════════════════════ */
+.empty{text-align:center;padding:32px;color:#334155}
+.empty .e-icon{font-size:36px;margin-bottom:8px}
+.empty p{font-size:13px}
 
-/* ── Section header ── */
-.section-hd{font-size:16px;font-weight:700;color:#1e3a5f;margin:0 0 14px;display:flex;align-items:center;gap:8px}
-
-/* ── Full-width section ── */
-.full-row{grid-column:1/-1}
+/* ══ Availability note ════════════════════════════ */
+.avail-note{font-size:10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:8px 12px;color:#fbbf24;margin-bottom:14px;line-height:1.6}
 </style>
 </head>
 <body>
 
 <!-- Header -->
-<div class="ap-header">
+<div class="header">
   <a href="index.html" class="back-btn">← رجوع</a>
-  <h1>📢 النشر التلقائي</h1>
-  <span class="icon">🤖</span>
+  <h1>🤖 النشر التلقائي</h1>
+  <span class="badge">Auto Post</span>
 </div>
 
-<!-- Main -->
-<div class="ap-container">
+<div class="wrap">
 
-  <!-- LEFT: Form -->
-  <div>
-    <!-- Product selection -->
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-title">🛍️ اختيار المنتج</div>
+  <!-- ══ Section 1: Platforms ══ -->
+  <div class="sec-title">المنصات المتصلة</div>
 
-      <div class="fgroup">
-        <label>الفئة</label>
-        <select id="selCategory" class="fsel" onchange="filterByCategory()">
-          <option value="">⏳ جاري التحميل...</option>
-        </select>
-      </div>
+  <div class="platforms-grid" id="platformsGrid">
 
-      <div class="fgroup">
-        <label>المنتج</label>
-        <select id="selProduct" class="fsel" onchange="onProductSelect()">
-          <option value="">— اختر منتجاً —</option>
-        </select>
-      </div>
-
-      <!-- Preview -->
-      <div class="prod-preview" id="prodPreview">
-        <span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>
-      </div>
+    <!-- Facebook -->
+    <div class="plat-card" id="pc-facebook" style="--c:#1877f2" onclick="selectPlatform('facebook')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('facebook')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">📘</span>
+      <div class="plat-name">فيسبوك</div>
+      <div class="plat-status" id="ps-facebook">غير متصل</div>
     </div>
 
-    <!-- Post content -->
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-title">✍️ نص المنشور</div>
-
-      <div class="fgroup">
-        <label>نص المنشور (يُعبأ تلقائياً)</label>
-        <textarea id="postText" class="post-text-area" placeholder="سيُعبأ النص تلقائياً بعد اختيار المنتج..." oninput="updateCharCount()"></textarea>
-        <div class="char-count" id="charCount">0 حرف</div>
-      </div>
+    <!-- Instagram -->
+    <div class="plat-card" id="pc-instagram" style="--c:#e1306c" onclick="selectPlatform('instagram')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('instagram')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">📸</span>
+      <div class="plat-name">إنستجرام</div>
+      <div class="plat-status" id="ps-instagram">غير متصل</div>
     </div>
 
-    <!-- Platform + schedule -->
-    <div class="card">
-      <div class="card-title">⚙️ إعدادات النشر</div>
+    <!-- TikTok -->
+    <div class="plat-card" id="pc-tiktok" style="--c:#ff0050" onclick="selectPlatform('tiktok')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('tiktok')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">🎵</span>
+      <div class="plat-name">تيك توك</div>
+      <div class="plat-status" id="ps-tiktok">غير متصل</div>
+    </div>
 
-      <div class="fgroup">
-        <label>المنصات</label>
-        <div class="platforms">
-          <button class="platform-btn active" data-p="facebook" onclick="togglePlatform(this)">
-            <span>📘</span> فيسبوك
-          </button>
-          <button class="platform-btn" data-p="instagram" onclick="togglePlatform(this)">
-            <span>📸</span> إنستجرام
-          </button>
-          <button class="platform-btn" data-p="telegram" onclick="togglePlatform(this)">
-            <span>✈️</span> تلجرام
-          </button>
-          <button class="platform-btn" data-p="whatsapp" onclick="togglePlatform(this)">
-            <span>💬</span> واتساب
-          </button>
+    <!-- Telegram -->
+    <div class="plat-card" id="pc-telegram" style="--c:#0088cc" onclick="selectPlatform('telegram')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('telegram')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">✈️</span>
+      <div class="plat-name">تلجرام</div>
+      <div class="plat-status" id="ps-telegram">غير متصل</div>
+    </div>
+
+    <!-- WhatsApp -->
+    <div class="plat-card" id="pc-whatsapp" style="--c:#25d366" onclick="selectPlatform('whatsapp')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('whatsapp')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">💬</span>
+      <div class="plat-name">واتساب</div>
+      <div class="plat-status" id="ps-whatsapp">غير متصل</div>
+    </div>
+
+    <!-- Snapchat -->
+    <div class="plat-card" id="pc-snapchat" style="--c:#fffc00" onclick="selectPlatform('snapchat')" data-connected="false">
+      <button class="settings-btn" onclick="event.stopPropagation();openCredModal('snapchat')">⚙️</button>
+      <div class="check-mark">✓</div>
+      <span class="plat-icon">👻</span>
+      <div class="plat-name">سناب شات</div>
+      <div class="plat-status" id="ps-snapchat">غير متصل</div>
+    </div>
+
+  </div>
+
+  <!-- ══ Section 2: Create post ══ -->
+  <div class="sec-title">إنشاء منشور</div>
+
+  <div class="main-grid">
+    <div>
+
+      <!-- Product picker -->
+      <div class="card">
+        <div class="card-title">🛍️ اختيار المنتج</div>
+        <div class="fgroup">
+          <label>الفئة</label>
+          <select id="selCat" class="fsel" onchange="filterByCat()">
+            <option value="">⏳ جاري التحميل...</option>
+          </select>
+        </div>
+        <div class="fgroup">
+          <label>المنتج</label>
+          <select id="selProd" class="fsel" onchange="onProdSelect()">
+            <option value="">— اختر منتجاً —</option>
+          </select>
+        </div>
+        <div class="prod-preview" id="prodPreview">
+          <span class="placeholder-txt">اختر منتجاً لرؤية المعاينة</span>
         </div>
       </div>
 
-      <div class="fgroup">
-        <label>موعد النشر</label>
-        <input type="datetime-local" id="scheduleTime" class="finput"/>
+      <!-- Post text -->
+      <div class="card">
+        <div class="card-title">✍️ نص المنشور</div>
+        <textarea id="postText" class="ftextarea" placeholder="يُعبأ تلقائياً بعد اختيار المنتج..." oninput="updateCC()"></textarea>
+        <div class="char-count" id="charCount">0 حرف</div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="card">
+        <div class="card-title">🗓️ مواعيد النشر</div>
+        <div id="schedRows"></div>
+        <button class="add-sched-btn" onclick="addScheduleRow()">+ إضافة موعد آخر</button>
+
+        <div class="repeat-row">
+          <label>التكرار:</label>
+          <button class="repeat-chip active" data-r="none"   onclick="setRepeat(this)">مرة واحدة</button>
+          <button class="repeat-chip"        data-r="daily"  onclick="setRepeat(this)">يومي</button>
+          <button class="repeat-chip"        data-r="weekly" onclick="setRepeat(this)">أسبوعي</button>
+          <button class="repeat-chip"        data-r="monthly"onclick="setRepeat(this)">شهري</button>
+        </div>
       </div>
 
       <button class="submit-btn" id="saveBtn" onclick="saveToQueue()">
         <span>💾</span> جدولة المنشور
       </button>
-    </div>
-  </div>
 
-  <!-- RIGHT: Queue -->
-  <div>
-    <div class="card">
-      <div class="card-title">🗓️ قائمة الجدولة</div>
-      <div class="queue-list" id="queueList">
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
+    </div>
+
+    <!-- Right: Queue -->
+    <div>
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box total">  <div class="num" id="stTotal">—</div><div class="lbl">إجمالي</div></div>
+        <div class="stat-box pending"><div class="num" id="stPending">—</div><div class="lbl">منتظر</div></div>
+        <div class="stat-box posted"> <div class="num" id="stPosted">—</div><div class="lbl">نُشر</div></div>
+        <div class="stat-box failed"> <div class="num" id="stFailed">—</div><div class="lbl">فشل</div></div>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <div class="card-title" style="margin-bottom:12px">📋 قائمة الجدولة</div>
+        <div id="queueList"><div class="empty"><div class="e-icon">📭</div><p>لا توجد منشورات</p></div></div>
       </div>
     </div>
-
-    <!-- Info box -->
-    <div class="card" style="margin-top:20px;background:linear-gradient(135deg,#eff6ff,#e0f2fe)">
-      <div class="card-title" style="border-color:#bfdbfe;color:#1d4ed8">ℹ️ كيف يعمل النشر التلقائي؟</div>
-      <p style="font-size:13px;color:#1e40af;line-height:1.7">
-        يقوم نظام GitHub Actions بفحص المنشورات المجدولة كل <strong>15 دقيقة</strong>.<br/>
-        عند حلول موعد المنشور، يتم إرساله تلقائياً إلى المنصات المحددة.<br/>
-        <br/>
-        <strong>⚠️ تنبيه:</strong> المنصات التي تعمل بالنشر التلقائي عبر API:<br/>
-        📘 فيسبوك — ✈️ تلجرام<br/>
-        <br/>
-        إنستجرام وواتساب تتطلب تطبيق مخصص.
-      </p>
-    </div>
   </div>
 
+</div>
+
+<!-- ══ Credentials Modal ══════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="credModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="plat-icon" id="mIcon">📘</span>
+      <h2 id="mTitle">إعدادات المنصة</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-note" id="mNote"></div>
+    <div id="mFields"></div>
+    <div class="modal-actions" id="mActions">
+      <button class="btn-save" onclick="saveCredentials()">💾 حفظ</button>
+      <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -223,167 +332,367 @@ body{font-family:'Cairo',sans-serif;background:#f0f4f8;color:#1e293b;direction:r
 <script type="module">
 import './js/firebase.js';
 
-// ── State ──────────────────────────────────────────────
-let allProducts = [];
-let filteredProducts = [];
+// ══ Platform definitions ══════════════════════════
+const PLATFORMS = {
+  facebook: {
+    icon:'📘', name:'فيسبوك', color:'#1877f2',
+    fields:[
+      { id:'fb_page_id',      label:'Page ID',           type:'text',     ph:'123456789',  help:'من About صفحة الفيسبوك' },
+      { id:'fb_access_token', label:'Page Access Token', type:'password', ph:'EAAG...',    help:'من Meta Developer → Graph API Explorer' }
+    ],
+    note:`1️⃣ اذهب إلى <a href="https://developers.facebook.com/tools/explorer" target="_blank">Graph API Explorer</a><br>
+          2️⃣ اختر تطبيقك وصفحتك<br>
+          3️⃣ أضف صلاحيات: <b>pages_manage_posts, pages_read_engagement</b><br>
+          4️⃣ انسخ الـ Page ID من قسم About في صفحتك`
+  },
+  instagram: {
+    icon:'📸', name:'إنستجرام', color:'#e1306c',
+    fields:[
+      { id:'ig_account_id',   label:'Instagram Account ID', type:'text',     ph:'17841...',   help:'من Meta Business Suite' },
+      { id:'ig_access_token', label:'Access Token',         type:'password', ph:'EAAG...',    help:'نفس توكن فيسبوك (مرتبط)' }
+    ],
+    note:`يتطلب <b>حساب Business أو Creator</b> مرتبط بصفحة فيسبوك.<br>
+          1️⃣ Meta Business Suite → الحسابات → إنستجرام<br>
+          2️⃣ انسخ الـ Account ID من الإعدادات<br>
+          3️⃣ استخدم نفس Access Token من فيسبوك مع صلاحية <b>instagram_content_publish</b>`
+  },
+  tiktok: {
+    icon:'🎵', name:'تيك توك', color:'#ff0050',
+    fields:[
+      { id:'tt_open_id',      label:'Open ID',        type:'text',     ph:'...',         help:'من TikTok Developer Portal' },
+      { id:'tt_access_token', label:'Access Token',   type:'password', ph:'att_...',     help:'بعد إتمام OAuth' }
+    ],
+    note:`⚠️ تيك توك يدعم نشر <b>الفيديو فقط</b> عبر API.<br>
+          1️⃣ اذهب إلى <a href="https://developers.tiktok.com" target="_blank">developers.tiktok.com</a><br>
+          2️⃣ أنشئ تطبيق → اطلب صلاحية Content Posting API<br>
+          3️⃣ أكمل OAuth للحصول على الـ Open ID و Access Token`
+  },
+  telegram: {
+    icon:'✈️', name:'تلجرام', color:'#0088cc',
+    fields:[
+      { id:'tg_bot_token',  label:'Bot Token',    type:'password', ph:'123456:ABC...', help:'من @BotFather' },
+      { id:'tg_channel_id', label:'Channel ID',   type:'text',     ph:'@mychannel',    help:'اسم القناة أو الـ ID السالب' }
+    ],
+    note:`1️⃣ ابحث عن <b>@BotFather</b> في تيليجرام<br>
+          2️⃣ أرسل /newbot واتبع الخطوات<br>
+          3️⃣ أضف البوت مشرفاً في القناة<br>
+          4️⃣ Channel ID: للقنوات العامة استخدم @اسم_القناة`
+  },
+  whatsapp: {
+    icon:'💬', name:'واتساب', color:'#25d366',
+    fields:[
+      { id:'wa_phone_id',     label:'Phone Number ID', type:'text',     ph:'11628...',     help:'من Meta Business → WhatsApp' },
+      { id:'wa_access_token', label:'Access Token',    type:'password', ph:'EAAG...',      help:'من Meta Developer' },
+      { id:'wa_to_number',    label:'رقم المستلم',     type:'text',     ph:'9647700000000',help:'رقم واتساب كامل مع كود الدولة' }
+    ],
+    note:`⚠️ WhatsApp Business API يتطلب <b>رقماً مسجلاً في Meta</b>.<br>
+          يُرسل رسالة نصية (لا يدعم البث العام بل رسائل للعملاء).<br>
+          1️⃣ Meta Business → WhatsApp → Getting Started<br>
+          2️⃣ انسخ Phone Number ID والـ Access Token`
+  },
+  snapchat: {
+    icon:'👻', name:'سناب شات', color:'#fffc00',
+    fields:[
+      { id:'snap_client_id',     label:'Client ID',      type:'text',     ph:'...', help:'من Snap Kit Developer' },
+      { id:'snap_access_token',  label:'Access Token',   type:'password', ph:'...', help:'بعد OAuth' }
+    ],
+    note:`⚠️ Snapchat <b>لا يوفر API</b> للنشر العضوي (Organic Posts).<br>
+          المتاح فقط هو Snap Ads API للإعلانات المدفوعة.<br>
+          يمكن حفظ البيانات هنا للمستقبل عند توفر API رسمي.`
+  }
+};
+
+// ══ State ════════════════════════════════════════
+let allProducts = [], filteredProducts = [];
 let selectedProduct = null;
+let credentials = {};     // loaded from Firestore
+let repeatMode = 'none';
+let currentModalPlat = null;
 let queueUnsub = null;
 
-// ── Init ───────────────────────────────────────────────
-document.addEventListener('fbReady', async () => {
-  await Promise.all([loadProducts(), listenQueue()]);
+// ══ Init ══════════════════════════════════════════
+const waitFb = () => new Promise(r => {
+  if (window._fbReady) { r(); return; }
+  document.addEventListener('fbReady', r, { once: true });
 });
-// fallback if fbReady already fired
-if (window._fbReady) {
-  loadProducts();
-  listenQueue();
-}
 
-// Set default schedule time (1 hour from now)
-(function setDefaultTime() {
-  const now = new Date();
-  now.setHours(now.getHours() + 1);
-  const iso = now.toISOString().slice(0, 16);
-  document.getElementById('scheduleTime').value = iso;
+(async () => {
+  addScheduleRow();
+  await waitFb();
+  await Promise.all([loadCredentials(), loadProducts(), listenQueue()]);
 })();
 
-// ── Load products ──────────────────────────────────────
+// ══ Credentials ═══════════════════════════════════
+async function loadCredentials() {
+  try {
+    const { doc, getDoc } = window._fb;
+    const snap = await getDoc(doc(window._db, 'settings', 'social_accounts'));
+    if (snap.exists()) {
+      credentials = snap.data() || {};
+      updatePlatformCards();
+    }
+  } catch (e) { console.warn('cred load:', e); }
+}
+
+function updatePlatformCards() {
+  Object.keys(PLATFORMS).forEach(p => {
+    const card = document.getElementById(`pc-${p}`);
+    const status = document.getElementById(`ps-${p}`);
+    const plat = PLATFORMS[p];
+    // Check if at least one field is filled
+    const hasData = plat.fields.some(f => credentials[f.id] && credentials[f.id].trim());
+    card.dataset.connected = hasData ? 'true' : 'false';
+    card.classList.toggle('connected', hasData);
+    status.textContent = hasData ? '✅ متصل' : 'غير متصل';
+  });
+}
+
+// ══ Platform selection ════════════════════════════
+window.selectPlatform = (p) => {
+  const card = document.getElementById(`pc-${p}`);
+  if (card.dataset.connected !== 'true') {
+    openCredModal(p);
+    return;
+  }
+  card.classList.toggle('selected');
+};
+
+function getSelectedPlatforms() {
+  return Object.keys(PLATFORMS).filter(p =>
+    document.getElementById(`pc-${p}`)?.classList.contains('selected')
+  );
+}
+
+// ══ Credentials modal ═════════════════════════════
+window.openCredModal = (p) => {
+  currentModalPlat = p;
+  const plat = PLATFORMS[p];
+  document.getElementById('mIcon').textContent = plat.icon;
+  document.getElementById('mTitle').textContent = `ربط ${plat.name}`;
+  document.getElementById('mNote').innerHTML = plat.note;
+
+  // Build fields
+  document.getElementById('mFields').innerHTML = plat.fields.map(f => `
+    <div class="fgroup">
+      <label>${f.label} <span style="color:#475569;font-size:10px">(${f.help})</span></label>
+      <div class="input-wrap">
+        <input id="cf_${f.id}" class="finput" type="${f.type}" placeholder="${f.ph}"
+               value="${esc(credentials[f.id] || '')}" autocomplete="off"/>
+        ${f.type==='password'?`<button class="eye-btn" type="button" onclick="toggleEye('cf_${f.id}',this)">👁</button>`:''}
+      </div>
+    </div>`).join('');
+
+  // Disconnect button if connected
+  const hasData = plat.fields.some(f => credentials[f.id] && credentials[f.id].trim());
+  const acts = document.getElementById('mActions');
+  acts.innerHTML = `
+    <button class="btn-save" onclick="saveCredentials()">💾 حفظ</button>
+    <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+    ${hasData ? `<button class="btn-disconnect" onclick="disconnectPlatform('${p}')">🔌 قطع الاتصال بـ ${plat.name}</button>` : ''}`;
+
+  document.getElementById('credModal').classList.remove('hidden');
+};
+
+window.closeModal = () => {
+  document.getElementById('credModal').classList.add('hidden');
+  currentModalPlat = null;
+};
+
+window.toggleEye = (id, btn) => {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+};
+
+window.saveCredentials = async () => {
+  if (!currentModalPlat) return;
+  const plat = PLATFORMS[currentModalPlat];
+  const update = {};
+  plat.fields.forEach(f => {
+    update[f.id] = (document.getElementById(`cf_${f.id}`)?.value || '').trim();
+  });
+  Object.assign(credentials, update);
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(window._db, 'settings', 'social_accounts'), credentials, { merge: true });
+    updatePlatformCards();
+    closeModal();
+    showToast(`تم حفظ إعدادات ${plat.name} ✅`, 'success');
+  } catch (e) {
+    showToast('خطأ في الحفظ: ' + e.message, 'error');
+  }
+};
+
+window.disconnectPlatform = async (p) => {
+  if (!confirm(`قطع الاتصال بـ ${PLATFORMS[p].name}؟`)) return;
+  const plat = PLATFORMS[p];
+  plat.fields.forEach(f => { credentials[f.id] = ''; });
+  try {
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(window._db, 'settings', 'social_accounts'), credentials, { merge: true });
+    document.getElementById(`pc-${p}`).classList.remove('selected');
+    updatePlatformCards();
+    closeModal();
+    showToast(`تم قطع الاتصال بـ ${PLATFORMS[p].name}`, 'success');
+  } catch (e) {
+    showToast('خطأ: ' + e.message, 'error');
+  }
+};
+
+// ══ Products ══════════════════════════════════════
 async function loadProducts() {
   try {
     const { getDocs, collection, query, orderBy } = window._fb;
-    const db = window._db;
-    const snap = await getDocs(query(collection(db, 'products'), orderBy('name_ar', 'asc')));
+    const snap = await getDocs(query(collection(window._db, 'products'), orderBy('name_ar', 'asc')));
     allProducts = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-    buildCategorySelect();
-  } catch (e) {
-    console.error(e);
-    showToast('خطأ في تحميل المنتجات', 'error');
-  }
+    buildCatSelect();
+  } catch (e) { showToast('خطأ في تحميل المنتجات', 'error'); }
 }
 
-function buildCategorySelect() {
-  const cats = [...new Set(allProducts.map(p => p.category || p.cat || 'عام').filter(Boolean))].sort();
-  const sel = document.getElementById('selCategory');
-  sel.innerHTML = `<option value="">🌐 كل الفئات</option>` +
-    cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
-  filterByCategory();
+function buildCatSelect() {
+  const cats = [...new Set(allProducts.map(p => p.category || p.cat || 'عام'))].sort();
+  const sel = document.getElementById('selCat');
+  sel.innerHTML = `<option value="">🌐 كل الفئات</option>` + cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  filterByCat();
 }
 
-window.filterByCategory = function () {
-  const cat = document.getElementById('selCategory').value;
+window.filterByCat = () => {
+  const cat = document.getElementById('selCat').value;
   filteredProducts = cat ? allProducts.filter(p => (p.category || p.cat || 'عام') === cat) : [...allProducts];
-  const selP = document.getElementById('selProduct');
-  selP.innerHTML = `<option value="">— اختر منتجاً —</option>` +
+  document.getElementById('selProd').innerHTML =
+    `<option value="">— اختر منتجاً —</option>` +
     filteredProducts.map(p => `<option value="${p._id}">${esc(p.name_ar || p.name || p._id)}</option>`).join('');
   selectedProduct = null;
-  document.getElementById('prodPreview').innerHTML = `<span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>`;
-  document.getElementById('prodPreview').className = 'prod-preview';
-  document.getElementById('postText').value = '';
-  document.getElementById('charCount').textContent = '0 حرف';
+  resetPreview();
 };
 
-window.onProductSelect = function () {
-  const id = document.getElementById('selProduct').value;
-  if (!id) return;
+window.onProdSelect = () => {
+  const id = document.getElementById('selProd').value;
   selectedProduct = filteredProducts.find(p => p._id === id) || null;
-  if (!selectedProduct) return;
+  if (!selectedProduct) { resetPreview(); return; }
   renderPreview(selectedProduct);
   autoFillText(selectedProduct);
 };
 
+function resetPreview() {
+  const pv = document.getElementById('prodPreview');
+  pv.className = 'prod-preview';
+  pv.innerHTML = `<span class="placeholder-txt">اختر منتجاً لرؤية المعاينة</span>`;
+  document.getElementById('postText').value = '';
+  updateCC();
+}
+
 function renderPreview(p) {
   const img = p.image || p.img || '';
-  const name = p.name_ar || p.name || '';
-  const price = p.retail_price || p.price || '';
-  const cat = p.category || p.cat || '';
-  const preview = document.getElementById('prodPreview');
-  preview.className = 'prod-preview loaded';
-  preview.innerHTML = `
+  const pv = document.getElementById('prodPreview');
+  pv.className = 'prod-preview loaded';
+  pv.innerHTML = `
     ${img ? `<img src="${esc(img)}" onerror="this.style.display='none'" alt=""/>` : ''}
     <div class="info">
-      <h3>${esc(name)}</h3>
-      ${price ? `<div class="price">💰 ${price} د.ع</div>` : ''}
-      ${cat ? `<div class="cat">📂 ${esc(cat)}</div>` : ''}
+      <h3>${esc(p.name_ar || p.name || '')}</h3>
+      ${p.retail_price || p.price ? `<div class="price">💰 ${p.retail_price || p.price} د.ع</div>` : ''}
+      ${p.category || p.cat ? `<div class="cat">📂 ${esc(p.category || p.cat)}</div>` : ''}
     </div>`;
 }
 
 function autoFillText(p) {
-  const name = p.name_ar || p.name || '';
-  const price = p.retail_price || p.price || '';
-  const wholesale = p.wholesale_price || '';
-  const detail = p.detail || p.description || '';
-  const cat = p.category || p.cat || '';
   const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
-  const prodUrl = `${siteUrl}/product.html?id=${p._id}`;
-
-  let txt = `🛍️ ${name}\n`;
-  if (cat)       txt += `📂 ${cat}\n`;
-  if (price)     txt += `💰 المفرد: ${price} د.ع\n`;
-  if (wholesale) txt += `📦 الجملة: ${wholesale} د.ع\n`;
-  if (detail)    txt += `\n${detail}\n`;
-  txt += `\n🔗 ${prodUrl}`;
-
-  document.getElementById('postText').value = txt;
-  updateCharCount();
+  const url = `${siteUrl}/product.html?id=${p._id}`;
+  let t = `🛍️ ${p.name_ar || p.name || ''}\n`;
+  if (p.category || p.cat) t += `📂 ${p.category || p.cat}\n`;
+  if (p.retail_price || p.price)  t += `💰 المفرد: ${p.retail_price || p.price} د.ع\n`;
+  if (p.wholesale_price) t += `📦 الجملة: ${p.wholesale_price} د.ع\n`;
+  if (p.detail || p.description) t += `\n${p.detail || p.description}\n`;
+  t += `\n🔗 ${url}`;
+  document.getElementById('postText').value = t;
+  updateCC();
 }
 
-window.updateCharCount = function () {
-  const n = document.getElementById('postText').value.length;
-  document.getElementById('charCount').textContent = `${n} حرف`;
+window.updateCC = () => {
+  document.getElementById('charCount').textContent = `${document.getElementById('postText').value.length} حرف`;
 };
 
-// ── Platform toggle ────────────────────────────────────
-window.togglePlatform = function (btn) {
-  btn.classList.toggle('active');
+// ══ Schedule rows ══════════════════════════════════
+let schedCount = 0;
+
+window.addScheduleRow = () => {
+  schedCount++;
+  const id = `sr_${schedCount}`;
+  const now = new Date(); now.setHours(now.getHours() + schedCount);
+  const iso = now.toISOString().slice(0, 16);
+  const div = document.createElement('div');
+  div.className = 'sched-row';
+  div.id = id;
+  div.innerHTML = `
+    <input type="datetime-local" class="finput sched-input" value="${iso}" min="${new Date().toISOString().slice(0,16)}"/>
+    <button class="del-btn" onclick="removeSchedRow('${id}')">✕</button>`;
+  document.getElementById('schedRows').appendChild(div);
 };
 
-function getSelectedPlatforms() {
-  return [...document.querySelectorAll('.platform-btn.active')].map(b => b.dataset.p);
+window.removeSchedRow = (id) => {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+};
+
+window.setRepeat = (btn) => {
+  document.querySelectorAll('.repeat-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  repeatMode = btn.dataset.r;
+};
+
+function getScheduleTimes() {
+  return [...document.querySelectorAll('.sched-input')]
+    .map(inp => inp.value)
+    .filter(v => v && new Date(v) > new Date());
 }
 
-// ── Save to queue ──────────────────────────────────────
-window.saveToQueue = async function () {
+// ══ Save to queue ══════════════════════════════════
+window.saveToQueue = async () => {
   if (!selectedProduct) return showToast('اختر منتجاً أولاً', 'error');
   const platforms = getSelectedPlatforms();
   if (!platforms.length) return showToast('اختر منصة واحدة على الأقل', 'error');
-  const schedStr = document.getElementById('scheduleTime').value;
-  if (!schedStr) return showToast('حدد موعد النشر', 'error');
-  const schedDate = new Date(schedStr);
-  if (schedDate <= new Date()) return showToast('يجب أن يكون الموعد في المستقبل', 'error');
+  const times = getScheduleTimes();
+  if (!times.length) return showToast('حدد موعداً مستقبلياً على الأقل', 'error');
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true;
-  btn.innerHTML = '<span class="loading-spinner"></span> جاري الحفظ...';
+  btn.innerHTML = '<span class="spin"></span> جاري الحفظ...';
 
   try {
     const { addDoc, collection, Timestamp } = window._fb;
-    const db = window._db;
     const p = selectedProduct;
     const siteUrl = (typeof SITE_URL !== 'undefined' ? SITE_URL : location.origin);
 
-    await addDoc(collection(db, 'automated_queue'), {
-      productId:    p._id,
-      productName:  p.name_ar || p.name || '',
-      productImage: p.image || p.img || '',
-      productPrice: p.retail_price || p.price || '',
-      productUrl:   `${siteUrl}/product.html?id=${p._id}`,
-      postText:     document.getElementById('postText').value.trim(),
-      platforms,
-      scheduledAt:  Timestamp.fromDate(schedDate),
-      status:       'pending',
-      createdAt:    Timestamp.now(),
-      attempts:     0
-    });
-    showToast('تم جدولة المنشور بنجاح ✅', 'success');
+    for (const timeStr of times) {
+      await addDoc(collection(window._db, 'automated_queue'), {
+        productId:    p._id,
+        productName:  p.name_ar || p.name || '',
+        productImage: p.image || p.img || '',
+        productPrice: p.retail_price || p.price || '',
+        productUrl:   `${siteUrl}/product.html?id=${p._id}`,
+        postText:     document.getElementById('postText').value.trim(),
+        platforms,
+        scheduledAt:  Timestamp.fromDate(new Date(timeStr)),
+        repeat:       repeatMode,
+        status:       'pending',
+        createdAt:    Timestamp.now(),
+        attempts:     0
+      });
+    }
+
+    showToast(`تم جدولة ${times.length} منشور ✅`, 'success');
     // reset
-    document.getElementById('selProduct').value = '';
-    document.getElementById('prodPreview').innerHTML = `<span class="placeholder">سيظهر هنا معاينة المنتج بعد الاختيار</span>`;
-    document.getElementById('prodPreview').className = 'prod-preview';
-    document.getElementById('postText').value = '';
-    document.getElementById('charCount').textContent = '0 حرف';
-    selectedProduct = null;
+    document.getElementById('selProd').value = '';
+    resetPreview();
+    // deselect platforms
+    document.querySelectorAll('.plat-card.selected').forEach(c => c.classList.remove('selected'));
+    // reset schedules
+    document.getElementById('schedRows').innerHTML = '';
+    schedCount = 0;
+    addScheduleRow();
+    repeatMode = 'none';
+    document.querySelectorAll('.repeat-chip').forEach((b,i) => b.classList.toggle('active', i===0));
   } catch (e) {
-    console.error(e);
     showToast('فشل الحفظ: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
@@ -391,71 +700,79 @@ window.saveToQueue = async function () {
   }
 };
 
-// ── Listen queue ───────────────────────────────────────
+// ══ Queue listener ══════════════════════════════════
 async function listenQueue() {
   const { collection, query, orderBy, onSnapshot } = window._fb;
-  const db = window._db;
   if (queueUnsub) queueUnsub();
   queueUnsub = onSnapshot(
-    query(collection(db, 'automated_queue'), orderBy('scheduledAt', 'desc')),
-    snap => renderQueue(snap.docs.map(d => ({ _id: d.id, ...d.data() }))),
-    err => console.error('queue listen:', err)
+    query(collection(window._db, 'automated_queue'), orderBy('scheduledAt', 'desc')),
+    snap => {
+      const items = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+      renderQueue(items);
+      renderStats(items);
+    },
+    err => console.error(err)
   );
+}
+
+function renderStats(items) {
+  document.getElementById('stTotal').textContent   = items.length;
+  document.getElementById('stPending').textContent = items.filter(i => i.status==='pending').length;
+  document.getElementById('stPosted').textContent  = items.filter(i => i.status==='posted').length;
+  document.getElementById('stFailed').textContent  = items.filter(i => i.status==='failed').length;
 }
 
 function renderQueue(items) {
   const list = document.getElementById('queueList');
   if (!items.length) {
-    list.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>لا توجد منشورات مجدولة</p></div>`;
+    list.innerHTML = `<div class="empty"><div class="e-icon">📭</div><p>لا توجد منشورات مجدولة</p></div>`;
     return;
   }
-  list.innerHTML = items.map(item => {
+  list.innerHTML = items.slice(0, 30).map(item => {
     const sched = item.scheduledAt?.toDate ? item.scheduledAt.toDate() : new Date(item.scheduledAt);
-    const schedStr = sched.toLocaleString('ar-IQ', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const platforms = (item.platforms || []).map(p =>
-      `<span class="q-plat-tag ${p}">${platLabel(p)}</span>`).join('');
+    const schedStr = sched.toLocaleString('ar-IQ', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const platsHtml = (item.platforms || []).map(p =>
+      `<span class="q-plat">${PLATFORMS[p]?.icon || ''} ${PLATFORMS[p]?.name || p}</span>`).join('');
+    const repeatLbl = item.repeat && item.repeat !== 'none'
+      ? `<span style="color:#a78bfa;font-size:10px"> 🔄 ${{daily:'يومي',weekly:'أسبوعي',monthly:'شهري'}[item.repeat]||''}</span>` : '';
     return `
-      <div class="q-item ${item.status || 'pending'}">
+      <div class="q-item ${item.status||'pending'}">
         ${item.productImage ? `<img src="${esc(item.productImage)}" onerror="this.style.display='none'" alt=""/>` : ''}
         <div class="q-info">
           <div class="q-name">${esc(item.productName || item.productId)}</div>
-          <div class="q-meta">🗓️ ${schedStr}</div>
-          <div class="q-platforms">${platforms}</div>
+          <div class="q-meta">🗓️ ${schedStr}${repeatLbl}</div>
+          <div class="q-platforms">${platsHtml}</div>
         </div>
-        <span class="q-status">${statusLabel(item.status)}</span>
-        <button class="q-del" onclick="deleteQueueItem('${item._id}')" title="حذف">✕</button>
+        <span class="q-status-badge">${statusLabel(item.status)}</span>
+        <button class="q-del" onclick="delItem('${item._id}')" title="حذف">✕</button>
       </div>`;
   }).join('');
 }
 
-window.deleteQueueItem = async function (id) {
-  if (!confirm('حذف هذا المنشور المجدول؟')) return;
+window.delItem = async (id) => {
+  if (!confirm('حذف هذا المنشور؟')) return;
   try {
     const { doc, deleteDoc } = window._fb;
     await deleteDoc(doc(window._db, 'automated_queue', id));
     showToast('تم الحذف', 'success');
-  } catch (e) {
-    showToast('فشل الحذف', 'error');
-  }
+  } catch { showToast('فشل الحذف', 'error'); }
 };
 
-// ── Helpers ────────────────────────────────────────────
-function platLabel(p) {
-  return { facebook:'📘 فيسبوك', instagram:'📸 إنستجرام', telegram:'✈️ تلجرام', whatsapp:'💬 واتساب' }[p] || p;
-}
+// ══ Helpers ════════════════════════════════════════
 function statusLabel(s) {
-  return { pending:'⏳ منتظر', posted:'✅ نُشر', failed:'❌ فشل', processing:'🔄 جاري' }[s] || s;
+  return { pending:'⏳ منتظر', posted:'✅ نُشر', failed:'❌ فشل', processing:'🔄 جاري' }[s] || (s || 'منتظر');
 }
-function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Toast ──────────────────────────────────────────────
-function showToast(msg, type = '') {
+// ══ Toast ══════════════════════════════════════════
+function showToast(msg, type='') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = `toast ${type} show`;
-  setTimeout(() => { t.className = `toast ${type}`; }, 3000);
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => { t.className = `toast ${type}`; }, 3500);
 }
 </script>
 </body>

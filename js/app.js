@@ -5401,6 +5401,17 @@ function injectMarketingNav() {
   div.innerHTML = `<span class="nav-icon">📣</span>التسويق`;
   div.onclick = () => window.open('marketing.html', '_blank');
   sbNav.appendChild(div);
+
+  // Auto-post link
+  if (!sbNav.querySelector('#nav_pageAutoPost')) {
+    const divAP = document.createElement('div');
+    divAP.className = 'nav-item';
+    divAP.id = 'nav_pageAutoPost';
+    divAP.innerHTML = `<span class="nav-icon">🤖</span>النشر التلقائي`;
+    divAP.onclick = () => window.open('auto-post.html', '_blank');
+    sbNav.appendChild(divAP);
+  }
+
   // Also inject register link in login overlay
   injectRegisterLink();
 }

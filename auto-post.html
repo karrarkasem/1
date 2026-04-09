@@ -174,6 +174,11 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
 .toast.ok{background:var(--mint2);color:#fff}
 .toast.err{background:var(--rose2);color:#fff}
 
+/* ══ CONTENT TYPE ══ */
+.ctype-btn{padding:7px 14px;border-radius:99px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'Cairo',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s}
+.ctype-btn:hover{border-color:var(--teal);color:var(--teal)}
+.ctype-btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+
 /* ══ SPINNER ══ */
 .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -246,6 +251,19 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <p style="font-size:.7rem;color:var(--muted2);margin-top:8px">اضغط ⚙️ لإدخال مفاتيح الربط • اضغط البطاقة لتحديد المنصة للنشر</p>
+
+    <!-- نوع المحتوى -->
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:8px">نوع المحتوى</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="ctype-btn on" data-ct="post"    onclick="setContentType(this)">📝 بوست (منشور)</button>
+        <button class="ctype-btn"    data-ct="story"   onclick="setContentType(this)">⭕ ستوري</button>
+        <button class="ctype-btn"    data-ct="reel"    onclick="setContentType(this)">🎬 ريلز / شورت</button>
+      </div>
+      <div id="ctypeNote" style="font-size:.7rem;color:var(--muted2);margin-top:8px;line-height:1.6">
+        📝 <b>بوست:</b> يدعمه الكل — 📸 فيسبوك، إنستجرام، تلجرام، واتساب
+      </div>
+    </div>
   </div>
 
   <!-- Product picker -->
@@ -399,7 +417,14 @@ var PLATS = {
 };
 
 // ══ State ════════════════════════════════════════════
-var allProds=[], filteredProds=[], selProd=null, creds={}, repeatMode='none', curModal=null, queueUnsub=null, schedIdx=0;
+var allProds=[], filteredProds=[], selProd=null, creds={}, repeatMode='none', contentType='post', curModal=null, queueUnsub=null, schedIdx=0;
+
+// ── Content type notes ──────────────────────────────
+var CT_NOTES = {
+  post:  '📝 <b>بوست:</b> يدعمه الكل — فيسبوك ✅ إنستجرام ✅ تلجرام ✅ واتساب ✅',
+  story: '⭕ <b>ستوري:</b> فيسبوك ✅ إنستجرام ✅ — تلجرام وواتساب لا يدعمانه عبر API',
+  reel:  '🎬 <b>ريلز / شورت:</b> إنستجرام ✅ (فيديو) — يتطلب رابط فيديو عام'
+};
 
 // ══ Helpers for Firebase access (same pattern as app.js) ══
 function fb(){ return window._fb; }
@@ -646,6 +671,14 @@ function setRepeat(btn){
   repeatMode=btn.dataset.r;
 }
 
+function setContentType(btn){
+  document.querySelectorAll('.ctype-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  contentType=btn.dataset.ct;
+  var note=document.getElementById('ctypeNote');
+  if(note) note.innerHTML=CT_NOTES[contentType]||'';
+}
+
 function getSchedTimes(){
   var now=new Date();
   return Array.from(document.querySelectorAll('.sched-inp'))
@@ -676,11 +709,12 @@ function saveQueue(){
       productUrl:   siteUrl+'/product.html?id='+p._id,
       postText:document.getElementById('postText').value.trim(),
       platforms:plats,
-      scheduledAt: fb().Timestamp.fromDate(new Date(t)),
-      repeat:      repeatMode,
-      status:      'pending',
-      createdAt:   fb().Timestamp.now(),
-      attempts:    0
+      scheduledAt:  fb().Timestamp.fromDate(new Date(t)),
+      repeat:       repeatMode,
+      contentType:  contentType,
+      status:       'pending',
+      createdAt:    fb().Timestamp.now(),
+      attempts:     0
     });
   });
 
@@ -734,7 +768,9 @@ function renderQueue(items){
     var sched=item.scheduledAt&&item.scheduledAt.toDate?item.scheduledAt.toDate():new Date(item.scheduledAt);
     var schedStr=sched.toLocaleString('ar-IQ',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
     var rep=item.repeat&&item.repeat!=='none'?(' 🔄 '+({daily:'يومي',weekly:'أسبوعي',monthly:'شهري'}[item.repeat]||'')):'';
+    var ctLabel={post:'📝 بوست',story:'⭕ ستوري',reel:'🎬 ريلز'}[item.contentType||'post']||'📝 بوست';
     var tags=(item.platforms||[]).map(function(p){return '<span class="q-tag">'+(PLATS[p]?PLATS[p].icon:'')+' '+(PLATS[p]?PLATS[p].name:p)+'</span>';}).join('');
+    tags+='<span class="q-tag" style="background:var(--violet3);color:var(--violet)">'+ctLabel+'</span>';
     var img=item.productImage?'<img src="'+esc(item.productImage)+'" onerror="this.style.display=\'none\'" alt=""/>':'';
     return '<div class="q-item '+(item.status||'pending')+'">'+img+
       '<div class="q-info"><div class="q-name">'+esc(item.productName||item.productId)+'</div>'+

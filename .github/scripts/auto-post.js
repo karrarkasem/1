@@ -38,14 +38,24 @@ async function postFacebook(item) {
   if (!token || !pageId) return skip('Facebook', 'missing credentials');
 
   const caption = item.postText || item.productName || '';
+  const ct = item.contentType || 'post';
 
-  if (item.productImage) {
-    // POST /photos — attaches image + caption
-    const params = new URLSearchParams({
-      caption,
-      url: item.productImage,
-      access_token: token
+  // ── Story ───────────────────────────────────────
+  if (ct === 'story') {
+    if (!item.productImage) return skip('Facebook', 'story requires an image');
+    // Step 1: upload photo as story
+    const p1 = new URLSearchParams({ url: item.productImage, access_token: token });
+    const r1 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photo_stories`, {
+      method: 'POST', body: p1
     });
+    const j1 = await r1.json();
+    if (j1.id) return ok('Facebook', j1.id);
+    return fail('Facebook', 'story: ' + (j1.error?.message || JSON.stringify(j1)));
+  }
+
+  // ── Post (default) ──────────────────────────────
+  if (item.productImage) {
+    const params = new URLSearchParams({ caption, url: item.productImage, access_token: token });
     const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
       method: 'POST', body: params
     });
@@ -53,7 +63,6 @@ async function postFacebook(item) {
     if (j.id) return ok('Facebook', j.id);
     return fail('Facebook', j.error?.message || JSON.stringify(j));
   } else {
-    // POST /feed — text + link
     const params = new URLSearchParams({ message: caption, link: item.productUrl || '', access_token: token });
     const res = await fetch(`https://graph.facebook.com/v19.0/${pageId}/feed`, {
       method: 'POST', body: params
@@ -73,25 +82,31 @@ async function postInstagram(item) {
   if (!token || !igId) return skip('Instagram', 'missing credentials');
   if (!item.productImage) return skip('Instagram', 'image required for IG');
 
-  // Step 1: Create container
-  const containerParams = new URLSearchParams({
-    image_url: item.productImage,
-    caption:   (item.postText || '').slice(0, 2200),
+  const ct = item.contentType || 'post';
+
+  // Step 1: Create media container
+  const containerData = {
+    image_url:    item.productImage,
+    caption:      (item.postText || '').slice(0, 2200),
     access_token: token
-  });
+  };
+
+  // Story uses different media_type
+  if (ct === 'story') {
+    containerData.media_type = 'STORIES';
+  }
+
   const r1 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
-    method: 'POST', body: containerParams
+    method: 'POST', body: new URLSearchParams(containerData)
   });
   const j1 = await r1.json();
   if (!j1.id) return fail('Instagram', j1.error?.message || JSON.stringify(j1));
 
-  // Small wait for media processing
   await sleep(3000);
 
-  // Step 2: Publish container
-  const publishParams = new URLSearchParams({ creation_id: j1.id, access_token: token });
+  // Step 2: Publish
   const r2 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media_publish`, {
-    method: 'POST', body: publishParams
+    method: 'POST', body: new URLSearchParams({ creation_id: j1.id, access_token: token })
   });
   const j2 = await r2.json();
   if (j2.id) return ok('Instagram', j2.id);

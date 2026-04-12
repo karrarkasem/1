@@ -7580,13 +7580,6 @@ function _buildShareText(p) {
   L.push(`🛍️ ${p.name}`);
   if (p.cat) L.push(`📂 ${p.cat}`);
 
-  // ── السعر ─────────────────────────────────────
-  if (p.price || p.wholesalePrice) {
-    L.push('');
-    if (p.price)          L.push(`💰 المفرد:  ${p.price} د.ع`);
-    if (p.wholesalePrice) L.push(`📦 الجملة:  ${p.wholesalePrice} د.ع`);
-  }
-
   // ── التعبئة ───────────────────────────────────
   const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
   if (pkgEntries.length) {

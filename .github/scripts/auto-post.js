@@ -222,14 +222,13 @@ async function rescheduleIfNeeded(docRef, item) {
   if (repeat === 'weekly')  next.setDate(next.getDate() + 7);
   if (repeat === 'monthly') next.setMonth(next.getMonth() + 1);
 
+  const { _id, postResults, postedAt, postedPlatforms, failedPlatforms, processedAt, ...rest } = item;
   await db.collection('automated_queue').add({
-    ...item,
+    ...rest,
     scheduledAt: admin.firestore.Timestamp.fromDate(next),
     status:      'pending',
     createdAt:   admin.firestore.Timestamp.now(),
     attempts:    0,
-    postResults: admin.firestore.FieldValue.delete?.() || null,
-    postedAt:    null,
     parentId:    docRef.id
   });
   console.log(`  → Rescheduled (${repeat}) for ${next.toISOString()}`);

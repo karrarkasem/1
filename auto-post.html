@@ -631,13 +631,15 @@ function renderPrev(p){
 function autoFill(p){
   var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
   var url=siteUrl+'/product.html?id='+p._id;
-  var t='🛍️ '+p.name+'\n';
-  if(p.category) t+='📂 '+p.category+'\n';
-  if(p.price)          t+='💰 المفرد: '+p.price+' د.ع\n';
-  if(p.wholesalePrice) t+='📦 الجملة: '+p.wholesalePrice+' د.ع\n';
-  if(p.detail)         t+='\n'+p.detail+'\n';
-  t+='\n🔗 '+url;
-  document.getElementById('postText').value=t;
+  var L=[];
+  L.push('🛍️ '+p.name);
+  if(p.category) L.push('📂 '+p.category);
+  if(p.detail){ L.push(''); L.push('📝 '+p.detail); }
+  L.push('');
+  L.push('─────────────────');
+  L.push('');
+  L.push('🔗 '+url);
+  document.getElementById('postText').value=L.join('\n');
   updateCC();
 }
 

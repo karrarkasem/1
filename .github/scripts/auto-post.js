@@ -257,8 +257,24 @@ async function main() {
     const item = { _id: docSnap.id, ...docSnap.data() };
     console.log(`▶️  [${item._id}] ${item.productName} → platforms: ${(item.platforms||[]).join(', ')}`);
 
+    // ── جلب الصورة من Firestore مباشرة ────────────
+    if (item.productId) {
+      try {
+        const prodSnap = await db.collection('products').doc(item.productId).get();
+        if (prodSnap.exists) {
+          const prod = prodSnap.data();
+          if (prod.image) {
+            item.productImage = prod.image;
+            console.log(`  [img] Fetched from products/${item.productId}`);
+          }
+        }
+      } catch (e) {
+        console.warn('  [img] Could not fetch product image:', e.message);
+      }
+    }
+
     if (DRY) {
-      console.log('  [DRY] Would post:', JSON.stringify({ platforms: item.platforms, text: (item.postText||'').slice(0,60)+'...' }));
+      console.log('  [DRY] Would post:', JSON.stringify({ platforms: item.platforms, image: item.productImage||'none', text: (item.postText||'').slice(0,60)+'...' }));
       continue;
     }
 

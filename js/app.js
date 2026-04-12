@@ -7568,37 +7568,53 @@ function _initPWAInstall() {
 let _shareProduct = null;
 
 function _buildShareText(p) {
-  const storeUrl  = SITE_URL || window.location.origin;
-  // رابط المنتج المحدد إن وُجد، وإلا رابط المتجر
-  const prodUrl   = p._shareUrl || (p._id ? `${storeUrl}/product.html?id=${p._id}` : storeUrl);
-  const company   = window.COMPANY?.company_name_ar || 'متجرنا';
-  const wa        = window.COMPANY?.whatsapp_number || WA || '';
+  const storeUrl = SITE_URL || window.location.origin;
+  const prodUrl  = p._shareUrl || (p._id ? `${storeUrl}/product.html?id=${p._id}` : storeUrl);
+  const company  = window.COMPANY?.company_name_ar || 'متجرنا';
+  const wa       = window.COMPANY?.whatsapp_number || WA || '';
+  const det      = p.detail || p.det || '';
 
-  const det = p.detail || p.det || '';
+  const L = []; // lines
 
-  const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
-  const pkgLines   = pkgEntries.map(([unit, qty]) => `   • ${unit}: ${qty} قطعة`).join('\n');
-  const pkgSection = pkgLines ? `\n📦 التعبئة:\n${pkgLines}` : '';
+  // ── الاسم والفئة ──────────────────────────────
+  L.push(`🛍️ ${p.name}`);
+  if (p.cat) L.push(`📂 ${p.cat}`);
 
-  const weightLine = p.carton_weight ? `\n⚖️ وزن الكرتون: ${p.carton_weight} كغ`  : '';
-  const volumeLine = p.carton_volume ? `\n📐 الحجم الكتلي: ${p.carton_volume} م³` : '';
-
-  let pieceWeightLine = '';
-  if (p.carton_weight && pkgEntries.length) {
-    const maxQty = Math.max(...pkgEntries.map(([,q]) => q));
-    if (maxQty > 0) pieceWeightLine = `\n🔹 وزن القطعة: ~${(p.carton_weight / maxQty).toFixed(3)} كغ`;
+  // ── السعر ─────────────────────────────────────
+  if (p.price || p.wholesalePrice) {
+    L.push('');
+    if (p.price)          L.push(`💰 المفرد:  ${p.price} د.ع`);
+    if (p.wholesalePrice) L.push(`📦 الجملة:  ${p.wholesalePrice} د.ع`);
   }
 
-  const detLine = det ? `\n\n📝 ${det}` : '';
-  const waLine  = wa  ? `\n📞 واتساب: wa.me/${wa}` : '';
+  // ── التعبئة ───────────────────────────────────
+  const pkgEntries = p.packaging ? Object.entries(p.packaging) : [];
+  if (pkgEntries.length) {
+    L.push('');
+    L.push('📦 التعبئة:');
+    pkgEntries.forEach(([unit, qty]) => L.push(`   • ${unit}: ${qty} قطعة`));
+    if (p.carton_weight) {
+      const maxQty = Math.max(...pkgEntries.map(([,q]) => q));
+      if (maxQty > 0) L.push(`   • وزن القطعة: ~${(p.carton_weight / maxQty).toFixed(3)} كغ`);
+    }
+  }
+  if (p.carton_weight) L.push(`⚖️ وزن الكرتون: ${p.carton_weight} كغ`);
+  if (p.carton_volume) L.push(`📐 الحجم: ${p.carton_volume} م³`);
 
-  return `🛍️ ${p.name}${p.cat ? ` — ${p.cat}` : ''}
-${pkgSection}${weightLine}${volumeLine}${pieceWeightLine}${detLine}
+  // ── التفاصيل ──────────────────────────────────
+  if (det) { L.push(''); L.push(`📝 ${det}`); }
 
-💬 للاستفسار عن الأسعار والتوفر تواصل معنا:${waLine}
-🔗 ${prodUrl}
+  // ── فاصل + تواصل ──────────────────────────────
+  L.push('');
+  L.push('─────────────────');
+  L.push(`🏪 ${company}`);
+  if (wa) { L.push(''); L.push(`📞 واتساب: wa.me/${wa}`); }
 
-#${(p.cat||'منتجات').replace(/\s+/g,'')} #${company.replace(/\s+/g,'')} #تسوق_الان #العراق`.trim();
+  // ── رابط المنتج (دائماً في آخر النص) ─────────
+  L.push('');
+  L.push(`🔗 ${prodUrl}`);
+
+  return L.join('\n');
 }
 
 // جلب صورة المنتج كـ File (للـ Web Share API) — مع timeout 4 ثواني

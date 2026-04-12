@@ -133,6 +133,8 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
 .q-item.processing .q-badge{background:var(--sky3);color:var(--sky2)}
 .q-del{position:absolute;top:8px;left:8px;background:none;border:none;color:var(--border2);cursor:pointer;font-size:.9rem;padding:2px;transition:.2s}
 .q-del:hover{color:var(--rose)}
+.q-retry{position:absolute;top:8px;left:30px;background:none;border:none;color:var(--gold2);cursor:pointer;font-size:.9rem;padding:2px;transition:.2s}
+.q-retry:hover{color:var(--mint2)}
 .q-info{flex:1;min-width:0}
 
 /* ══ MODAL ══ */
@@ -774,14 +776,29 @@ function renderQueue(items){
     var tags=(item.platforms||[]).map(function(p){return '<span class="q-tag">'+(PLATS[p]?PLATS[p].icon:'')+' '+(PLATS[p]?PLATS[p].name:p)+'</span>';}).join('');
     tags+='<span class="q-tag" style="background:var(--violet3);color:var(--violet)">'+ctLabel+'</span>';
     var img=item.productImage?'<img src="'+esc(item.productImage)+'" onerror="this.style.display=\'none\'" alt=""/>':'';
+    var retryBtn=item.status==='failed'?'<button class="q-retry" onclick="retryItem(\''+item._id+'\')" title="إعادة المحاولة">🔄</button>':'';
     return '<div class="q-item '+(item.status||'pending')+'">'+img+
       '<div class="q-info"><div class="q-name">'+esc(item.productName||item.productId)+'</div>'+
       '<div class="q-meta">🗓️ '+schedStr+rep+'</div>'+
       '<div class="q-tags">'+tags+'</div></div>'+
       '<span class="q-badge">'+stLbl(item.status)+'</span>'+
+      retryBtn+
       '<button class="q-del" onclick="delItem(\''+item._id+'\')" title="حذف">✕</button>'+
       '</div>';
   }).join('');
+}
+
+function retryItem(id){
+  var now=new Date();
+  now.setMinutes(now.getMinutes()+1);
+  fb().updateDoc(fb().doc(db(),'automated_queue',id),{
+    status:'pending',
+    scheduledAt: fb().Timestamp.fromDate(now),
+    attempts:0,
+    postResults:null,
+    postedAt:null
+  }).then(function(){ toast('تم إعادة الجدولة ✅','ok'); })
+  .catch(function(e){ toast('خطأ: '+e.message,'err'); });
 }
 
 function delItem(id){

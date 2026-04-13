@@ -690,7 +690,7 @@ function renderPrev(p){
 }
 
 function buildPostText(p, url){
-  var wa  = (window.COMPANY&&window.COMPANY.whatsapp_number) ? window.COMPANY.whatsapp_number : '';
+  var wa  = (window.COMPANY&&(window.COMPANY.whatsapp_number||window.COMPANY.company_whatsapp)) ? (window.COMPANY.whatsapp_number||window.COMPANY.company_whatsapp) : '';
   var cat = p.category||p.cat||'';
   var L=[];
   L.push('🛍️ '+p.name+(cat?' — '+cat:''));

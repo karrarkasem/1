@@ -36,7 +36,7 @@ async function loadCredentials() {
 
 // ── Build post text ────────────────────────────────
 function buildPostText(product, productUrl) {
-  const wa  = COMPANY.whatsapp_number || '';
+  const wa  = COMPANY.whatsapp_number || COMPANY.company_whatsapp || '';
   const cat = product.category || '';
   const L   = [];
   L.push(`🛍️ ${product.name}${cat ? ' — ' + cat : ''}`);

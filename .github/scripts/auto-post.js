@@ -273,7 +273,7 @@ async function handleRotation(docSnap, item) {
 
   const products = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.name && p.status !== 'hidden' && p.price > 0)
+    .filter(p => p.name && p.status !== 'hidden')
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
 
   if (!products.length) {

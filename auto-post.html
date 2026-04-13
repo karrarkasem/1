@@ -627,13 +627,18 @@ function loadProds(){
       var data = d.data();
       return {
         _id:            d.id,
-        name:           data.name || '',                        // الحقل الأصلي في Firestore
-        category:       data.category || 'عام',                // الحقل الأصلي
-        image:          data.image || '',                       // الحقل الأصلي
-        price:          parseFloat(data.price) || 0,           // المفرد
-        wholesalePrice: parseFloat(data.wholesalePrice) || 0,  // الجملة (كما في app.js)
+        name:           data.name || '',
+        category:       data.category || 'عام',
+        image:          data.image || '',
+        price:          parseFloat(data.price) || 0,
+        wholesalePrice: parseFloat(data.wholesalePrice) || 0,
         detail:         data.detail || '',
-        status:         data.status || 'active'
+        status:         data.status || 'active',
+        carton_weight:  data.carton_weight || '',
+        carton_volume:  data.carton_volume || '',
+        carton_l:       data.carton_l || '',
+        carton_w:       data.carton_w || '',
+        carton_h:       data.carton_h || ''
       };
     }).filter(function(p){ return p.name && p.price > 0 && p.status !== 'hidden'; });
 

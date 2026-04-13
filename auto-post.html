@@ -520,8 +520,13 @@ function startLoad(){
 }
 
 function loadCompany(){
-  return fb().getDoc(fb().doc(db(),'settings','company')).then(function(snap){
-    window.COMPANY = snap.exists() ? (snap.data()||{}) : {};
+  return fb().getDocs(fb().collection(db(),'settings')).then(function(snap){
+    var s={};
+    snap.docs.forEach(function(d){
+      var data=d.data();
+      if(data.key && !data.protected) s[data.key]=data.value;
+    });
+    window.COMPANY=s;
   }).catch(function(e){ console.warn('company:', e); window.COMPANY={}; });
 }
 

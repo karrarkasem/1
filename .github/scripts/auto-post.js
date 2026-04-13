@@ -21,12 +21,39 @@ admin.initializeApp({
 const db     = admin.firestore();
 const DRY    = process.env.DRY_RUN === 'true';
 
-// ── Load social credentials from Firestore ─────────
+// ── Load social credentials + company info ─────────
 let CREDS = {};
+let COMPANY = {};
 async function loadCredentials() {
-  const snap = await db.collection('settings').doc('social_accounts').get();
-  CREDS = snap.exists ? snap.data() : {};
+  const [credsSnap, compSnap] = await Promise.all([
+    db.collection('settings').doc('social_accounts').get(),
+    db.collection('settings').doc('company').get()
+  ]);
+  CREDS   = credsSnap.exists ? credsSnap.data() : {};
+  COMPANY = compSnap.exists  ? compSnap.data()  : {};
   console.log('[creds] Loaded fields:', Object.keys(CREDS).filter(k => CREDS[k]).join(', ') || 'none');
+}
+
+// ── Build post text ────────────────────────────────
+function buildPostText(product, productUrl) {
+  const wa  = COMPANY.whatsapp_number || '';
+  const cat = product.category || '';
+  const L   = [];
+  L.push(`🛍️ ${product.name}${cat ? ' — ' + cat : ''}`);
+  if (product.carton_weight) L.push(`⚖️ وزن الكرتون: ${product.carton_weight} كغ`);
+  if (product.carton_volume) L.push(`📐 الحجم الكتلي: ${product.carton_volume} م³`);
+  if (product.detail)        { L.push(''); L.push(`📝 ${product.detail}`); }
+  L.push('');
+  L.push('💬 للاستفسار عن الأسعار والتوفر تواصل معنا:');
+  if (wa) { L.push('📞 واتساب: '); L.push(`wa.me/${wa}`); }
+  L.push('');
+  L.push('مشاهدة المنتج :');
+  L.push(`🔗 ${productUrl}`);
+  const tags = [];
+  if (cat) tags.push(`#${cat.replace(/\s+/g, '')}`);
+  tags.push('#شركةبرجمان', '#تسوق_الان', '#العراق');
+  L.push(tags.join(' '));
+  return L.join('\n');
 }
 
 // ════════════════════════════════════════════════════
@@ -264,21 +291,16 @@ async function handleRotation(docSnap, item) {
   console.log(`  [rotation] Category: ${item.category} | Product ${nextIdx+1}/${products.length}: ${product.name}`);
 
   // 3. Build post text
-  const storeUrl = 'https://brjman.com';
-  const L = [];
-  L.push(`🛍️ ${product.name}`);
-  if (product.category) L.push(`📂 ${product.category}`);
-  if (product.detail)   { L.push(''); L.push(`📝 ${product.detail}`); }
-  L.push(''); L.push('─────────────────'); L.push('');
-  L.push(`🔗 ${storeUrl}/product.html?id=${product.id}`);
+  const storeUrl  = 'https://brjman.com';
+  const productUrl = `${storeUrl}/product.html?id=${product.id}`;
 
   const postItem = {
     ...item,
     productId:    product.id,
     productName:  product.name,
     productImage: product.image || '',
-    productUrl:   `${storeUrl}/product.html?id=${product.id}`,
-    postText:     L.join('\n'),
+    productUrl:   productUrl,
+    postText:     buildPostText(product, productUrl),
   };
 
   // 4. Post to platforms
@@ -346,19 +368,20 @@ async function main() {
       continue;
     }
 
-    // ── جلب الصورة من Firestore مباشرة ────────────
+    // ── جلب بيانات المنتج من Firestore ────────────
     if (item.productId) {
       try {
         const prodSnap = await db.collection('products').doc(item.productId).get();
         if (prodSnap.exists) {
           const prod = prodSnap.data();
-          if (prod.image) {
-            item.productImage = prod.image;
-            console.log(`  [img] Fetched from products/${item.productId}`);
-          }
+          if (prod.image) item.productImage = prod.image;
+          // إعادة بناء النص دائماً من بيانات المنتج الحالية
+          const prodUrl = item.productUrl || `https://brjman.com/product.html?id=${item.productId}`;
+          item.postText = buildPostText(prod, prodUrl);
+          console.log(`  [img+text] Fetched from products/${item.productId}`);
         }
       } catch (e) {
-        console.warn('  [img] Could not fetch product image:', e.message);
+        console.warn('  [product] Could not fetch:', e.message);
       }
     }
 

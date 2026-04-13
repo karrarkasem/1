@@ -689,18 +689,31 @@ function renderPrev(p){
     '</div>';
 }
 
+function buildPostText(p, url){
+  var wa  = (window.COMPANY&&window.COMPANY.whatsapp_number) ? window.COMPANY.whatsapp_number : '';
+  var cat = p.category||p.cat||'';
+  var L=[];
+  L.push('🛍️ '+p.name+(cat?' — '+cat:''));
+  if(p.carton_weight) L.push('⚖️ وزن الكرتون: '+p.carton_weight+' كغ');
+  if(p.carton_volume) L.push('📐 الحجم الكتلي: '+p.carton_volume+' م³');
+  if(p.detail){ L.push(''); L.push('📝 '+p.detail); }
+  L.push('');
+  L.push('💬 للاستفسار عن الأسعار والتوفر تواصل معنا:');
+  if(wa){ L.push('📞 واتساب: '); L.push('wa.me/'+wa); }
+  L.push('');
+  L.push('مشاهدة المنتج :');
+  L.push('🔗 '+url);
+  var tags=[];
+  if(cat) tags.push('#'+(cat.replace(/\s+/g,'')));
+  tags.push('#شركةبرجمان','#تسوق_الان','#العراق');
+  L.push(tags.join(' '));
+  return L.join('\n');
+}
+
 function autoFill(p){
   var siteUrl=(typeof SITE_URL!=='undefined'?SITE_URL:location.origin);
   var url=siteUrl+'/product.html?id='+p._id;
-  var L=[];
-  L.push('🛍️ '+p.name);
-  if(p.category) L.push('📂 '+p.category);
-  if(p.detail){ L.push(''); L.push('📝 '+p.detail); }
-  L.push('');
-  L.push('─────────────────');
-  L.push('');
-  L.push('🔗 '+url);
-  document.getElementById('postText').value=L.join('\n');
+  document.getElementById('postText').value=buildPostText(p,url);
   updateCC();
 }
 

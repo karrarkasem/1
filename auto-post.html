@@ -181,6 +181,12 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
 .ctype-btn:hover{border-color:var(--teal);color:var(--teal)}
 .ctype-btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
 
+/* ══ MODE TOGGLE ══ */
+.mode-btn{flex:1;padding:10px;border-radius:var(--r12);border:1.5px solid var(--border2);background:var(--surface2);color:var(--muted);font-family:'Cairo',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:.2s}
+.mode-btn:hover{border-color:var(--teal);color:var(--teal)}
+.mode-btn.on{background:var(--teal);border-color:var(--teal);color:#fff}
+#modeAuto.on{background:linear-gradient(135deg,var(--violet),#7c3aed);border-color:var(--violet)}
+
 /* ══ SPINNER ══ */
 .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -268,6 +274,15 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
+  <!-- Mode toggle -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="mode-btn on" id="modeManual" onclick="setMode('manual')">🛍️ منتج محدد</button>
+    <button class="mode-btn"    id="modeAuto"   onclick="setMode('auto')">🔄 نشر دوري تلقائي</button>
+  </div>
+
+  <!-- ══ MANUAL MODE ══ -->
+  <div id="sectionManual">
+
   <!-- Product picker -->
   <div class="card">
     <div class="card-title">🛍️ اختيار المنتج</div>
@@ -313,6 +328,50 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-h
   <button class="submit-btn" id="saveBtn" onclick="saveQueue()">
     💾 جدولة المنشور
   </button>
+
+  </div><!-- end sectionManual -->
+
+  <!-- ══ AUTO ROTATION MODE ══ -->
+  <div id="sectionAuto" style="display:none">
+
+  <div class="card">
+    <div class="card-title">🔄 إعداد النشر الدوري</div>
+
+    <div class="fg">
+      <label class="fl">الفئة</label>
+      <select id="rotCat" class="fsel">
+        <option value="">⏳ جاري التحميل...</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label class="fl">الفترة بين كل منشور</label>
+      <select id="rotInterval" class="fsel">
+        <option value="1">كل ساعة</option>
+        <option value="3">كل 3 ساعات</option>
+        <option value="6">كل 6 ساعات</option>
+        <option value="12">كل 12 ساعة</option>
+        <option value="24" selected>يومي (كل 24 ساعة)</option>
+        <option value="48">كل يومين</option>
+        <option value="168">أسبوعي</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label class="fl">وقت البداية</label>
+      <input type="datetime-local" id="rotStart" class="fi" style="direction:ltr;text-align:right"/>
+    </div>
+
+    <div style="background:var(--teal3);border-radius:var(--r8);padding:10px 12px;font-size:.75rem;color:var(--teal2);line-height:1.7;margin-top:8px">
+      🔄 سيتم نشر منتج مختلف من الفئة في كل دورة بالترتيب الأبجدي، ويعود للأول بعد الانتهاء.
+    </div>
+  </div>
+
+  <button class="submit-btn" id="saveRotBtn" onclick="saveRotation()" style="background:linear-gradient(135deg,var(--violet),#7c3aed)">
+    🔄 تفعيل النشر الدوري
+  </button>
+
+  </div><!-- end sectionAuto -->
 
 </div>
 
@@ -777,6 +836,21 @@ function renderQueue(items){
     tags+='<span class="q-tag" style="background:var(--violet3);color:var(--violet)">'+ctLabel+'</span>';
     var img=item.productImage?'<img src="'+esc(item.productImage)+'" onerror="this.style.display=\'none\'" alt=""/>':'';
     var retryBtn=item.status==='failed'?'<button class="q-retry" onclick="retryItem(\''+item._id+'\')" title="إعادة المحاولة">🔄</button>':'';
+    // rotation item
+    if(item.type==='rotation'){
+      var itvl={1:'كل ساعة',3:'كل 3 ساعات',6:'كل 6 ساعات',12:'كل 12 ساعة',24:'يومي',48:'كل يومين',168:'أسبوعي'}[item.intervalHours]||('كل '+item.intervalHours+' ساعة');
+      var rotTags=(item.platforms||[]).map(function(p){return '<span class="q-tag">'+(PLATS[p]?PLATS[p].icon+' '+PLATS[p].name:p)+'</span>';}).join('');
+      return '<div class="q-item '+(item.status||'pending')+'" style="border-right-color:var(--violet)">'+
+        '<div style="font-size:1.5rem;flex-shrink:0">🔄</div>'+
+        '<div class="q-info">'+
+          '<div class="q-name">📂 '+esc(item.category||'')+'</div>'+
+          '<div class="q-meta">⏱️ '+itvl+' • التالي: '+schedStr+'</div>'+
+          '<div class="q-tags">'+rotTags+'<span class="q-tag" style="background:var(--violet3);color:var(--violet)">دوري</span></div>'+
+        '</div>'+
+        retryBtn+
+        '<button class="q-del" onclick="delItem(\''+item._id+'\')" title="إيقاف وحذف">✕</button>'+
+        '</div>';
+    }
     return '<div class="q-item '+(item.status||'pending')+'">'+img+
       '<div class="q-info"><div class="q-name">'+esc(item.productName||item.productId)+'</div>'+
       '<div class="q-meta">🗓️ '+schedStr+rep+'</div>'+
@@ -786,6 +860,59 @@ function renderQueue(items){
       '<button class="q-del" onclick="delItem(\''+item._id+'\')" title="حذف">✕</button>'+
       '</div>';
   }).join('');
+}
+
+// ══ Mode toggle ═══════════════════════════════════════
+var postMode = 'manual';
+function setMode(m){
+  postMode = m;
+  document.getElementById('modeManual').classList.toggle('on', m==='manual');
+  document.getElementById('modeAuto').classList.toggle('on', m==='auto');
+  document.getElementById('sectionManual').style.display = m==='manual'?'':'none';
+  document.getElementById('sectionAuto').style.display   = m==='auto'?'':'none';
+  if(m==='auto') buildRotCatSel();
+}
+
+function buildRotCatSel(){
+  var cats=[...new Set(allProds.map(function(p){return p.category||'عام';}))].sort();
+  var sel=document.getElementById('rotCat');
+  sel.innerHTML=cats.map(function(c){
+    var cnt=allProds.filter(function(p){return (p.category||'عام')===c;}).length;
+    return '<option value="'+esc(c)+'">'+esc(c)+' ('+cnt+' منتج)</option>';
+  }).join('');
+  // default start time = now + 1 hour
+  var d=new Date(); d.setHours(d.getHours()+1); d.setSeconds(0);
+  document.getElementById('rotStart').value=d.toISOString().slice(0,16);
+}
+
+function saveRotation(){
+  var cat=document.getElementById('rotCat').value;
+  if(!cat) return toast('اختر فئة أولاً','err');
+  var plats=getSelectedPlats();
+  if(!plats.length) return toast('اختر منصة واحدة على الأقل','err');
+  var startVal=document.getElementById('rotStart').value;
+  if(!startVal||new Date(startVal)<=new Date()) return toast('حدد وقت بداية مستقبلي','err');
+  var intervalHours=parseInt(document.getElementById('rotInterval').value)||24;
+
+  var btn=document.getElementById('saveRotBtn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> جاري...';
+
+  fb().addDoc(fb().collection(db(),'automated_queue'),{
+    type:         'rotation',
+    category:     cat,
+    platforms:    plats,
+    contentType:  contentType,
+    intervalHours:intervalHours,
+    scheduledAt:  fb().Timestamp.fromDate(new Date(startVal)),
+    lastProductId:null,
+    status:       'pending',
+    createdAt:    fb().Timestamp.now(),
+    attempts:     0
+  }).then(function(){
+    toast('تم تفعيل النشر الدوري ✅','ok');
+    setMode('manual');
+  }).catch(function(e){ toast('خطأ: '+e.message,'err'); })
+  .finally(function(){ btn.disabled=false; btn.innerHTML='🔄 تفعيل النشر الدوري'; });
 }
 
 function retryItem(id){

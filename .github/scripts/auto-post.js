@@ -235,6 +235,89 @@ async function rescheduleIfNeeded(docRef, item) {
 }
 
 // ════════════════════════════════════════════════════
+// ROTATION — auto-cycle through category products
+// ════════════════════════════════════════════════════
+async function handleRotation(docSnap, item) {
+  // 1. Load products in category
+  const snap = await db.collection('products')
+    .where('category', '==', item.category)
+    .get();
+
+  const products = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.name && p.status !== 'hidden' && p.price > 0)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
+
+  if (!products.length) {
+    await docSnap.ref.update({ status: 'failed', error: 'لا توجد منتجات في الفئة' });
+    console.log('  [rotation] No products in category:', item.category);
+    return;
+  }
+
+  // 2. Find next product after lastProductId
+  let nextIdx = 0;
+  if (item.lastProductId) {
+    const lastIdx = products.findIndex(p => p.id === item.lastProductId);
+    nextIdx = (lastIdx + 1) % products.length;
+  }
+  const product = products[nextIdx];
+  console.log(`  [rotation] Category: ${item.category} | Product ${nextIdx+1}/${products.length}: ${product.name}`);
+
+  // 3. Build post text
+  const storeUrl = 'https://brjman.com';
+  const L = [];
+  L.push(`🛍️ ${product.name}`);
+  if (product.category) L.push(`📂 ${product.category}`);
+  if (product.detail)   { L.push(''); L.push(`📝 ${product.detail}`); }
+  L.push(''); L.push('─────────────────'); L.push('');
+  L.push(`🔗 ${storeUrl}/product.html?id=${product.id}`);
+
+  const postItem = {
+    ...item,
+    productId:    product.id,
+    productName:  product.name,
+    productImage: product.image || '',
+    productUrl:   `${storeUrl}/product.html?id=${product.id}`,
+    postText:     L.join('\n'),
+  };
+
+  // 4. Post to platforms
+  await docSnap.ref.update({ status: 'processing', processedAt: admin.firestore.Timestamp.now() });
+
+  const results = {};
+  for (const platform of (item.platforms || [])) {
+    try {
+      const poster = POSTER[platform];
+      results[platform] = poster ? await poster(postItem) : skip(platform, 'unknown');
+      console.log(`  [${platform}] ${JSON.stringify(results[platform])}`);
+    } catch (err) {
+      results[platform] = fail(platform, err.message);
+    }
+    await sleep(1000);
+  }
+
+  const posted = Object.values(results).filter(r => r.ok).map(r => r.platform);
+  const failed = Object.values(results).filter(r => !r.ok && !r.skipped).map(r => r.platform);
+
+  // 5. Schedule next run
+  const nextMs   = (item.intervalHours || 24) * 3600 * 1000;
+  const nextTime = new Date(Date.now() + nextMs);
+
+  await docSnap.ref.update({
+    status:          'pending',   // keep active for next cycle
+    scheduledAt:     admin.firestore.Timestamp.fromDate(nextTime),
+    lastProductId:   product.id,
+    lastProductName: product.name,
+    lastPostedAt:    admin.firestore.Timestamp.now(),
+    lastResults:     results,
+    postedPlatforms: posted,
+    failedPlatforms: failed,
+    attempts:        admin.firestore.FieldValue.increment(1),
+  });
+  console.log(`  → rotation done | ✅ ${posted.join(',')||'none'} | ❌ ${failed.join(',')||'none'} | next: ${nextTime.toISOString()}`);
+}
+
+// ════════════════════════════════════════════════════
 // MAIN
 // ════════════════════════════════════════════════════
 async function main() {
@@ -255,6 +338,13 @@ async function main() {
   for (const docSnap of snap.docs) {
     const item = { _id: docSnap.id, ...docSnap.data() };
     console.log(`▶️  [${item._id}] ${item.productName} → platforms: ${(item.platforms||[]).join(', ')}`);
+
+    // ── Rotation item ──────────────────────────────
+    if (item.type === 'rotation') {
+      if (DRY) { console.log('  [DRY] rotation:', item.category, 'interval:', item.intervalHours+'h'); continue; }
+      await handleRotation(docSnap, item);
+      continue;
+    }
 
     // ── جلب الصورة من Firestore مباشرة ────────────
     if (item.productId) {

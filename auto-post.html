@@ -514,8 +514,15 @@ document.addEventListener('DOMContentLoaded', function(){
 
 function startLoad(){
   loadCreds();
+  loadCompany();
   loadProds();
   listenQueue();
+}
+
+function loadCompany(){
+  return fb().getDoc(fb().doc(db(),'settings','company')).then(function(snap){
+    window.COMPANY = snap.exists() ? (snap.data()||{}) : {};
+  }).catch(function(e){ console.warn('company:', e); window.COMPANY={}; });
 }
 
 // ══ Credentials ═══════════════════════════════════════

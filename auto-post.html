@@ -695,6 +695,7 @@ function buildPostText(p, url){
   var L=[];
   L.push('🛍️ '+p.name+(cat?' — '+cat:''));
   if(p.carton_weight) L.push('⚖️ وزن الكرتون: '+p.carton_weight+' كغ');
+  if(p.carton_l && p.carton_w && p.carton_h) L.push('📏 الأبعاد: '+p.carton_l+'×'+p.carton_w+'×'+p.carton_h+' سم');
   if(p.carton_volume) L.push('📐 الحجم الكتلي: '+p.carton_volume+' م³');
   if(p.detail){ L.push(''); L.push('📝 '+p.detail); }
   L.push('');

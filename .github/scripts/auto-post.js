@@ -41,6 +41,7 @@ function buildPostText(product, productUrl) {
   const L   = [];
   L.push(`🛍️ ${product.name}${cat ? ' — ' + cat : ''}`);
   if (product.carton_weight) L.push(`⚖️ وزن الكرتون: ${product.carton_weight} كغ`);
+  if (product.carton_l && product.carton_w && product.carton_h) L.push(`📏 الأبعاد: ${product.carton_l}×${product.carton_w}×${product.carton_h} سم`);
   if (product.carton_volume) L.push(`📐 الحجم الكتلي: ${product.carton_volume} م³`);
   if (product.detail)        { L.push(''); L.push(`📝 ${product.detail}`); }
   L.push('');

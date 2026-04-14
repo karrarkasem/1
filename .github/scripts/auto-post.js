@@ -65,21 +65,20 @@ function buildPostText(product, productUrl) {
 // ════════════════════════════════════════════════════
 // STORY IMAGE BUILDER — 1080×1920 with product image + brand bars
 // ════════════════════════════════════════════════════
-async function buildStoryImage(imageUrl, productUrl) {
+
+// Returns JPEG buffer (no upload)
+async function buildStoryImageBuffer(imageUrl, productUrl) {
   const W = 1080, H = 1920, MID = 1080, barH = 420;
   const brand = { r: 9, g: 50, b: 87 };
 
-  // Download product image
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) throw new Error('Cannot download product image');
   const imgBuf = await imgRes.buffer();
 
-  // Resize product image to square 1080×1080
   const prodImg = await sharp(imgBuf)
     .resize(W, MID, { fit: 'cover', position: 'centre' })
     .toBuffer();
 
-  // Short URL for display
   const displayUrl = (productUrl || '').replace('https://', '').slice(0, 50);
 
   const topSvg = Buffer.from(
@@ -100,28 +99,28 @@ async function buildStoryImage(imageUrl, productUrl) {
     `</svg>`
   );
 
-  const storyBuf = await sharp({
+  return await sharp({
     create: { width: W, height: H, channels: 3, background: brand }
   })
   .composite([
-    { input: topSvg,  top: 0,             left: 0 },
-    { input: prodImg, top: barH,          left: 0 },
-    { input: botSvg,  top: barH + MID,    left: 0 }
+    { input: topSvg,  top: 0,          left: 0 },
+    { input: prodImg, top: barH,       left: 0 },
+    { input: botSvg,  top: barH + MID, left: 0 }
   ])
   .jpeg({ quality: 88 })
   .toBuffer();
+}
 
-  // Upload to imgbb
+// Uploads buffer to imgbb, returns public URL (used by Instagram)
+async function uploadToImgbb(buf) {
   const imgbbKey = CREDS.imgbb_api_key || process.env.IMGBB_API_KEY;
-  if (!imgbbKey) throw new Error('No imgbb API key — add imgbb_api_key to social_accounts in Firestore');
-  const base64 = storyBuf.toString('base64');
+  if (!imgbbKey) throw new Error('No imgbb API key');
+  const base64 = buf.toString('base64');
   const params = new URLSearchParams({ key: imgbbKey, image: base64, name: `story_${Date.now()}` });
-  const uploadRes = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: params });
-  const uploadJson = await uploadRes.json();
-  if (!uploadJson.success) throw new Error('imgbb upload failed: ' + JSON.stringify(uploadJson.error || uploadJson));
-  const url = uploadJson.data.url;
-  const cleanup = () => {}; // imgbb free tier has no delete API
-  return { url, cleanup };
+  const res = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: params });
+  const json = await res.json();
+  if (!json.success) throw new Error('imgbb upload failed: ' + JSON.stringify(json.error || json));
+  return json.data.url;
 }
 
 // ════════════════════════════════════════════════════
@@ -135,25 +134,24 @@ async function postFacebook(item) {
   const caption = item.postText || item.productName || '';
   const ct = item.contentType || 'post';
 
-  // ── Story ───────────────────────────────────────
+  // ── Story: upload binary directly to Facebook ──
   if (ct === 'story') {
     if (!item.productImage) return skip('Facebook', 'story requires an image');
-    let storyUrl = item.productImage;
-    let cleanup  = null;
+    const FormData = require('form-data');
+    const form = new FormData();
+    form.append('access_token', token);
     try {
-      const built = await buildStoryImage(item.productImage, item.productUrl || '');
-      storyUrl = built.url;
-      cleanup  = built.cleanup;
-      console.log('  [story] Built story image:', storyUrl);
+      const buf = await buildStoryImageBuffer(item.productImage, item.productUrl || '');
+      form.append('source', buf, { filename: 'story.jpg', contentType: 'image/jpeg' });
+      console.log('  [story] Built story buffer:', buf.length, 'bytes');
     } catch (e) {
-      console.warn('  [story] Image build failed, using original:', e.message);
+      console.warn('  [story] Image build failed, using url fallback:', e.message);
+      form.append('url', item.productImage);
     }
-    const p1 = new URLSearchParams({ url: storyUrl, access_token: token });
     const r1 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photo_stories`, {
-      method: 'POST', body: p1
+      method: 'POST', body: form, headers: form.getHeaders()
     });
     const j1 = await r1.json();
-    if (cleanup) cleanup();
     if (j1.id) return ok('Facebook', j1.id);
     return fail('Facebook', 'story: ' + (j1.error?.message || JSON.stringify(j1)));
   }
@@ -189,17 +187,15 @@ async function postInstagram(item) {
 
   const ct = item.contentType || 'post';
 
-  // ── Story: build 9:16 image ─────────────────────
+  // ── Story: build 9:16 image → upload to imgbb ──
   let imageUrl = item.productImage;
-  let cleanup  = null;
   if (ct === 'story') {
     try {
-      const built = await buildStoryImage(item.productImage, item.productUrl || '');
-      imageUrl = built.url;
-      cleanup  = built.cleanup;
-      console.log('  [story] Built story image:', imageUrl);
+      const buf = await buildStoryImageBuffer(item.productImage, item.productUrl || '');
+      imageUrl = await uploadToImgbb(buf);
+      console.log('  [story] Uploaded story image:', imageUrl);
     } catch (e) {
-      console.warn('  [story] Image build failed, using original:', e.message);
+      console.warn('  [story] Story image failed, using original:', e.message);
     }
   }
 
@@ -218,7 +214,7 @@ async function postInstagram(item) {
     method: 'POST', body: new URLSearchParams(containerData)
   });
   const j1 = await r1.json();
-  if (!j1.id) { if (cleanup) cleanup(); return fail('Instagram', j1.error?.message || JSON.stringify(j1)); }
+  if (!j1.id) return fail('Instagram', j1.error?.message || JSON.stringify(j1));
 
   await sleep(3000);
 
@@ -227,7 +223,6 @@ async function postInstagram(item) {
     method: 'POST', body: new URLSearchParams({ creation_id: j1.id, access_token: token })
   });
   const j2 = await r2.json();
-  if (cleanup) cleanup();
   if (j2.id) return ok('Instagram', j2.id);
   return fail('Instagram', j2.error?.message || JSON.stringify(j2));
 }

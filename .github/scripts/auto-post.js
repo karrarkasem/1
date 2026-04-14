@@ -16,9 +16,7 @@ admin.initializeApp({
     projectId:   process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey
-  }),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET ||
-                 `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
+  })
 });
 const db     = admin.firestore();
 const DRY    = process.env.DRY_RUN === 'true';
@@ -113,14 +111,16 @@ async function buildStoryImage(imageUrl, productUrl) {
   .jpeg({ quality: 88 })
   .toBuffer();
 
-  // Upload to Firebase Storage
-  const bucket = admin.storage().bucket();
-  const fname  = `auto_stories/story_${Date.now()}.jpg`;
-  const file   = bucket.file(fname);
-  await file.save(storyBuf, { metadata: { contentType: 'image/jpeg' } });
-  await file.makePublic();
-  const url = `https://storage.googleapis.com/${bucket.name}/${fname}`;
-  const cleanup = () => file.delete().catch(() => {});
+  // Upload to imgbb
+  const imgbbKey = CREDS.imgbb_api_key || process.env.IMGBB_API_KEY;
+  if (!imgbbKey) throw new Error('No imgbb API key — add imgbb_api_key to social_accounts in Firestore');
+  const base64 = storyBuf.toString('base64');
+  const params = new URLSearchParams({ key: imgbbKey, image: base64, name: `story_${Date.now()}` });
+  const uploadRes = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: params });
+  const uploadJson = await uploadRes.json();
+  if (!uploadJson.success) throw new Error('imgbb upload failed: ' + JSON.stringify(uploadJson.error || uploadJson));
+  const url = uploadJson.data.url;
+  const cleanup = () => {}; // imgbb free tier has no delete API
   return { url, cleanup };
 }
 
@@ -153,7 +153,7 @@ async function postFacebook(item) {
       method: 'POST', body: p1
     });
     const j1 = await r1.json();
-    if (cleanup) await cleanup();
+    if (cleanup) cleanup();
     if (j1.id) return ok('Facebook', j1.id);
     return fail('Facebook', 'story: ' + (j1.error?.message || JSON.stringify(j1)));
   }
@@ -218,7 +218,7 @@ async function postInstagram(item) {
     method: 'POST', body: new URLSearchParams(containerData)
   });
   const j1 = await r1.json();
-  if (!j1.id) { if (cleanup) await cleanup(); return fail('Instagram', j1.error?.message || JSON.stringify(j1)); }
+  if (!j1.id) { if (cleanup) cleanup(); return fail('Instagram', j1.error?.message || JSON.stringify(j1)); }
 
   await sleep(3000);
 
@@ -227,7 +227,7 @@ async function postInstagram(item) {
     method: 'POST', body: new URLSearchParams({ creation_id: j1.id, access_token: token })
   });
   const j2 = await r2.json();
-  if (cleanup) await cleanup();
+  if (cleanup) cleanup();
   if (j2.id) return ok('Instagram', j2.id);
   return fail('Instagram', j2.error?.message || JSON.stringify(j2));
 }

@@ -7,7 +7,7 @@
 
 const admin  = require('firebase-admin');
 const fetch  = require('node-fetch');
-const FormData = require('form-data');
+const sharp  = require('sharp');
 
 // ── Firebase Admin ─────────────────────────────────
 const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
@@ -16,7 +16,9 @@ admin.initializeApp({
     projectId:   process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey
-  })
+  }),
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET ||
+                 `${process.env.FIREBASE_PROJECT_ID}.appspot.com`
 });
 const db     = admin.firestore();
 const DRY    = process.env.DRY_RUN === 'true';
@@ -63,6 +65,66 @@ function buildPostText(product, productUrl) {
 }
 
 // ════════════════════════════════════════════════════
+// STORY IMAGE BUILDER — 1080×1920 with product image + brand bars
+// ════════════════════════════════════════════════════
+async function buildStoryImage(imageUrl, productUrl) {
+  const W = 1080, H = 1920, MID = 1080, barH = 420;
+  const brand = { r: 9, g: 50, b: 87 };
+
+  // Download product image
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error('Cannot download product image');
+  const imgBuf = await imgRes.buffer();
+
+  // Resize product image to square 1080×1080
+  const prodImg = await sharp(imgBuf)
+    .resize(W, MID, { fit: 'cover', position: 'centre' })
+    .toBuffer();
+
+  // Short URL for display
+  const displayUrl = (productUrl || '').replace('https://', '').slice(0, 50);
+
+  const topSvg = Buffer.from(
+    `<svg width="${W}" height="${barH}">` +
+    `<rect width="${W}" height="${barH}" fill="rgb(9,50,87)"/>` +
+    `<text x="${W/2}" y="${barH/2+24}" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="80" font-weight="bold" fill="white" text-anchor="middle">BRJMAN</text>` +
+    `</svg>`
+  );
+
+  const botSvg = Buffer.from(
+    `<svg width="${W}" height="${barH}">` +
+    `<rect width="${W}" height="${barH}" fill="rgb(9,50,87)"/>` +
+    `<text x="${W/2}" y="${barH/2-10}" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="30" fill="rgba(255,255,255,0.7)" text-anchor="middle">مشاهدة المنتج</text>` +
+    `<text x="${W/2}" y="${barH/2+40}" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="28" fill="white" text-anchor="middle">${displayUrl}</text>` +
+    `</svg>`
+  );
+
+  const storyBuf = await sharp({
+    create: { width: W, height: H, channels: 3, background: brand }
+  })
+  .composite([
+    { input: topSvg,  top: 0,             left: 0 },
+    { input: prodImg, top: barH,          left: 0 },
+    { input: botSvg,  top: barH + MID,    left: 0 }
+  ])
+  .jpeg({ quality: 88 })
+  .toBuffer();
+
+  // Upload to Firebase Storage
+  const bucket = admin.storage().bucket();
+  const fname  = `auto_stories/story_${Date.now()}.jpg`;
+  const file   = bucket.file(fname);
+  await file.save(storyBuf, { metadata: { contentType: 'image/jpeg' } });
+  await file.makePublic();
+  const url = `https://storage.googleapis.com/${bucket.name}/${fname}`;
+  const cleanup = () => file.delete().catch(() => {});
+  return { url, cleanup };
+}
+
+// ════════════════════════════════════════════════════
 // FACEBOOK — Graph API v19
 // ════════════════════════════════════════════════════
 async function postFacebook(item) {
@@ -76,12 +138,22 @@ async function postFacebook(item) {
   // ── Story ───────────────────────────────────────
   if (ct === 'story') {
     if (!item.productImage) return skip('Facebook', 'story requires an image');
-    // Step 1: upload photo as story
-    const p1 = new URLSearchParams({ url: item.productImage, access_token: token });
+    let storyUrl = item.productImage;
+    let cleanup  = null;
+    try {
+      const built = await buildStoryImage(item.productImage, item.productUrl || '');
+      storyUrl = built.url;
+      cleanup  = built.cleanup;
+      console.log('  [story] Built story image:', storyUrl);
+    } catch (e) {
+      console.warn('  [story] Image build failed, using original:', e.message);
+    }
+    const p1 = new URLSearchParams({ url: storyUrl, access_token: token });
     const r1 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photo_stories`, {
       method: 'POST', body: p1
     });
     const j1 = await r1.json();
+    if (cleanup) await cleanup();
     if (j1.id) return ok('Facebook', j1.id);
     return fail('Facebook', 'story: ' + (j1.error?.message || JSON.stringify(j1)));
   }
@@ -117,23 +189,36 @@ async function postInstagram(item) {
 
   const ct = item.contentType || 'post';
 
+  // ── Story: build 9:16 image ─────────────────────
+  let imageUrl = item.productImage;
+  let cleanup  = null;
+  if (ct === 'story') {
+    try {
+      const built = await buildStoryImage(item.productImage, item.productUrl || '');
+      imageUrl = built.url;
+      cleanup  = built.cleanup;
+      console.log('  [story] Built story image:', imageUrl);
+    } catch (e) {
+      console.warn('  [story] Image build failed, using original:', e.message);
+    }
+  }
+
   // Step 1: Create media container
   const containerData = {
-    image_url:    item.productImage,
-    caption:      (item.postText || '').slice(0, 2200),
+    image_url:    imageUrl,
     access_token: token
   };
-
-  // Story uses different media_type
   if (ct === 'story') {
     containerData.media_type = 'STORIES';
+  } else {
+    containerData.caption = (item.postText || '').slice(0, 2200);
   }
 
   const r1 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
     method: 'POST', body: new URLSearchParams(containerData)
   });
   const j1 = await r1.json();
-  if (!j1.id) return fail('Instagram', j1.error?.message || JSON.stringify(j1));
+  if (!j1.id) { if (cleanup) await cleanup(); return fail('Instagram', j1.error?.message || JSON.stringify(j1)); }
 
   await sleep(3000);
 
@@ -142,6 +227,7 @@ async function postInstagram(item) {
     method: 'POST', body: new URLSearchParams({ creation_id: j1.id, access_token: token })
   });
   const j2 = await r2.json();
+  if (cleanup) await cleanup();
   if (j2.id) return ok('Instagram', j2.id);
   return fail('Instagram', j2.error?.message || JSON.stringify(j2));
 }

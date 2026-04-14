@@ -25,12 +25,17 @@ const DRY    = process.env.DRY_RUN === 'true';
 let CREDS = {};
 let COMPANY = {};
 async function loadCredentials() {
-  const [credsSnap, compSnap] = await Promise.all([
+  const [credsSnap, settingsSnap] = await Promise.all([
     db.collection('settings').doc('social_accounts').get(),
-    db.collection('settings').doc('company').get()
+    db.collection('settings').get()
   ]);
-  CREDS   = credsSnap.exists ? credsSnap.data() : {};
-  COMPANY = compSnap.exists  ? compSnap.data()  : {};
+  CREDS = credsSnap.exists ? credsSnap.data() : {};
+  const s = {};
+  settingsSnap.docs.forEach(d => {
+    const data = d.data();
+    if (data.key && !data.protected) s[data.key] = data.value;
+  });
+  COMPANY = s;
   console.log('[creds] Loaded fields:', Object.keys(CREDS).filter(k => CREDS[k]).join(', ') || 'none');
 }
 

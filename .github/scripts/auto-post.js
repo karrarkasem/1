@@ -57,7 +57,8 @@ function buildPostText(product, productUrl) {
   L.push(`🔗 ${productUrl}`);
   const tags = [];
   if (cat) tags.push(`#${cat.replace(/\s+/g, '')}`);
-  tags.push('#شركةبرجمان', '#تسوق_الان', '#العراق');
+  const companyTag = (COMPANY.company_name_ar || COMPANY.company_name || 'برجمان').replace(/\s+/g, '');
+  tags.push(`#${companyTag}`, '#تسوق_الان', '#العراق');
   L.push(tags.join(' '));
   return L.join('\n');
 }
@@ -365,7 +366,7 @@ async function handleRotation(docSnap, item) {
 
   const products = snap.docs
     .map(d => ({ id: d.id, ...d.data() }))
-    .filter(p => p.name && p.status !== 'hidden')
+    .filter(p => p.name && p.status === 'active')
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
 
   if (!products.length) {
@@ -384,7 +385,7 @@ async function handleRotation(docSnap, item) {
   console.log(`  [rotation] Category: ${item.category} | Product ${nextIdx+1}/${products.length}: ${product.name}`);
 
   // 3. Build post text
-  const storeUrl  = 'https://brjman.com';
+  const storeUrl  = (COMPANY.store_url || 'https://brjman.com').replace(/\/$/, '');
   const productUrl = `${storeUrl}/product.html?id=${product.id}`;
 
   const postItem = {
@@ -439,6 +440,22 @@ async function main() {
   console.log(`\n🤖 برجمان Auto-Post — ${new Date().toISOString()} | DRY_RUN=${DRY}`);
   await loadCredentials();
 
+  // ── استرجاع العناصر العالقة في processing أكثر من 20 دقيقة ──
+  const stuckCutoff = new Date(Date.now() - 20 * 60 * 1000);
+  const stuckSnap = await db.collection('automated_queue')
+    .where('status', '==', 'processing')
+    .where('processedAt', '<=', admin.firestore.Timestamp.fromDate(stuckCutoff))
+    .limit(10)
+    .get();
+  if (!stuckSnap.empty) {
+    console.log(`⚠️  Found ${stuckSnap.size} stuck item(s) — resetting to pending`);
+    const batch = db.batch();
+    stuckSnap.docs.forEach(d => {
+      batch.update(d.ref, { status: 'pending', processedAt: null });
+    });
+    await batch.commit();
+  }
+
   const now  = admin.firestore.Timestamp.now();
   const snap = await db.collection('automated_queue')
     .where('status', '==', 'pending')
@@ -467,11 +484,15 @@ async function main() {
         const prodSnap = await db.collection('products').doc(item.productId).get();
         if (prodSnap.exists) {
           const prod = prodSnap.data();
+          // تحديث الصورة دائماً من بيانات المنتج الحالية
           if (prod.image) item.productImage = prod.image;
-          // إعادة بناء النص دائماً من بيانات المنتج الحالية
-          const prodUrl = item.productUrl || `https://brjman.com/product.html?id=${item.productId}`;
-          item.postText = buildPostText(prod, prodUrl);
-          console.log(`  [img+text] Fetched from products/${item.productId}`);
+          // بناء النص فقط إذا لم يكتب المستخدم نصاً مخصصاً
+          const storeBase = (COMPANY.store_url || 'https://brjman.com').replace(/\/$/, '');
+          const prodUrl = item.productUrl || `${storeBase}/product.html?id=${item.productId}`;
+          if (!item.postText || !item.postText.trim()) {
+            item.postText = buildPostText(prod, prodUrl);
+          }
+          console.log(`  [img] Fetched from products/${item.productId}`);
         }
       } catch (e) {
         console.warn('  [product] Could not fetch:', e.message);

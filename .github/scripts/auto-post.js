@@ -153,8 +153,12 @@ async function postFacebook(item) {
       method: 'POST', body: form, headers: form.getHeaders()
     });
     const j1 = await r1.json();
+    console.log('  [facebook story] response:', JSON.stringify(j1));
     if (j1.id) return ok('Facebook', j1.id);
-    return fail('Facebook', 'story: ' + (j1.error?.message || JSON.stringify(j1)));
+    const errDetail = j1.error
+      ? `code=${j1.error.code} sub=${j1.error.error_subcode} msg=${j1.error.message}`
+      : JSON.stringify(j1);
+    return fail('Facebook', 'story: ' + errDetail);
   }
 
   // ── Post (default) ──────────────────────────────

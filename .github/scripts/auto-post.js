@@ -69,7 +69,6 @@ function buildPostText(product, productUrl) {
 // Returns JPEG buffer (no upload)
 async function buildStoryImageBuffer(imageUrl, productUrl) {
   const W = 1080, H = 1920, MID = 1080, barH = 420;
-  const brand = { r: 9, g: 50, b: 87 };
 
   const imgRes = await fetch(imageUrl);
   if (!imgRes.ok) throw new Error('Cannot download product image');
@@ -81,26 +80,28 @@ async function buildStoryImageBuffer(imageUrl, productUrl) {
 
   const displayUrl = (productUrl || '').replace('https://', '').slice(0, 50);
 
+  // Light pale background for bars
   const topSvg = Buffer.from(
     `<svg width="${W}" height="${barH}">` +
-    `<rect width="${W}" height="${barH}" fill="rgb(9,50,87)"/>` +
-    `<text x="${W/2}" y="${barH/2+24}" font-family="DejaVu Sans,Arial,sans-serif" ` +
-    `font-size="80" font-weight="bold" fill="white" text-anchor="middle">BRJMAN</text>` +
+    `<rect width="${W}" height="${barH}" fill="#f0f4f8"/>` +
+    `<text x="${W/2}" y="${barH/2+30}" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="90" font-weight="bold" fill="rgb(9,50,87)" text-anchor="middle">BRJMAN</text>` +
     `</svg>`
   );
 
   const botSvg = Buffer.from(
     `<svg width="${W}" height="${barH}">` +
-    `<rect width="${W}" height="${barH}" fill="rgb(9,50,87)"/>` +
-    `<text x="${W/2}" y="${barH/2-10}" font-family="DejaVu Sans,Arial,sans-serif" ` +
-    `font-size="30" fill="rgba(255,255,255,0.7)" text-anchor="middle">مشاهدة المنتج</text>` +
-    `<text x="${W/2}" y="${barH/2+40}" font-family="DejaVu Sans,Arial,sans-serif" ` +
-    `font-size="28" fill="white" text-anchor="middle">${displayUrl}</text>` +
+    `<rect width="${W}" height="${barH}" fill="#f0f4f8"/>` +
+    `<text x="${W/2}" y="110" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="38" fill="rgb(9,50,87)" text-anchor="middle">مشاهدة المنتج</text>` +
+    `<rect x="90" y="160" width="900" height="110" rx="55" fill="rgb(9,50,87)"/>` +
+    `<text x="${W/2}" y="233" font-family="DejaVu Sans,Arial,sans-serif" ` +
+    `font-size="32" fill="white" text-anchor="middle">${displayUrl}</text>` +
     `</svg>`
   );
 
   return await sharp({
-    create: { width: W, height: H, channels: 3, background: brand }
+    create: { width: W, height: H, channels: 4, background: { r: 240, g: 244, b: 248, alpha: 1 } }
   })
   .composite([
     { input: topSvg,  top: 0,          left: 0 },
@@ -206,6 +207,7 @@ async function postInstagram(item) {
   };
   if (ct === 'story') {
     containerData.media_type = 'STORIES';
+    if (item.productUrl) containerData.story_url = item.productUrl;
   } else {
     containerData.caption = (item.postText || '').slice(0, 2200);
   }

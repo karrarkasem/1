@@ -168,6 +168,8 @@ let fbReady=false;
 let buyerMode = localStorage.getItem('bj_buyer_mode') || null; // 'retail' | 'wholesale' | null
 let _uploadedImgUrl = '';
 let _sendingOrder = false;
+// Manage Products filter state
+let _mfSearch = '', _mfCat = 'الكل', _mfAlpha = '';
 // Banner state
 let bannerSlide=0, bannerTimer=null;
 // Banner Modal state
@@ -3369,7 +3371,26 @@ async function saveUser(){
 // MANAGE PRODUCTS + IMAGE UPLOAD
 // ═══════════════════════════════════════════════════════
 function renderManageProds(){
-  document.getElementById('manageProdsBody').innerHTML=products.map((p,i)=>{
+  _buildMfCats();
+  _buildMfAlpha();
+
+  const q = _mfSearch.trim().toLowerCase();
+  const filtered = products.filter((p, i) => {
+    if (_mfCat !== 'الكل' && p.cat !== _mfCat) return false;
+    if (_mfAlpha && !p.name.startsWith(_mfAlpha)) return false;
+    if (q && !p.name.toLowerCase().includes(q) && !p.cat.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  const countEl = document.getElementById('mfCount');
+  if (countEl) {
+    countEl.textContent = filtered.length < products.length
+      ? `عرض ${filtered.length} من ${products.length} منتج`
+      : `${products.length} منتج`;
+  }
+
+  document.getElementById('manageProdsBody').innerHTML = filtered.map(p => {
+    const i = products.indexOf(p);
     const mpSu=p.stockUnit||(p.productUnits&&p.productUnits[0]?.name)||'';
     const mpUnits=_getProdUnits(p);
     const mpFill=(mpUnits.find(u=>u.name===mpSu)?.fill)||1;
@@ -3390,6 +3411,55 @@ function renderManageProds(){
       </td>
     </tr>`;
   }).join('');
+}
+
+function _buildMfCats(){
+  const el = document.getElementById('mfCats');
+  if (!el) return;
+  const cats = ['الكل', ...new Set(products.map(p => p.cat).filter(Boolean))];
+  el.innerHTML = '<span class="mf-cats-lbl">📂 الفئة:</span>' +
+    cats.map(c => `<button class="mf-cat${_mfCat===c?' on':''}" onclick="setMfCat('${c.replace(/'/g,"\\'")}')"> ${c}</button>`).join('');
+}
+
+const _ARABIC_LETTERS = 'أابتثجحخدذرزسشصضطظعغفقكلمنهوي'.split('').filter((c,i,a)=>a.indexOf(c)===i);
+
+function _buildMfAlpha(){
+  const el = document.getElementById('mfAlpha');
+  if (!el) return;
+  const usedLetters = new Set(products.map(p => p.name?.[0]));
+  el.innerHTML = '<span class="mf-alpha-lbl">أ-ي:</span>' +
+    _ARABIC_LETTERS.map(l => {
+      const has = usedLetters.has(l);
+      const on = _mfAlpha === l ? ' on' : '';
+      const dim = !has ? ' dim' : '';
+      return `<button class="mf-letter${on}${dim}" onclick="${has?`setMfAlpha('${l}')`:''}" title="${l}">${l}</button>`;
+    }).join('');
+}
+
+function setMfSearch(v){
+  _mfSearch = v;
+  const clearBtn = document.getElementById('mfClearBtn');
+  if (clearBtn) clearBtn.style.display = v ? '' : 'none';
+  renderManageProds();
+}
+
+function clearMfSearch(){
+  _mfSearch = '';
+  const inp = document.getElementById('mfSearch');
+  if (inp) inp.value = '';
+  const clearBtn = document.getElementById('mfClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderManageProds();
+}
+
+function setMfCat(c){
+  _mfCat = c;
+  renderManageProds();
+}
+
+function setMfAlpha(l){
+  _mfAlpha = _mfAlpha === l ? '' : l;
+  renderManageProds();
 }
 
 function openAddProd(){

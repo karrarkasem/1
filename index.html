@@ -430,6 +430,21 @@
         <button class="btn btn-ghost" onclick="openModal('packagingUnitsModal')">وحدات التعبئة</button>
         <button class="btn btn-sky" onclick="openAddProd()">+ إضافة منتج</button>
       </div>
+
+      <!-- فلاتر إدارة المنتجات -->
+      <div class="mf-bar" id="mfBar">
+        <div class="mf-search-wrap">
+          <span class="mf-search-icon">🔍</span>
+          <input type="text" id="mfSearch" class="mf-search" placeholder="بحث باسم المنتج..." oninput="setMfSearch(this.value)">
+          <button class="mf-clear" id="mfClearBtn" onclick="clearMfSearch()" style="display:none">✕</button>
+        </div>
+        <div class="mf-cats" id="mfCats"></div>
+        <div class="mf-alpha-wrap">
+          <div class="mf-alpha" id="mfAlpha"></div>
+        </div>
+      </div>
+      <div class="mf-count" id="mfCount"></div>
+
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>صورة</th><th>الاسم</th><th>التصنيف</th><th>المفرد</th><th>الجملة</th><th>المخزون</th><th>الحالة</th><th></th></tr></thead>

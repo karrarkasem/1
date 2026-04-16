@@ -444,15 +444,16 @@ async function main() {
   const stuckCutoff = new Date(Date.now() - 20 * 60 * 1000);
   const stuckSnap = await db.collection('automated_queue')
     .where('status', '==', 'processing')
-    .where('processedAt', '<=', admin.firestore.Timestamp.fromDate(stuckCutoff))
-    .limit(10)
+    .limit(20)
     .get();
-  if (!stuckSnap.empty) {
-    console.log(`⚠️  Found ${stuckSnap.size} stuck item(s) — resetting to pending`);
+  const stuckDocs = stuckSnap.docs.filter(d => {
+    const t = d.data().processedAt;
+    return t && t.toDate() <= stuckCutoff;
+  });
+  if (stuckDocs.length) {
+    console.log(`⚠️  Found ${stuckDocs.length} stuck item(s) — resetting to pending`);
     const batch = db.batch();
-    stuckSnap.docs.forEach(d => {
-      batch.update(d.ref, { status: 'pending', processedAt: null });
-    });
+    stuckDocs.forEach(d => batch.update(d.ref, { status: 'pending', processedAt: null }));
     await batch.commit();
   }
 

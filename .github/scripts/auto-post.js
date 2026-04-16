@@ -136,30 +136,35 @@ async function postFacebook(item) {
   const caption = item.postText || item.productName || '';
   const ct = item.contentType || 'post';
 
-  // ── Story: upload binary directly to Facebook ──
-  if (ct === 'story') {
-    if (!item.productImage) return skip('Facebook', 'story requires an image');
-    const FormData = require('form-data');
-    const form = new FormData();
-    form.append('access_token', token);
+  // ── Story: حاول photo_stories أولاً، إذا فشل ارجع لبوست عادي ──
+  if (ct === 'story' && item.productImage) {
     try {
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('access_token', token);
       const buf = await buildStoryImageBuffer(item.productImage, item.productUrl || '');
       form.append('source', buf, { filename: 'story.jpg', contentType: 'image/jpeg' });
       console.log('  [story] Built story buffer:', buf.length, 'bytes');
+      const r1 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photo_stories`, {
+        method: 'POST', body: form, headers: form.getHeaders()
+      });
+      const j1 = await r1.json();
+      console.log('  [facebook story] response:', JSON.stringify(j1));
+      if (j1.id) return ok('Facebook', j1.id);
+      // فشل الستوري — نكمل للـ fallback (بوست عادي بنفس الصورة المنسقة)
+      console.warn('  [facebook] story failed, falling back to regular post');
+      const storyImgUrl = await uploadToImgbb(buf).catch(() => item.productImage);
+      const params2 = new URLSearchParams({ caption, url: storyImgUrl, access_token: token });
+      const res2 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+        method: 'POST', body: params2
+      });
+      const j2 = await res2.json();
+      if (j2.id) return ok('Facebook', j2.id);
+      return fail('Facebook', j2.error?.message || JSON.stringify(j2));
     } catch (e) {
-      console.warn('  [story] Image build failed, using url fallback:', e.message);
-      form.append('url', item.productImage);
+      console.warn('  [facebook] story error:', e.message);
+      // سقط في البوست العادي أدناه
     }
-    const r1 = await fetch(`https://graph.facebook.com/v19.0/${pageId}/photo_stories`, {
-      method: 'POST', body: form, headers: form.getHeaders()
-    });
-    const j1 = await r1.json();
-    console.log('  [facebook story] response:', JSON.stringify(j1));
-    if (j1.id) return ok('Facebook', j1.id);
-    const errDetail = j1.error
-      ? `code=${j1.error.code} sub=${j1.error.error_subcode} msg=${j1.error.message}`
-      : JSON.stringify(j1);
-    return fail('Facebook', 'story: ' + errDetail);
   }
 
   // ── Post (default) ──────────────────────────────
@@ -193,29 +198,33 @@ async function postInstagram(item) {
 
   const ct = item.contentType || 'post';
 
-  // ── Story: build 9:16 image → upload to imgbb ──
+  // ── رفع الصورة على imgbb دائماً لضمان رابط عام نظيف ──
   let imageUrl = item.productImage;
-  if (ct === 'story') {
-    try {
+  try {
+    if (ct === 'story') {
+      // بناء صورة 9:16 للستوري ورفعها
       const buf = await buildStoryImageBuffer(item.productImage, item.productUrl || '');
       imageUrl = await uploadToImgbb(buf);
-      console.log('  [story] Uploaded story image:', imageUrl);
-    } catch (e) {
-      console.warn('  [story] Story image failed, using original:', e.message);
+      console.log('  [ig story] Uploaded story image:', imageUrl);
+    } else {
+      // بوست عادي — ارفع الصورة الأصلية على imgbb
+      const imgRes = await fetch(item.productImage);
+      if (imgRes.ok) {
+        const imgBuf = await imgRes.buffer();
+        imageUrl = await uploadToImgbb(imgBuf);
+        console.log('  [ig post] Uploaded product image:', imageUrl);
+      }
     }
+  } catch (e) {
+    console.warn('  [ig] Image upload failed, using original:', e.message);
   }
 
-  // Step 1: Create media container
+  // Step 1: Create media container — دائماً IMAGE بدون media_type خاص
   const containerData = {
     image_url:    imageUrl,
+    caption:      (item.postText || '').slice(0, 2200),
     access_token: token
   };
-  if (ct === 'story') {
-    containerData.media_type = 'STORIES';
-    if (item.productUrl) containerData.story_url = item.productUrl;
-  } else {
-    containerData.caption = (item.postText || '').slice(0, 2200);
-  }
 
   const r1 = await fetch(`https://graph.facebook.com/v19.0/${igId}/media`, {
     method: 'POST', body: new URLSearchParams(containerData)
